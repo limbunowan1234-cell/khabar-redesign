@@ -9,7 +9,6 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-const APK_DOWNLOAD_URL = 'https://github.com/limbunowan1234-cell/Khabar-darjeeling/releases/download/v1.0.0/Khabar-darjeeling-v1.0.0.apk';
 
 const categories = ['Darjeeling','Kalimpong','Kurseong','Mirik','Siliguri','West Bengal','Politics','Sports','Culture','Education','Health','Entertainment','Technology','Tea Gardens','Tourism','Crime','Opinion','Other'];
 
@@ -34,9 +33,6 @@ export default function AdminPage() {
   const [view, setView] = useState('manage');
   const [apkDownloads, setApkDownloads] = useState(0);
   const [editingArticle, setEditingArticle] = useState<any>(null);
-  const [reels, setReels] = useState<any[]>([]);
-  const [reelFormData, setReelFormData] = useState({ title: '', description: '', videoUrl: '', thumbnailUrl: '', category: 'Darjeeling', authorName: '' });
-  const [reelUploading, setReelUploading] = useState(false);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -55,14 +51,13 @@ export default function AdminPage() {
         const res = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
-          if (data.email?.toLowerCase() !== ADMIN_EMAIL && !data.labels?.includes('admin')) {
+          if (data.email?.toLowerCase() !== ADMIN_EMAIL && !(data as any).labels?.includes('admin')) {
             setError('Access denied. Admin only.');
             setLoading(false);
             return;
           }
           setUser(data);
           await loadArticles();
-
           await loadApkDownloads();
         }
       } catch {}
@@ -76,19 +71,6 @@ export default function AdminPage() {
       const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })), { headers: H, credentials: 'include' });
       if (res.ok) { const data = await res.json(); setArticles(data.documents || []); }
     } catch {}
-  }
-
-
-
-
-
-  async function deleteReel(id: string) {
-    if (!confirm('Delete this reel?')) return;
-    try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/reels/documents/' + id, { method: 'DELETE', headers: H, credentials: 'include' });
-      await loadReels();
-      setSuccess('Reel deleted!');
-    } catch { setError('Delete failed'); }
   }
 
   async function loadApkDownloads() {
@@ -110,9 +92,9 @@ export default function AdminPage() {
         body: JSON.stringify({ data: { count: newCount } })
       });
       setApkDownloads(newCount);
-      window.open(APK_DOWNLOAD_URL, '_blank');
+      window.open('https://github.com/limbunowan1234-cell/Khabar-darjeeling/releases/download/v1.0.0/KhabarDarjeeling-v1.0.0.2.apk', '_blank');
     } catch {
-      window.open(APK_DOWNLOAD_URL, '_blank');
+      window.open('https://github.com/limbunowan1234-cell/Khabar-darjeeling/releases/download/v1.0.0/KhabarDarjeeling-v1.0.0.2.apk', '_blank');
     }
   }
 
@@ -300,42 +282,7 @@ export default function AdminPage() {
               ))}
             </div>
 
-            <button onClick={trackApkDownload} style={{ width: '100%', padding: '14px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '16px', marginBottom: '24px' }}>?? Download APK</button>
-
-            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#0F4C5C' }}>Manage Reels</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <input type="text" value={reelFormData.title} onChange={(e) => setReelFormData({...reelFormData, title: e.target.value})} placeholder="Reel title" style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px' }} />
-                <input type="text" value={reelFormData.authorName} onChange={(e) => setReelFormData({...reelFormData, authorName: e.target.value})} placeholder="Author name" style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px' }} />
-                <input type="text" value={reelFormData.videoUrl} onChange={(e) => setReelFormData({...reelFormData, videoUrl: e.target.value})} placeholder="Video URL (e.g. video1.mp4)" style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px' }} />
-                <select value={reelFormData.category} onChange={(e) => setReelFormData({...reelFormData, category: e.target.value})} style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px' }}>
-                  <option value="Darjeeling">Darjeeling</option>
-                  <option value="Kalimpong">Kalimpong</option>
-                  <option value="Politics">Politics</option>
-                  <option value="Sports">Sports</option>
-                  <option value="Culture">Culture</option>
-                </select>
-              </div>
-              <textarea value={reelFormData.description} onChange={(e) => setReelFormData({...reelFormData, description: e.target.value})} placeholder="Reel description" rows={2} style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px', marginBottom: '12px', boxSizing: 'border-box' }} />
-              <button onClick={publishReel} disabled={reelUploading} style={{ width: '100%', padding: '10px', backgroundColor: reelUploading ? '#ccc' : '#c41e3a', color: 'white', border: 'none', borderRadius: '6px', cursor: reelUploading ? 'not-allowed' : 'pointer', fontWeight: '600', fontSize: '14px', marginBottom: '16px' }}>
-                {reelUploading ? 'Publishing..' : 'Publish Reel'}
-              </button>
-              <div style={{ display: 'grid', gap: '8px' }}>
-                {reels.length === 0 ? (
-                  <p style={{ color: '#999', fontSize: '14px' }}>No reels yet</p>
-                ) : (
-                  reels.map(reel => (
-                    <div key={reel.$id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: '#f9f9f9', borderRadius: '6px', fontSize: '13px' }}>
-                      <div>
-                        <div style={{ fontWeight: '600', marginBottom: '2px' }}>{reel.title}</div>
-                        <div style={{ color: '#999' }}>{reel.category} • {reel.views} views</div>
-                      </div>
-                      <button onClick={() => deleteReel(reel.$id)} style={{ padding: '4px 8px', backgroundColor: '#ffebee', color: '#c41e3a', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Delete</button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            <button onClick={trackApkDownload} style={{ width: '100%', padding: '14px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '16px', marginBottom: '24px' }}>Download APK</button>
 
             <div style={{ display: 'flex', gap: '0', marginBottom: '16px', borderBottom: '2px solid #ddd' }}>
               {['all', 'breaking', 'featured', 'contest'].map((tab) => (
@@ -356,11 +303,11 @@ export default function AdminPage() {
                     {article.imageFileId ? (
                       <img src={getImageUrl(article.imageFileId)} alt="" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
                     ) : (
-                      <div style={{ width: '60px', height: '60px', backgroundColor: '#e0e0e0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>??</div>
+                      <div style={{ width: '60px', height: '60px', backgroundColor: '#e0e0e0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>IMG</div>
                     )}
                     <div>
                       <div style={{ fontWeight: '600', fontSize: '14px', color: '#0F4C5C', marginBottom: '4px' }}>{article.title}</div>
-                      <div style={{ fontSize: '12px', color: '#999', marginBottom: '6px' }}>By {article.submitterName || article.authorName || 'Unknown'} � {article.category} � {formatDate(article.$createdAt)} � {(article.views || 0).toLocaleString()} views</div>
+                      <div style={{ fontSize: '12px', color: '#999', marginBottom: '6px' }}>By {article.submitterName || article.authorName || 'Unknown'} • {article.category} • {formatDate(article.$createdAt)} • {(article.views || 0).toLocaleString()} views</div>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         {article.isBreaking && <span style={{ padding: '2px 8px', backgroundColor: '#ffebee', color: '#c41e3a', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>BREAKING</span>}
                         {article.isFeatured && <span style={{ padding: '2px 8px', backgroundColor: '#fff3e0', color: '#e65100', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>FEATURED</span>}

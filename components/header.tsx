@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -30,13 +30,9 @@ export default function Header({
 }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const { user, logOut } = useAuthStore();
   
-  try {
-    var { user, logOut } = useAuthStore();
-  } catch (e) {
-    var user = null;
-    var logOut = null;
-  }
+
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -89,7 +85,7 @@ export default function Header({
               whiteSpace: 'nowrap',
             }}
           >
-            🗞️ KhabarDarjeeling
+            ðŸ—žï¸ KhabarDarjeeling
           </h1>
         </Link>
 
@@ -128,7 +124,7 @@ export default function Header({
               whiteSpace: 'nowrap',
             }}
           >
-            {isDarkMode ? '☀️ Light' : '🌙 Dark'}
+            {isDarkMode ? 'â˜€ï¸ Light' : 'ðŸŒ™ Dark'}
           </button>
 
           {/* Auth Buttons */}
@@ -148,7 +144,7 @@ export default function Header({
                   whiteSpace: 'nowrap',
                 }}
               >
-                👤 {user.name || user.email.split('@')[0]}
+                ðŸ‘¤ {user.name || user.email.split('@')[0]}
               </button>
 
               {/* Dropdown Menu */}
@@ -182,7 +178,7 @@ export default function Header({
                         borderBottom: `1px solid ${isDarkMode ? '#3a3a3a' : '#f0f0f0'}`,
                       }}
                     >
-                      📋 My Profile
+                      ðŸ“‹ My Profile
                     </button>
                   </Link>
                   <Link href="/bookmarks">
@@ -201,7 +197,7 @@ export default function Header({
                         borderBottom: `1px solid ${isDarkMode ? '#3a3a3a' : '#f0f0f0'}`,
                       }}
                     >
-                      🔖 Bookmarks
+                      ðŸ”– Bookmarks
                     </button>
                   </Link>
                   <button
@@ -218,7 +214,7 @@ export default function Header({
                       fontWeight: '600',
                     }}
                   >
-                    🚪 Logout
+                    ðŸšª Logout
                   </button>
                 </div>
               )}
@@ -238,7 +234,7 @@ export default function Header({
                   whiteSpace: 'nowrap',
                 }}
               >
-                🔑 Login
+                ðŸ”‘ Login
               </button>
             </Link>
           )}

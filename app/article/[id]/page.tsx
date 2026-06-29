@@ -85,7 +85,7 @@ export default function ArticlePage() {
   const [replyText, setReplyText] = useState('');
   const [postingReply, setPostingReply] = useState(false);
 
-  const isAdmin = user?.labels?.includes("admin") || user?.email === "nowanad@gmail.com";
+  const isAdmin = (user as any)?.labels?.includes("admin") || user?.email === "nowanad@gmail.com";
 
   const [following, setFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);

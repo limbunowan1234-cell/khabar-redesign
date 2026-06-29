@@ -18,7 +18,7 @@ export default function AuthPage() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -38,7 +38,7 @@ export default function AuthPage() {
         router.push('/');
       }
     } catch (err) {
-      setError(err.message || 'Authentication failed');
+      setError((err as any)?.message || 'Authentication failed');
       setLoading(false);
     }
   };

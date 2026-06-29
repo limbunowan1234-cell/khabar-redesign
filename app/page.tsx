@@ -397,7 +397,7 @@ export default function Home() {
   const featuredArticle = articles.find(a => a.isFeatured) || articles[0];
   const trendingArticles = [...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
   const gridArticles = filtered.filter(a => a.$id !== featuredArticle?.$id);
-  const isAdmin = user?.labels?.includes('admin') || user?.email === 'nowanad@gmail.com';
+  const isAdmin = (user as any)?.labels?.includes('admin') || user?.email === 'nowanad@gmail.com';
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)' }}>
