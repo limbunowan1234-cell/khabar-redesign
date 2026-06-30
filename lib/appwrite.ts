@@ -82,7 +82,7 @@ export async function postComment(articleId: string, userId: string, commentText
 }
 
 export async function getArticleLikes(articleId: string) {
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, { headers: H, credentials: 'include' });
+  const res = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents?cb=` + Date.now(), { headers: H, credentials: 'include', cache: 'no-store' });
   if (!res.ok) return [];
   const data = await res.json();
   return data.documents.filter((l: any) => l.articleId === articleId && !l.commentId) || [];
