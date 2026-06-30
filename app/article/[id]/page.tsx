@@ -213,7 +213,7 @@ export default function ArticlePage() {
     } catch { alert('Could not delete comment'); }
   }
 
-  async function handleCommentLike(commentId: string) {
+  {
     if (!user) { window.location.href = "/auth"; return; }
     const nowLiked = await toggleCommentLike(commentId, user.$id);
     setCommentLikes(prev => ({ ...prev, [commentId]: nowLiked ? (prev[commentId] || 0) + 1 : Math.max(0, (prev[commentId] || 0) - 1) }));
