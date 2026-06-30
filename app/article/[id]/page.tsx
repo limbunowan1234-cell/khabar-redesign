@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark } from '@/lib/appwrite';
+import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike } from '@/lib/appwrite';
 import { useAuthStore } from '@/lib/authStore';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
