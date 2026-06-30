@@ -82,6 +82,8 @@ export default function ArticlePage() {
   const [bookmarked, setBookmarked] = useState(false);
   const [shareMsg, setShareMsg] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [commentLikes, setCommentLikes] = useState<Record<string, number>>({});
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
   const [replyText, setReplyText] = useState('');
   const [postingReply, setPostingReply] = useState(false);
 
