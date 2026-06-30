@@ -1,4 +1,4 @@
-const endpoint = 'https://api.khabardarjeeling.space/v1';
+﻿const endpoint = 'https://api.khabardarjeeling.space/v1';
 const projectId = 'khabardarjeeling';
 const dbId = 'Khabar_db';
 
@@ -158,4 +158,28 @@ export async function checkIfFollowing(followerId: string, followingId: string) 
   if (!res.ok) return false;
   const data = await res.json();
   return data.documents.some((f: any) => f.followerId === followerId && f.followingId === followingId);
+}
+
+export async function getCommentLikes(commentId: string) {
+  const res = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, { headers: H, credentials: 'include' });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.documents.filter((l: any) => l.commentId === commentId) || [];
+}
+
+export async function toggleCommentLike(commentId: string, userId: string) {
+  const listRes = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, { headers: H, credentials: 'include' });
+  if (!listRes.ok) return false;
+  const { documents } = await listRes.json();
+  const existing = documents.find((l: any) => l.commentId === commentId && l.userId === userId);
+  if (existing) {
+    await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents/${existing.$id}`, { method: 'DELETE', headers: H, credentials: 'include' });
+    return false;
+  } else {
+    await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, {
+      method: 'POST', headers: HJ, credentials: 'include',
+      body: JSON.stringify({ documentId: 'unique()', data: { articleId: null, commentId, userId } })
+    });
+    return true;
+  }
 }
