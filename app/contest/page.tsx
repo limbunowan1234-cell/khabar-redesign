@@ -55,7 +55,7 @@ export default function ContestPage() {
             try {
               const likesRes = await fetch(
                 ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' +
-                encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] })) +
+                encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'commentId', values: [null] })) +
                 '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })),
                 { headers: H, credentials: 'include' }
               );
