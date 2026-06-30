@@ -167,7 +167,7 @@ export async function getCommentLikes(commentId: string) {
   return data.documents.filter((l: any) => l.commentId === commentId) || [];
 }
 
-export async function toggleCommentLike(commentId: string, userId: string) {
+export async function toggleCommentLike(commentId: string, userId: string, articleId: string) {
   const listRes = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, { headers: H, credentials: 'include' });
   if (!listRes.ok) return false;
   const { documents } = await listRes.json();
@@ -178,7 +178,7 @@ export async function toggleCommentLike(commentId: string, userId: string) {
   } else {
     await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, {
       method: 'POST', headers: HJ, credentials: 'include',
-      body: JSON.stringify({ documentId: 'unique()', data: { articleId: null, commentId, userId } })
+      body: JSON.stringify({ documentId: 'unique()', data: { articleId, commentId, userId } })
     });
     return true;
   }
