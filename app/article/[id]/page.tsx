@@ -149,6 +149,17 @@ export default function ArticlePage() {
         const bks = await getUserBookmarks(user.$id);
         setBookmarked(bks.some((b: any) => b.articleId === id));
         if (data?.submitterId) checkFollowing(data.submitterId);
+          const likesMap: Record<string, number> = {};
+          const userLiked = new Set<string>();
+          for (const c of cms) {
+            const clikes = await getCommentLikes(c.$id);
+            likesMap[c.$id] = clikes.length;
+            if (clikes.some((l: any) => l.userId === user.$id)) {
+              userLiked.add(c.$id);
+            }
+          }
+          setCommentLikes(likesMap);
+          setLikedComments(userLiked);
       }
     }
     load();
