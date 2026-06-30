@@ -79,6 +79,7 @@ export default function ArticlePage() {
   const [posting, setPosting] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [likeProcessing, setLikeProcessing] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [shareMsg, setShareMsg] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -167,9 +168,12 @@ export default function ArticlePage() {
 
   async function handleLike() {
     if (!user) { window.location.href = '/auth'; return; }
+    if (likeProcessing) return;
+    setLikeProcessing(true);
     const nowLiked = await toggleArticleLike(id, user.$id);
     setLiked(nowLiked);
     setLikeCount((c) => nowLiked ? c + 1 : Math.max(0, c - 1));
+    setLikeProcessing(false);
   }
 
   async function handleBookmark() {
