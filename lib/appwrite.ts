@@ -82,17 +82,22 @@ export async function postComment(articleId: string, userId: string, commentText
 }
 
 export async function getArticleLikes(articleId: string) {
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents?cb=` + Date.now(), { headers: H, credentials: 'include', cache: 'no-store' });
+  const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [articleId] }));
+  const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'commentId', values: [null] }));
+  const q3 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1000] }));
+  const res = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents?queries[]=${q1}&queries[]=${q2}&queries[]=${q3}`, { headers: H, credentials: 'include' });
   if (!res.ok) return [];
   const data = await res.json();
-  return data.documents.filter((l: any) => l.articleId === articleId && !l.commentId) || [];
+  return data.documents || [];
 }
 
 export async function toggleArticleLike(articleId: string, userId: string) {
-  const listRes = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, { headers: H, credentials: 'include' });
+  const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [articleId] }));
+  const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
+  const listRes = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents?queries[]=${q1}&queries[]=${q2}`, { headers: H, credentials: 'include' });
   if (!listRes.ok) return false;
   const { documents } = await listRes.json();
-  const existing = documents.find((l: any) => l.articleId === articleId && l.userId === userId && !l.commentId);
+  const existing = documents.find((l: any) => !l.commentId);
   if (existing) {
     await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents/${existing.$id}`, { method: 'DELETE', headers: H, credentials: 'include' });
     return false;
