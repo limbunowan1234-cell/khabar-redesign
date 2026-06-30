@@ -213,13 +213,6 @@ export default function ArticlePage() {
     } catch { alert('Could not delete comment'); }
   }
 
-  {
-    if (!user) { window.location.href = "/auth"; return; }
-    const nowLiked = await toggleCommentLike(commentId, user.$id);
-    setCommentLikes(prev => ({ ...prev, [commentId]: nowLiked ? (prev[commentId] || 0) + 1 : Math.max(0, (prev[commentId] || 0) - 1) }));
-    setLikedComments(prev => new Set(nowLiked ? [...prev, commentId] : [...prev].filter(id => id !== commentId)));
-  }
-
   async function handleCommentLike(commentId: string) {
     if (!user) { window.location.href = "/auth"; return; }
     const nowLiked = await toggleCommentLike(commentId, user.$id);
