@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark } from '@/lib/appwrite';
+import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike } from '@/lib/appwrite';
 import { useAuthStore } from '@/lib/authStore';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
@@ -82,6 +82,8 @@ export default function ArticlePage() {
   const [bookmarked, setBookmarked] = useState(false);
   const [shareMsg, setShareMsg] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [commentLikes, setCommentLikes] = useState<Record<string, number>>({});
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
   const [replyText, setReplyText] = useState('');
   const [postingReply, setPostingReply] = useState(false);
 
@@ -211,6 +213,13 @@ export default function ArticlePage() {
       const cms = await fetchComments(id);
       setComments(cms);
     } catch { alert('Could not delete comment'); }
+  }
+
+  async function handleCommentLike(commentId: string) {
+    if (!user) { window.location.href = '/auth'; return; }
+    const nowLiked = await toggleCommentLike(commentId, user.);
+    setCommentLikes(prev => ({ ...prev, [commentId]: nowLiked ? (prev[commentId] || 0) + 1 : Math.max(0, (prev[commentId] || 0) - 1) }));
+    setLikedComments(prev => new Set(nowLiked ? [...prev, commentId] : [...prev].filter(id => id !== commentId)));
   }
 
   if (loading) return (
@@ -423,7 +432,8 @@ export default function ArticlePage() {
                           {replies.length > 0 && <span style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#aaa' }}>{replies.length} {replies.length === 1 ? 'reply' : 'replies'}</span>}
                           {user && (
                             <button className="reply-btn" onClick={() => { setReplyingTo(isReplying ? null : c.$id); setReplyText(''); }} style={{ color: '#c41e3a' }}>
-                              {isReplying ? 'Cancel' : '↩ Reply'}
+                              <button className='reply-btn' onClick={() => handleCommentLike(c.)} style={{ color: likedComments.has(c.) ? '#c41e3a' : '#888' }}>{likedComments.has(c.) ? '❤️' : '🤍'} {commentLikes[c.] || 0}</button>
+                          {isReplying ? 'Cancel' : '↩ Reply'}
                             </button>
                           )}
                           {canDelete && (
