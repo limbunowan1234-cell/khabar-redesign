@@ -430,7 +430,9 @@ export default function ArticlePage() {
                         <p style={{ margin: '0 0 8px', fontSize: '14px', color: isDarkMode ? '#ccc' : '#444', lineHeight: '1.5' }}>{c.commentText}</p>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           {replies.length > 0 && <span style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#aaa' }}>{replies.length} {replies.length === 1 ? 'reply' : 'replies'}</span>}
-                          {user && (
+                         <button className="reply-btn" onClick={() => handleCommentLike(c.$id)} style={{ color: likedComments.has(c.$id) ? "#c41e3a" : "#888" }}>
+  {likedComments.has(c.$id) ? "❤️" : "🤍"} {commentLikes[c.$id] || 0}
+</button> {user && (
                             <button className="reply-btn" onClick={() => { setReplyingTo(isReplying ? null : c.$id); setReplyText(''); }} style={{ color: '#c41e3a' }}>
                               {isReplying ? 'Cancel' : '↩ Reply'}
                             </button>
