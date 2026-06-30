@@ -9,7 +9,7 @@ export async function getArticles() {
   const res = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents`, { headers: H, credentials: 'include' });
   if (!res.ok) return [];
   const data = await res.json();
-  return data.documents || [];
+  return data.documents.filter((l: any) => l.articleId === articleId && !l.commentId) || [];
 }
 
 export async function getArticle(id: string) {
@@ -85,7 +85,7 @@ export async function getArticleLikes(articleId: string) {
   const res = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, { headers: H, credentials: 'include' });
   if (!res.ok) return [];
   const data = await res.json();
-  return data.documents || [];
+  return data.documents.filter((l: any) => l.articleId === articleId && !l.commentId) || [];
 }
 
 export async function toggleArticleLike(articleId: string, userId: string) {
