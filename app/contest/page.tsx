@@ -55,8 +55,8 @@ export default function ContestPage() {
             try {
               const likesRes = await fetch(
                 ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' +
-                encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'commentId', values: [null] })) +
-                '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })),
+                encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] })) +
+                '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [2000] })),
                 { headers: H, credentials: 'include' }
               );
               if (likesRes.ok) {
@@ -74,7 +74,8 @@ export default function ContestPage() {
                   commentCount = commentsData.total || 0;
                 }
               } catch {}
-              return { ...a, _votes: likesData.total || 0, _comments: commentCount };
+              const articleLikes = (likesData.documents || []).filter((l) => !l.commentId).length;
+              return { ...a, _votes: articleLikes, _comments: commentCount };
               }
             } catch {}
             return { ...a, _votes: 0 };
