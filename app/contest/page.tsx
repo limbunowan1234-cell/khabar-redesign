@@ -74,7 +74,7 @@ export default function ContestPage() {
                   commentCount = commentsData.total || 0;
                 }
               } catch {}
-              const articleLikes = (likesData.documents || []).filter((l) => !l.commentId).length;
+              const articleLikes = (likesData.documents || []).filter((l: any) => !l.commentId).length;
               return { ...a, _votes: articleLikes, _comments: commentCount };
               }
             } catch {}
