@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike } from '@/lib/appwrite';
+import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike, incrementViews } from '@/lib/appwrite';
 import { useAuthStore } from '@/lib/authStore';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
@@ -138,7 +138,8 @@ export default function ArticlePage() {
   useEffect(() => {
     if (!id) return;
     async function load() {
-      const data = await getArticle(id);
+      incrementViews(id);
+        const data = await getArticle(id);
       setArticle(data);
       setLoading(false);
       const cms = await fetchComments(id);

@@ -1,4 +1,4 @@
-const endpoint = 'https://api.khabardarjeeling.space/v1';
+﻿const endpoint = 'https://api.khabardarjeeling.space/v1';
 const projectId = 'khabardarjeeling';
 const dbId = 'Khabar_db';
 
@@ -189,5 +189,19 @@ export async function toggleCommentLike(commentId: string, userId: string, artic
       body: JSON.stringify({ documentId: 'unique()', data: { articleId, commentId, userId } })
     });
     return true;
+  }
+}
+
+
+export async function incrementViews(articleId: string) {
+  try {
+    const article = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${articleId}`, { headers: H, credentials: 'include' });
+    if (!article.ok) return false;
+    const data = await article.json();
+    const newViews = (data.views || 0) + 1;
+    const upd = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${articleId}`, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ views: newViews }) });
+    return upd.ok;
+  } catch {
+    return false;
   }
 }
