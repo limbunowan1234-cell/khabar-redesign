@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
@@ -24,6 +24,12 @@ function getCategoryColor(cat: string): string {
 function getImageUrl(article: any): string {
   if (!article.imageFileId) return '';
   return ENDPOINT + '/storage/buckets/article-image/files/' + article.imageFileId + '/view?project=' + projectId;
+}
+
+function truncateText(text: string, words: number): string {
+  if (!text) return '';
+  const w = text.split(' ').slice(0, words).join(' ');
+  return text.split(' ').length > words ? w + '...' : w;
 }
 
 function readingTime(content: string): string {
@@ -61,11 +67,47 @@ function getTopArticles(articles: any[], period: string): any[] {
   return [...f].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
 }
 
+// HERO SECTION WITH 3 FEATURED ARTICLES
+function HeroSection({ articles, isDarkMode }: any) {
+  const shuffled = [...articles].sort(() => Math.random() - 0.5).slice(0, 3);
+  if (shuffled.length === 0) return null;
+
+  return (
+    <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+      {/* HERO GRADIENT */}
+      <div style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)', padding: '40px 24px', textAlign: 'center', color: 'white' }}>
+        <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.2' }}>खबर दार्जिलिंग</h1>
+        <p style={{ fontSize: '16px', margin: 0, opacity: 0.95, fontWeight: '500' }}>The Digital Home of Darjeeling</p>
+      </div>
+
+      {/* 3 FEATURED ARTICLES */}
+      <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        {shuffled.map((article) => {
+          const img = getImageUrl(article);
+          const preview = truncateText(article.content || article.summary || '', 30);
+          return (
+            <Link key={article.$id} href={'/article/' + article.$id} style={{ textDecoration: 'none', display: 'block', borderRadius: '10px', overflow: 'hidden', transition: 'transform 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
+              {img && <img src={img} alt={article.title} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+              <div style={{ padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9' }}>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#c41e3a', textTransform: 'uppercase', marginBottom: '6px' }}>{article.category || 'News'}</div>
+                <h3 style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', margin: '0 0 6px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
+                <p style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', margin: '0 0 8px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
+                <div style={{ fontSize: '10px', color: isDarkMode ? '#777' : '#999' }}>👁 {(article.views || 0).toLocaleString()}</div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function DesktopCard({ article, isDarkMode, featured }: any) {
   const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
   const author = article.submitterName || article.authorName || 'Staff Reporter';
   const catColor = getCategoryColor(article.category);
   const hasImage = !!imgUrl;
+  const preview = truncateText(article.content || '', 50); // 50-word preview
 
   if (!featured) {
     if (hasImage) {
@@ -81,7 +123,8 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderLeft: '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f0f0f0') }}>
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.35', margin: '0 0 10px' }}>{article.title}</h2>
-                <p style={{ color: isDarkMode ? '#bbb' : '#666', fontSize: '13px', lineHeight: '1.6', margin: '0 0 16px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{(article.content || '').substring(0, 150)}...</p>
+                {/* NEW: 50-word preview */}
+                <p style={{ color: isDarkMode ? '#bbb' : '#666', fontSize: '13px', lineHeight: '1.6', margin: '0 0 16px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -112,7 +155,8 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
                   {article.isFeatured && <span style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: catColor, padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>FEATURED</span>}
                 </div>
                 <h2 style={{ fontSize: '22px', fontWeight: '900', color: 'white', lineHeight: '1.3', margin: '0 0 10px', textShadow: '0 2px 8px rgba(0,0,0,0.3)', maxWidth: '80%' }}>{article.title}</h2>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', lineHeight: '1.6', margin: 0, maxWidth: '75%', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{(article.content || '').substring(0, 120)}...</p>
+                {/* NEW: 50-word preview for no-image cards */}
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', lineHeight: '1.6', margin: 0, maxWidth: '75%', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -161,7 +205,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
               {article.isBreaking && <span style={{ backgroundColor: '#c41e3a', color: 'white', padding: '3px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700' }}>BREAKING</span>}
             </div>
             <h3 style={{ fontSize: '15px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: '0 0 8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
-            <p style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', lineHeight: '1.5', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{(article.content || '').substring(0, 100)}...</p>
+            <p style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', lineHeight: '1.5', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: isDarkMode ? '#777' : '#999' }}>
               <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: catColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: '700' }}>{getInitials(author)}</div>
               <span style={{ fontWeight: '600', color: isDarkMode ? '#bbb' : '#555' }}>{author}</span>
@@ -181,6 +225,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
   const catColor = getCategoryColor(article.category);
   const hasImage = !!imgUrl;
   const isDiscover = index % 3 !== 2;
+  const preview = truncateText(article.content || '', 30); // shorter preview for mobile
 
   if (isDiscover) {
     if (hasImage) {
@@ -197,6 +242,8 @@ function MobileCard({ article, isDarkMode, index }: any) {
             </div>
             <div style={{ padding: '14px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: '0 0 10px' }}>{article.title}</h3>
+              {/* NEW: 30-word preview for mobile */}
+              <p style={{ fontSize: '13px', color: isDarkMode ? '#bbb' : '#666', lineHeight: '1.4', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: catColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: '700', flexShrink: 0 }}>{getInitials(author)}</div>
                 <span style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', fontWeight: '500' }}>{author}</span>
@@ -217,7 +264,8 @@ function MobileCard({ article, isDarkMode, index }: any) {
                 {article.isBreaking && <span style={{ backgroundColor: '#f5c518', color: '#1a1a1a', padding: '3px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700' }}>BREAKING</span>}
               </div>
               <h3 style={{ fontSize: '18px', fontWeight: '900', color: 'white', lineHeight: '1.35', margin: '0 0 12px', textShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>{article.title}</h3>
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5', margin: '0 0 16px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{(article.content || '').substring(0, 100)}...</p>
+              {/* NEW: 30-word preview for mobile gradient card */}
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5', margin: '0 0 16px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', border: '2px solid rgba(255,255,255,0.4)' }}>{getInitials(author)}</div>
                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.9)', fontWeight: '600' }}>{author}</span>
@@ -234,7 +282,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
     return (
       <Link href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '12px', display: 'flex' }}>
-          <div style={{ width: '4px', backgroundColor: catColor, flexShrink: 0 }} />
+          <div style={{ width: '4px', backgroundColor: getCategoryColor(article.category), flexShrink: 0 }} />
           <img src={imgUrl} alt={article.title} style={{ width: '100px', height: '90px', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           <div style={{ padding: '10px 12px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
             <h3 style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: '0 0 6px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
@@ -335,6 +383,25 @@ function ContestPreview({ articles, isDarkMode }: any) {
   );
 }
 
+// NEW: BREAKING NEWS SIDEBAR WIDGET
+function BreakingNewsSidebar({ articles, isDarkMode }: any) {
+  const breaking = articles.filter((a: any) => a.isBreaking).slice(0, 3);
+  if (breaking.length === 0) return null;
+  return (
+    <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px', borderLeft: '4px solid #c41e3a' }}>
+      <h3 style={{ fontSize: '13px', fontWeight: '800', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>🔴 Breaking News</h3>
+      {breaking.map((a, i) => (
+        <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div style={{ paddingBottom: '10px', marginBottom: i < breaking.length - 1 ? '10px' : 0, borderBottom: i < breaking.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f5f5f5') : 'none' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#ddd' : '#1a1a1a', margin: '0 0 4px', lineHeight: '1.3' }}>{a.title}</h4>
+            <div style={{ fontSize: '11px', color: isDarkMode ? '#777' : '#999' }}>{fmtDate(a.$createdAt)}</div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   const { initAuth, user, logOut } = useAuthStore();
   const [articles, setArticles] = useState<any[]>([]);
@@ -403,7 +470,8 @@ export default function Home() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)' }}>
       <style>{'.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}'}</style>
       <div style={{ textAlign: 'center' }}>
-        <img src="/assets/logo.png" alt="KhabarDarjeeling" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid rgba(255,255,255,0.4)', marginBottom: '20px', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        {/* BIGGER LOGO */}
+        <img src="/assets/logo.png" alt="KhabarDarjeeling" style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid rgba(255,255,255,0.4)', marginBottom: '20px', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         <h1 style={{ color: 'white', fontSize: '28px', fontWeight: '800', margin: '0 0 6px' }}>Khabar Darjeeling</h1>
         <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', margin: '0 0 30px' }}>Hamro Khabar, Hami Lekhaw</p>
         <div className="spin" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', margin: '0 auto' }} />
@@ -414,7 +482,7 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5', color: isDarkMode ? '#e0e0e0' : '#1a1a1a', paddingBottom: isMobile ? '70px' : '0' }}>
-      <style>{'.ticker-wrap{overflow:hidden;flex:1}.ticker-track{display:inline-flex;white-space:nowrap;animation:tickerScroll 35s linear infinite}.ticker-track:hover{animation-play-state:paused}@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}.cat-pill{transition:all 0.2s;cursor:pointer;border:none}.cat-pill:hover{opacity:0.85}'}</style>
+      <style>{'.ticker-wrap{overflow:hidden;flex:1}.ticker-track{display:inline-flex;white-space:nowrap;animation:tickerScroll 35s linear infinite}.ticker-track:hover{animation-play-state:paused}@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}.cat-pill{transition:all 0.2s;cursor:pointer;border:none}'}</style>
 
       {showBanner && (
         <div style={{ backgroundColor: '#f5c518', color: '#c41e3a', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', borderBottom: '2px solid #c41e3a' }}>
@@ -466,10 +534,12 @@ export default function Home() {
         </>
       )}
 
+      {/* BIGGER LOGO IN HEADER */}
       <header style={{ backgroundColor: isDarkMode ? '#1e1e1e' : '#c41e3a', color: 'white', padding: '10px 16px', borderBottom: '3px solid #f5c518', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
           <Link href="/" style={{ textDecoration: 'none', color: 'white', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            <img src="/assets/logo.png" alt="KhabarDarjeeling" style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.4)' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            {/* INCREASED FROM 42px to 56px */}
+            <img src="/assets/logo.png" alt="KhabarDarjeeling" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.4)' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             <div>
               <h1 style={{ margin: 0, fontSize: isMobile ? '16px' : '20px', fontWeight: '800', lineHeight: '1.2' }}>Khabar Darjeeling</h1>
               {!isMobile && <p style={{ margin: 0, fontSize: '10px', opacity: 0.8 }}>Hamro Khabar, Hami Lekhaw</p>}
@@ -551,6 +621,8 @@ export default function Home() {
 
       {isMobile ? (
         <div style={{ padding: '4px 16px 16px' }}>
+          {/* HERO SECTION ON MOBILE */}
+          {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><HeroSection articles={articles} isDarkMode={isDarkMode} /></div>}
           {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><TopTen articles={articles} isDarkMode={isDarkMode} /></div>}
           {!searchQuery && selectedCategory === 'All' && <ContestPreview articles={articles} isDarkMode={isDarkMode} />}
           {featuredArticle && !searchQuery && selectedCategory === 'All' && (
@@ -590,6 +662,9 @@ export default function Home() {
             </div>
           </aside>
           <main>
+            {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
+            {!searchQuery && selectedCategory === 'All' && <HeroSection articles={articles} isDarkMode={isDarkMode} />}
+            
             {featuredArticle && !searchQuery && selectedCategory === 'All' && (
               <div style={{ marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
@@ -617,6 +692,8 @@ export default function Home() {
             )}
           </main>
           <aside>
+            {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
+            <BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />
             <TopTen articles={articles} isDarkMode={isDarkMode} />
             <ContestPreview articles={articles} isDarkMode={isDarkMode} />
             <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
@@ -654,7 +731,7 @@ export default function Home() {
               {[{ label: 'Post a Story', href: '/post', color: '#c41e3a' }, { label: 'Story Contest', href: '/contest', color: '#e65100' }, { label: 'My Bookmarks', href: '/bookmarks', color: '#0F4C5C' }, { label: 'My Profile', href: '/profile', color: '#7b1fa2' }].map(item => (
                 <a key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', marginBottom: '6px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '8px', textDecoration: 'none', borderLeft: '3px solid ' + item.color }}>
                   <span style={{ fontSize: '13px', fontWeight: '600', color: isDarkMode ? '#ddd' : '#1a1a1a' }}>{item.label}</span>
-                  <span style={{ color: item.color, fontWeight: '700', fontSize: '16px' }}>?</span>
+                  <span style={{ color: item.color, fontWeight: '700', fontSize: '16px' }}>→</span>
                 </a>
               ))}
             </div>
@@ -672,7 +749,7 @@ export default function Home() {
       )}
 
             {isMobile && (
-        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#eee'), display: 'flex', zIndex: 200, boxShadow: '0 -2px 10px rgba(0,0,0,0.1)' }}>
+        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#eee'), display: 'flex', zIndex: '200', boxShadow: '0 -2px 10px rgba(0,0,0,0.1)' }}>
           {[
             { id: 'home', href: '/', icon: '🏠', label: 'Home' },
             { id: 'search', href: '#', icon: '🔍', label: 'Search' },
