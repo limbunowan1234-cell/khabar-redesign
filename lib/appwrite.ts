@@ -199,7 +199,7 @@ export async function incrementViews(articleId: string) {
     if (!article.ok) return false;
     const data = await article.json();
     const newViews = (data.views || 0) + 1;
-    const upd = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${articleId}`, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ views: newViews }) });
+    const upd = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${articleId}`, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { views: newViews } }) });
     return upd.ok;
   } catch {
     return false;
