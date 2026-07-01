@@ -1,4 +1,5 @@
-﻿'use client';
+'use client';
+import AuthorBadge from '@/components/AuthorBadge';
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -342,6 +343,7 @@ export default function ArticlePage() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <div style={{ fontWeight: "700", fontSize: "15px", color: isDarkMode ? "#fff" : "#1a1a1a" }}>{author}</div>
+                  {article.submitterId && <AuthorBadge submitterId={article.submitterId} size="sm" />}
                   {user && article.submitterId && article.submitterId !== user.$id && (
                     <button onClick={() => handleFollow(article.submitterId, author)} disabled={followLoading} style={{ backgroundColor: following ? "transparent" : "#c41e3a", color: following ? "#c41e3a" : "white", border: "1px solid #c41e3a", padding: "4px 12px", borderRadius: "16px", cursor: "pointer", fontWeight: "700", fontSize: "12px" }}>
                       {followLoading ? "..." : following ? "✓ Following" : "+ Follow"}

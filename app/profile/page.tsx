@@ -1,4 +1,5 @@
-﻿'use client';
+'use client';
+import AuthorBadge from '@/components/AuthorBadge';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -111,6 +112,7 @@ export default function ProfilePage() {
         </div>
         <h1 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 4px' }}>{user.name}</h1>
         <p style={{ fontSize: '14px', opacity: 0.85, margin: '0 0 20px' }}>{user.email}</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}><AuthorBadge submitterId={user.$id} size="md" /></div>
         <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
           {[
             { label: 'Articles', value: myArticles.length },
