@@ -390,7 +390,7 @@ function BreakingNewsSidebar({ articles, isDarkMode }: any) {
   return (
     <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px', borderLeft: '4px solid #c41e3a' }}>
       <h3 style={{ fontSize: '13px', fontWeight: '800', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>ðŸ”´ Breaking News</h3>
-      {breaking.map((a: any, i) => (
+      {breaking.map((a: any, i: number) => (
         <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ paddingBottom: '10px', marginBottom: i < breaking.length - 1 ? '10px' : 0, borderBottom: i < breaking.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f5f5f5') : 'none' }}>
             <h4 style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#ddd' : '#1a1a1a', margin: '0 0 4px', lineHeight: '1.3' }}>{a.title}</h4>
