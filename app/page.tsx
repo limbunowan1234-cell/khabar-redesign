@@ -1,4 +1,5 @@
 'use client';
+import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -521,7 +522,7 @@ export default function Home() {
                 <a href="https://www.facebook.com/profile.php?id=61590708777947" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: '#1877f2', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>Facebook</a>
                 <a href="https://www.instagram.com/khabardarjeeling_2026" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>Instagram</a>
                 <a href="https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>WhatsApp Channel</a>
-                <a href={APK_URL} download style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>Download APK</a>
+                <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>Download APK</a>
               </div>
               {user ? (
                 <button onClick={() => { logOut(); setShowMenu(false); }} style={{ width: '100%', padding: '12px', backgroundColor: '#ffebee', color: '#c41e3a', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', marginTop: '16px' }}>Logout</button>
@@ -604,7 +605,7 @@ export default function Home() {
       {isMobile && !searchQuery && selectedCategory === 'All' && (
         <div style={{ padding: '10px 16px 0' }}>
           <WeatherWidget variant="banner" isDarkMode={isDarkMode} />
-          <a href={APK_URL} download style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '12px', padding: '12px 16px', textDecoration: 'none', marginBottom: '8px' }}>
+          <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '12px', padding: '12px 16px', textDecoration: 'none', marginBottom: '8px' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: '700', fontSize: '13px' }}>Download our Android App</div>
               <div style={{ fontSize: '11px', opacity: 0.8 }}>Faster news, offline reading</div>
@@ -659,7 +660,7 @@ export default function Home() {
                 <a href="https://www.facebook.com/profile.php?id=61590708777947" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', backgroundColor: '#1877f2', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '12px', marginBottom: '6px' }}>Facebook</a>
                 <a href="https://www.instagram.com/khabardarjeeling_2026" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '12px', marginBottom: '6px' }}>Instagram</a>
                 <a href="https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', backgroundColor: '#25D366', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '12px', marginBottom: '6px' }}>WhatsApp</a>
-                <a href={APK_URL} download style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '12px' }}>Download App</a>
+                <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '12px' }}>Download App</a>
               </div>
             </div>
           </aside>
@@ -720,7 +721,7 @@ export default function Home() {
                 <div style={{ backgroundColor: '#f5c518', color: '#1a1a1a', padding: '8px 16px', borderRadius: '20px', fontWeight: '700', fontSize: '13px', display: 'inline-block' }}>Enter Now</div>
               </div>
             </Link>
-            <a href={APK_URL} download style={{ textDecoration: 'none' }}>
+            <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ textDecoration: 'none' }}>
               <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: '700', fontSize: '13px', color: isDarkMode ? '#fff' : '#1a1a1a' }}>Download App</div>

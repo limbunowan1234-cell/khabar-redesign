@@ -1,4 +1,4 @@
-﻿const endpoint = 'https://api.khabardarjeeling.space/v1';
+const endpoint = 'https://api.khabardarjeeling.space/v1';
 const projectId = 'khabardarjeeling';
 const dbId = 'Khabar_db';
 
@@ -204,4 +204,16 @@ export async function incrementViews(articleId: string) {
   } catch {
     return false;
   }
+}
+
+export async function trackApkDownload() {
+  try {
+    const res = await fetch(endpoint + '/databases/' + dbId + '/collections/analytics/documents/apk_downloads', { headers: H, credentials: 'include' });
+    let current = 0;
+    if (res.ok) { const d = await res.json(); current = d.count || 0; }
+    await fetch(endpoint + '/databases/' + dbId + '/collections/analytics/documents/apk_downloads', {
+      method: 'PATCH', headers: HJ, credentials: 'include',
+      body: JSON.stringify({ data: { count: current + 1 } })
+    });
+  } catch {}
 }
