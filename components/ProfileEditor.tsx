@@ -77,7 +77,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
       if (!res.ok) throw new Error('save');
       window.location.reload();
     } catch {
-      setErr('Could not save. Check that Users have Update permission on user_profiles.');
+      setErr('Could not save. Check that Users have Update permission on profiles.');
       setSaving(false);
     }
   }
