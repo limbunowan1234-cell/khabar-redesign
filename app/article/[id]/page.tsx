@@ -14,7 +14,7 @@ function imgUrl(a: any): string {
   return ENDPOINT + '/storage/buckets/article-image/files/' + id + '/view?project=' + PROJECT;
 }
 
-function clean(text: string, max = 155): string {
+function clean(text: string, max = 120): string {
   if (!text) return 'Latest news from Darjeeling and the Gorkha community.';
   const t = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   return t.length > max ? t.slice(0, max).trim() + '...' : t;
