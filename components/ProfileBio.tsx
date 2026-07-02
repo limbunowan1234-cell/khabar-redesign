@@ -12,7 +12,7 @@ export default function ProfileBio({ userId }: { userId: string }) {
     let alive = true;
     const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
     const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
-    fetch(ENDPOINT + '/databases/' + DB + '/collections/user_profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' })
+    fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (alive && d) { const row = (d.documents || [])[0]; if (row && row.bio) setBio(row.bio); } })
       .catch(() => {});

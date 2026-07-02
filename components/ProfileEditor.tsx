@@ -30,7 +30,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
     let alive = true;
     const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
     const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
-    fetch(ENDPOINT + '/databases/' + DB + '/collections/user_profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' })
+    fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (!alive || !d) return;
@@ -70,9 +70,9 @@ export default function ProfileEditor({ userId, userName }: Props) {
       const data = { userId, displayName, userName: displayName, bio, avatarUrl };
       let res;
       if (docId) {
-        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/user_profiles/documents/' + docId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data }) });
+        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + docId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data }) });
       } else {
-        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/user_profiles/documents', { method: 'POST', headers: HJ, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data }) });
+        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents', { method: 'POST', headers: HJ, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data }) });
       }
       if (!res.ok) throw new Error('save');
       window.location.reload();
