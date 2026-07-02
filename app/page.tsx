@@ -1,4 +1,5 @@
 'use client';
+import WeatherWidget from '@/components/WeatherWidget';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
@@ -602,6 +603,7 @@ export default function Home() {
 
       {isMobile && !searchQuery && selectedCategory === 'All' && (
         <div style={{ padding: '10px 16px 0' }}>
+          <WeatherWidget variant="banner" isDarkMode={isDarkMode} />
           <a href={APK_URL} download style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '12px', padding: '12px 16px', textDecoration: 'none', marginBottom: '8px' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: '700', fontSize: '13px' }}>Download our Android App</div>
@@ -693,6 +695,7 @@ export default function Home() {
           </main>
           <aside>
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
+            <WeatherWidget variant="card" isDarkMode={isDarkMode} />
             <BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />
             <TopTen articles={articles} isDarkMode={isDarkMode} />
             <ContestPreview articles={articles} isDarkMode={isDarkMode} />
