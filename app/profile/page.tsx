@@ -1,4 +1,6 @@
 'use client';
+import ProfileEditor from '@/components/ProfileEditor';
+import ProfileBio from '@/components/ProfileBio';
 import AuthorBadge from '@/components/AuthorBadge';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -107,12 +109,11 @@ export default function ProfilePage() {
 
       {/* PROFILE HERO */}
       <div style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)', padding: '40px 20px 60px', color: 'white', textAlign: 'center' }}>
-        <div style={{ width: '90px', height: '90px', borderRadius: '50%', backgroundColor: '#f5c518', color: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '800', margin: '0 auto 16px', border: '4px solid rgba(255,255,255,0.3)' }}>
-          {getInitials(user.name)}
-        </div>
+        <ProfileEditor userId={user.$id} userName={user.name} />
         <h1 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 4px' }}>{user.name}</h1>
         <p style={{ fontSize: '14px', opacity: 0.85, margin: '0 0 20px' }}>{user.email}</p>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}><AuthorBadge submitterId={user.$id} size="md" /></div>
+          <ProfileBio userId={user.$id} />
         <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
           {[
             { label: 'Articles', value: myArticles.length },
