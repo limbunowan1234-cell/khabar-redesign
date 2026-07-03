@@ -754,7 +754,6 @@ export default function Home() {
       )}
 
             {isMobile && (
-        <SiteFooter isDarkMode={isDarkMode} />
         <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#eee'), display: 'flex', zIndex: '200', boxShadow: '0 -2px 10px rgba(0,0,0,0.1)' }}>
           {[
             { id: 'home', href: '/', icon: '🏠', label: 'Home' },
@@ -775,6 +774,7 @@ export default function Home() {
           ))}
         </nav>
       )}
+        <SiteFooter isDarkMode={isDarkMode} />
 
       {!isMobile && (
         <footer style={{ backgroundColor: isDarkMode ? '#1e1e1e' : '#1a1a1a', color: '#aaa', padding: '24px 20px', textAlign: 'center', marginTop: '40px' }}>
