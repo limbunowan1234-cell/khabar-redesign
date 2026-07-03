@@ -34,6 +34,47 @@ export default function TierProgress({ userId }: { userId: string }) {
         const likesRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' + q3 + '&queries[]=' + q4, { headers: H, credentials: 'include' });
         const likesData = likesRes.ok ? await likesRes.json() : { documents: [] };
         const userLikes = likesData.documents.filter((l: any) => articleIds.includes(l.articleId)).length;
+
         const commentsRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents?queries[]=' + q3 + '&queries[]=' + q4, { headers: H, credentials: 'include' });
         const commentsData = commentsRes.ok ? await commentsRes.json() : { documents: [] };
-        const userComments = commentsData.documents.filter((��聅�䤀�����ѥ���%�̹����Ց�̡����ѥ���%��������Ѡ�(������������Ё٥��̀􀡅�ѥ�����ф����յ���́��mt��ɕ�Ս����մ聹յ��Ȱ��聅�䤀����մ������٥��́���������(������������Ёѽх�M��ɔ��٥��̀���͕�1���̀���͕���������(���������������ٔ��͕�M��ɔ�ѽх�M��ɔ��(������􁍅э����(�������������ٔ��͕�1����������͔��(��������(����ɕ��ɸ�������쁅��ٔ�􁙅�͔���(����m�͕�%�t��((������Ё���ɕ��Q��Ȁ�Q%IL������Ѐ���͍�ɔ���й�������͍�ɔ��й��ँ��Q%IMl�t�(������Ё����Q��Ȁ�Q%IL������Ѐ���͍�ɔ��й�������Q%IMmQ%IL�����Ѡ����t�(������Ё������Q�9��Ѐ􁹕��Q��ȹ������͍�ɔ�(������Ё�ɽ�ɕ��A�ɍ��Ѐ􁹕��Q��Ȁ�����ɕ��Q��Ȁ������耠�͍�ɔ������ɕ��Q��ȹ������������Q��ȹ���������ɕ��Q��ȹ������������((��ɕ��ɸ��(�����؁��屔��쁉����ɽչ�耝�����ȵ�Ʌ����Р��Ց����ɝ�����ذ�������Ĥ�����ɝ�����԰��ܰ�а���Ԥ�����������ɑ��I�����耜�������������耜��������ɝ��	��ѽ�耜��������ɑ��耜���ͽ����ɝ�����ذ�������Ȥ�����(�������؁��屔��쁙���M��耜����������]�����耜�����������耜���Ŕ̈́���ѕ��QɅ�͙�ɴ耝����ɍ�͔������ѕ�M������耜���������ɝ��	��ѽ�耜��������e��ȁQ��ȁAɽ�ɕ��𽑥��(�����������������(���������؁��屔��쁡�����耜�����������ɽչ�耜���������ɑ��I�����耜����������ѥ��耝�ձ͔�ĸ�́������є�����(��������耠(����������(�����������؁��屔��쁑������耝���������ѥ����ѕ��耝���������ݕ����������%ѕ��耝��͕���������ɝ��	��ѽ�耜�������(�������������؁��屔��쁙���M��耜����������]�����耜�����������耜�ńńń��������ɕ��Q��ȹ�����𽑥��(�������������؁��屔��쁙���M��耜�����������耜���؜�����͍�ɕ����𽑥��(����������𽑥��(�����������؁��屔���ݥ�Ѡ耜�������������耜����������ɽչ�耜������������ɑ��I�����耜������ٕə���耝�����������ɝ��	��ѽ�耜�������(�������������؁��屔���ݥ�Ѡ��ɽ�ɕ��A�ɍ��Ѐ�������������耜������������ɽչ�聍��ɕ��Q��ȹ����Ȱ��Ʌ�ͥѥ��耝ݥ�Ѡ���́��͔�����(����������𽑥��(�����������؁��屔��쁙���M��耜�����������耜��������(�������������������Q�9��Ѐ���������~:$�5��ѥ�ȁɕ��������聀��������Q�9���������́Ѽ������Q��ȹ�������(����������𽑥��(�����������؁��屔��쁙���M��耜�����������耜���������ɝ��Q��耜����������!�����耜ĸМ����(������������9�܁]ɥѕ��ÊL����	ɽ����ÊL�����M��ٕ����ÊLȰ���������Ȱ����(����������𽑥��(����������(��������(����𽑥��(��<uGE��\�
+        const userComments = commentsData.documents.filter((c: any) => articleIds.includes(c.articleId)).length;
+
+        const views = (articlesData.documents || []).reduce((sum: number, a: any) => sum + (a.views || 0), 0);
+        const totalScore = views + userLikes + userComments;
+        if (alive) setScore(totalScore);
+      } catch {}
+      if (alive) setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, [userId]);
+
+  const currentTier = TIERS.find(t => score >= t.min && score < t.max) || TIERS[0];
+  const nextTier = TIERS.find(t => score < t.min) || TIERS[TIERS.length - 1];
+  const pointsToNext = nextTier.min - score;
+  const progressPercent = nextTier === currentTier ? 100 : ((score - currentTier.min) / (nextTier.min - currentTier.min)) * 100;
+
+  return (
+    <div style={{ background: 'linear-gradient(135deg, rgba(196,30,58,0.1) 0%, rgba(245,197,24,0.05) 100%)', borderRadius: '14px', padding: '18px', marginBottom: '20px', border: '1px solid rgba(196,30,58,0.2)' }}>
+      <div style={{ fontSize: '13px', fontWeight: '700', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Your Tier Progress</div>
+      {loading ? (
+        <div style={{ height: '40px', background: '#ddd', borderRadius: '8px', animation: 'pulse 1.5s infinite' }} />
+      ) : (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: '#1a1a1a' }}>{currentTier.name}</div>
+            <div style={{ fontSize: '14px', color: '#666' }}>{score} pts</div>
+          </div>
+          <div style={{ width: '100%', height: '8px', background: '#e0e0e0', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' }}>
+            <div style={{ width: progressPercent + '%', height: '100%', background: currentTier.color, transition: 'width 0.3s ease' }} />
+          </div>
+          <div style={{ fontSize: '12px', color: '#888' }}>
+            {pointsToNext === 0 ? '🎉 Max tier reached!' : `${pointsToNext} points to ${nextTier.name}`}
+          </div>
+          <div style={{ fontSize: '11px', color: '#aaa', marginTop: '10px', lineHeight: '1.4' }}>
+            New Writer: 0–50 | Bronze: 50–500 | Silver: 500–2,500 | Gold: 2,500+
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
