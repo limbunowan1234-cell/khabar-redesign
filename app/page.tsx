@@ -595,7 +595,7 @@ export default function Home() {
 
       {isMobile && (
         <div style={{ padding: '10px 16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#eee'), display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input type="text" placeholder="Search news..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5', color: isDarkMode ? '#fff' : '#1a1a1a', outline: 'none', boxSizing: 'border-box' }} />
+          <input id="mobile-search" type="text" placeholder="Search news..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5', color: isDarkMode ? '#fff' : '#1a1a1a', outline: 'none', boxSizing: 'border-box' }} />
           <Link href="/post" style={{ textDecoration: 'none', flexShrink: 0 }}>
             <button style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px', whiteSpace: 'nowrap' }}>Post</button>
           </Link>
@@ -763,7 +763,7 @@ export default function Home() {
             ...(isAdmin ? [{ id: 'admin', href: '/admin', icon: '⚙️', label: 'Admin' }] : []),
           ].map((item) => (
             <Link key={item.id} href={item.href} style={{ flex: 1, textDecoration: 'none' }}>
-              <div onClick={() => { setActiveNav(item.id); if (item.id === 'search') window.scrollTo({ top: 80, behavior: 'smooth' }); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px', cursor: 'pointer' }}>
+              <div onClick={() => { setActiveNav(item.id); if (item.id === 'search') { window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => { const el = document.getElementById('mobile-search'); if (el) el.focus(); }, 300); } }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px', cursor: 'pointer' }}>
                 <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: activeNav === item.id ? '#c41e3a' : isDarkMode ? '#2a2a2a' : '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2px' }}>
                   <span style={{ fontSize: '16px' }}>{item.icon}</span>
                 </div>
