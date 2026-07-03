@@ -2,6 +2,7 @@
 import ProfileEditor from '@/components/ProfileEditor';
 import ProfileBio from '@/components/ProfileBio';
 import AuthorBadge from '@/components/AuthorBadge';
+import TierProgress from '@/components/TierProgress';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
