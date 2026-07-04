@@ -83,8 +83,6 @@ function HeroSection({ articles, isDarkMode }: any) {
         <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.2' }}>खबर दार्जिलिङ</h1>
         <p style={{ fontSize: '16px', margin: 0, opacity: 0.95, fontWeight: '500' }}>The Digital Home of Darjeeling</p>
       </div>
-
-      </div>
       {/* 3 FEATURED ARTICLES */}
       <div className='hero-layout' style={{ padding: '20px' }}>
         <div className='hero-main' style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
