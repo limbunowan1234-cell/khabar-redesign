@@ -85,17 +85,9 @@ function HeroSection({ articles, isDarkMode }: any) {
       </div>
 
       {/* 3 FEATURED ARTICLES */}
-      {/* MOBILE CAROUSEL — Mobile only */}
-      <div style={{ display: 'block', padding: '0 20px 20px', '@media (min-width: 1024px)': { display: 'none' } }}>
-        <div style={{ overflowX: 'auto', overflowY: 'hidden', scrollBehavior: 'smooth', paddingBottom: '10px' }}>
-          <TopCreators />
-        </div>
-      </div>
-
-      {/* DESKTOP + MOBILE MAIN LAYOUT */}
       <div style={{ display: 'flex', gap: '24px', padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
         {/* LEFT SIDEBAR — Desktop only */}
-        <div style={{ display: 'none', width: '260px', flexShrink: 0, '@media (min-width: 1024px)': { display: 'flex' } }}>
+        <div style={{ display: 'none', '@media (min-width: 1024px)': { display: 'flex' }, width: '260px', flexShrink: 0 }}>
           <TopCreators />
         </div>
 
