@@ -79,7 +79,7 @@ function HeroSection({ articles, isDarkMode }: any) {
     <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
       {/* HERO GRADIENT */}
       <div style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)', padding: '40px 24px', textAlign: 'center', color: 'white' }}>
-        <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.2' }}>खबर दार्जिलिंग</h1>
+        <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.2' }}>??? ??????????</h1>
         <p style={{ fontSize: '16px', margin: 0, opacity: 0.95, fontWeight: '500' }}>The Digital Home of Darjeeling</p>
       </div>
 
@@ -95,7 +95,7 @@ function HeroSection({ articles, isDarkMode }: any) {
                 <div style={{ fontSize: '11px', fontWeight: '700', color: '#c41e3a', textTransform: 'uppercase', marginBottom: '6px' }}>{article.category || 'News'}</div>
                 <h3 style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', margin: '0 0 6px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
                 <p style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', margin: '0 0 8px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
-                <div style={{ fontSize: '10px', color: isDarkMode ? '#777' : '#999' }}>👁 {(article.views || 0).toLocaleString()}</div>
+                <div style={{ fontSize: '10px', color: isDarkMode ? '#777' : '#999' }}>?? {(article.views || 0).toLocaleString()}</div>
               </div>
             </Link>
           );
@@ -136,9 +136,9 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: isDarkMode ? '#777' : '#999' }}>
                   <span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
-                  <span>•</span>
+                  <span>�</span>
                   <span>{readingTime(article.content)}</span>
-                  {article.views > 0 && <span>• {article.views.toLocaleString()} views</span>}
+                  {article.views > 0 && <span>� {article.views.toLocaleString()} views</span>}
                 </div>
               </div>
             </div>
@@ -168,7 +168,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
                 </div>
                 <div style={{ display: 'flex', gap: '10px', fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
                   <span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
-                  <span>•</span>
+                  <span>�</span>
                   <span>{readingTime(article.content)}</span>
                 </div>
               </div>
@@ -191,7 +191,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
               <h3 style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
             </div>
             <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: isDarkMode ? '#999' : '#888' }}>
-              <span>{author}</span><span>•</span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span><span>•</span><span>{readingTime(article.content)}</span>
+              <span>{author}</span><span>�</span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span><span>�</span><span>{readingTime(article.content)}</span>
             </div>
           </div>
         </div>
@@ -212,8 +212,8 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: isDarkMode ? '#777' : '#999' }}>
               <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: catColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: '700' }}>{getInitials(author)}</div>
               <span style={{ fontWeight: '600', color: isDarkMode ? '#bbb' : '#555' }}>{author}</span>
-              <span>•</span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
-              <span>•</span><span>{readingTime(article.content)}</span>
+              <span>�</span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
+              <span>�</span><span>{readingTime(article.content)}</span>
             </div>
           </div>
         </div>
@@ -306,7 +306,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
             <span style={{ backgroundColor: catColor, color: 'white', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' }}>{article.category}</span>
             <h3 style={{ fontSize: '14px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: '6px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
             <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: isDarkMode ? '#999' : '#888' }}>
-              <span>{author}</span><span>•</span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
+              <span>{author}</span><span>�</span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
             </div>
           </div>
         </div>
@@ -392,7 +392,7 @@ function BreakingNewsSidebar({ articles, isDarkMode }: any) {
   if (breaking.length === 0) return null;
   return (
     <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px', borderLeft: '4px solid #c41e3a' }}>
-      <h3 style={{ fontSize: '13px', fontWeight: '800', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>🔴 Breaking News</h3>
+      <h3 style={{ fontSize: '13px', fontWeight: '800', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>?? Breaking News</h3>
       {breaking.map((a: any, i: number) => (
         <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ paddingBottom: '10px', marginBottom: i < breaking.length - 1 ? '10px' : 0, borderBottom: i < breaking.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f5f5f5') : 'none' }}>
@@ -736,13 +736,13 @@ export default function Home() {
               {[{ label: 'Post a Story', href: '/post', color: '#c41e3a' }, { label: 'Story Contest', href: '/contest', color: '#e65100' }, { label: 'My Bookmarks', href: '/bookmarks', color: '#0F4C5C' }, { label: 'My Profile', href: '/profile', color: '#7b1fa2' }].map(item => (
                 <a key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', marginBottom: '6px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '8px', textDecoration: 'none', borderLeft: '3px solid ' + item.color }}>
                   <span style={{ fontSize: '13px', fontWeight: '600', color: isDarkMode ? '#ddd' : '#1a1a1a' }}>{item.label}</span>
-                  <span style={{ color: item.color, fontWeight: '700', fontSize: '16px' }}>→</span>
+                  <span style={{ color: item.color, fontWeight: '700', fontSize: '16px' }}>?</span>
                 </a>
               ))}
             </div>
             <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>About</h3>
-              <p style={{ fontSize: '13px', color: isDarkMode ? '#aaa' : '#666', lineHeight: '1.6', margin: '0 0 12px' }}>The Digital Home of Darjeeling — bringing you the latest news from the hills, tea gardens, and Gorkha community.</p>
+              <p style={{ fontSize: '13px', color: isDarkMode ? '#aaa' : '#666', lineHeight: '1.6', margin: '0 0 12px' }}>The Digital Home of Darjeeling � bringing you the latest news from the hills, tea gardens, and Gorkha community.</p>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {['Darjeeling', 'Kalimpong', 'GTA', 'Tea Gardens', 'Politics'].map(tag => (
                   <span key={tag} onClick={() => setSelectedCategory(tag)} style={{ padding: '4px 10px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f0f0f0', color: isDarkMode ? '#ddd' : '#555', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>{tag}</span>
@@ -756,12 +756,12 @@ export default function Home() {
             {isMobile && (
         <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#eee'), display: 'flex', zIndex: '200', boxShadow: '0 -2px 10px rgba(0,0,0,0.1)' }}>
           {[
-            { id: 'home', href: '/', icon: '🏠', label: 'Home' },
-            { id: 'search', href: '#', icon: '🔍', label: 'Search' },
-            { id: 'post', href: '/post', icon: '✍️', label: 'Post' },
-            { id: 'contest', href: '/contest', icon: '🏆', label: 'Contest' },
-            { id: 'profile', href: user ? '/profile' : '/auth', icon: '👤', label: user ? 'Profile' : 'Login' },
-            ...(isAdmin ? [{ id: 'admin', href: '/admin', icon: '⚙️', label: 'Admin' }] : []),
+            { id: 'home', href: '/', icon: '??', label: 'Home' },
+            { id: 'search', href: '#', icon: '??', label: 'Search' },
+            { id: 'post', href: '/post', icon: '??', label: 'Post' },
+            { id: 'contest', href: '/contest', icon: '??', label: 'Contest' },
+            { id: 'profile', href: user ? '/profile' : '/auth', icon: '??', label: user ? 'Profile' : 'Login' },
+            ...(isAdmin ? [{ id: 'admin', href: '/admin', icon: '??', label: 'Admin' }] : []),
           ].map((item) => (
             <Link key={item.id} href={item.href} style={{ flex: 1, textDecoration: 'none' }}>
               <div onClick={() => { setActiveNav(item.id); if (item.id === 'search') { window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => { const el = document.getElementById('mobile-search'); if (el) el.focus(); }, 300); } }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px', cursor: 'pointer' }}>
@@ -778,7 +778,7 @@ export default function Home() {
 
       {!isMobile && (
         <footer style={{ backgroundColor: isDarkMode ? '#1e1e1e' : '#1a1a1a', color: '#aaa', padding: '24px 20px', textAlign: 'center', marginTop: '40px' }}>
-          <p style={{ margin: 0, fontSize: '14px' }}>© 2026 Khabar Darjeeling. All rights reserved.</p>
+          <p style={{ margin: 0, fontSize: '14px' }}>� 2026 Khabar Darjeeling. All rights reserved.</p>
         </footer>
       )}
     </div>
