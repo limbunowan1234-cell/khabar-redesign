@@ -33,6 +33,9 @@ export default function AdminPage() {
   const [photos, setPhotos] = useState<any[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
+  const [postingStory, setPostingStory] = useState(false);
+  const [storyTitle, setStoryTitle] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [view, setView] = useState('manage');
@@ -153,7 +156,53 @@ export default function AdminPage() {
     try {
       await fetch(endpoint + '/databases/' + dbId + '/collections/photos/documents/' + photoId, { method: 'DELETE', headers: H, credentials: 'include' });
       await loadPhotos();
-    } catch {}
+  }
+
+  function togglePhotoSelect(photoId: string) {
+    setSelectedPhotoIds(prev => prev.includes(photoId) ? prev.filter(id => id !== photoId) : [...prev, photoId]);
+  }
+
+  async function handlePostAsArticle() {
+    if (selectedPhotoIds.length === 0) { setError('Select at least one photo'); return; }
+    if (!storyTitle.trim()) { setError('Enter a title for the story'); return; }
+    setPostingStory(true);
+    setError('');
+    try {
+      const selectedPhotos = photos.filter((p: any) => selectedPhotoIds.includes(p.$id));
+      const mainImageId = selectedPhotos[0].imageFileId;
+      const galleryIds = selectedPhotos.slice(1).map((p: any) => p.imageFileId);
+      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
+        method: 'POST', headers: HJ, credentials: 'include',
+        body: JSON.stringify({
+          documentId: 'unique()',
+          data: {
+            title: storyTitle,
+            content: 'A photo story from Khabar Darjeeling featuring ' + selectedPhotos.length + ' images.',
+            category: 'Photo Story',
+            location: 'Darjeeling',
+            imageFileId: mainImageId,
+            galleryImageIds: galleryIds,
+            youtube_id: null,
+            isBreaking: false, isFeatured: false, isContestEntry: false,
+            authorName: user?.name || 'Khabar Darjeeling',
+            authorEmail: user?.email || '',
+            submitterId: user?.$id || '',
+            submitterName: user?.name || '',
+            submitterEmail: user?.email || '',
+            status: 'published',
+            submittedAt: new Date().toISOString(),
+            publishedAt: new Date().toISOString(),
+            views: 0
+          }
+        })
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Failed to post story'); }
+      setSuccess('Photo story posted as article!');
+      setSelectedPhotoIds([]);
+      setStoryTitle('');
+    } catch (err: any) { setError(err.message || 'Failed to post story'); }
+    setPostingStory(false);
+  }
   }
 
   async function handleImageUpload(e: any) {
@@ -459,10 +508,23 @@ export default function AdminPage() {
               <input type='file' accept='image/*' multiple onChange={handlePhotoUpload} disabled={uploadingPhotos} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#fafafa' }} />
               {uploadingPhotos && <p style={{ color: '#0F4C5C', marginTop: '8px', fontSize: '14px' }}>Uploading {uploadProgress}...</p>}
             </div>
+            {selectedPhotoIds.length > 0 && (
+              <div style={{ backgroundColor: '#f0f4f5', border: '2px solid #0F4C5C', borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
+                <p style={{ margin: '0 0 10px', fontWeight: '700', color: '#0F4C5C' }}>{selectedPhotoIds.length} photo(s) selected for story</p>
+                <input type='text' value={storyTitle} onChange={(e) => setStoryTitle(e.target.value)} placeholder='Story title (e.g. Darjeeling Tea Festival 2026)' style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', marginBottom: '10px' }} />
+                <button onClick={handlePostAsArticle} disabled={postingStory} style={{ width: '100%', padding: '12px', backgroundColor: '#0F4C5C', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', opacity: postingStory ? 0.7 : 1 }}>
+                  {postingStory ? 'Posting...' : 'Post as Article'}
+                </button>
+              </div>
+            )}
+
             <h3 style={{ color: '#0F4C5C', marginBottom: '16px' }}>Uploaded Photos ({photos.length})</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '14px' }}>
               {photos.map((p: any) => (
-                <div key={p.$id} style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid #eee', position: 'relative' }}>
+                <div key={p.$id} style={{ borderRadius: '10px', overflow: 'hidden', border: selectedPhotoIds.includes(p.$id) ? '3px solid #0F4C5C' : '1px solid #eee', position: 'relative' }}>
+                  {p.type === 'story' && (
+                    <input type='checkbox' checked={selectedPhotoIds.includes(p.$id)} onChange={() => togglePhotoSelect(p.$id)} style={{ position: 'absolute', top: '6px', left: '6px', width: '20px', height: '20px', zIndex: 5, cursor: 'pointer' }} />
+                  )}
                   <img src={getImageUrl2(p.imageFileId)} alt={p.title || 'Photo'} style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
                   <div style={{ padding: '8px', backgroundColor: '#fafafa' }}>
                     <span style={{ fontSize: '10px', fontWeight: '700', color: p.type === 'ad' ? '#c41e3a' : '#0F4C5C', textTransform: 'uppercase' }}>{p.type === 'ad' ? 'Ad Banner' : 'Photo Story'}</span>
