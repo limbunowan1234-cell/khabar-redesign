@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
@@ -7,7 +7,8 @@ const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
 
-export default function PublicProfile({ params }: { params: { userId: string } }) {
+export default function PublicProfile({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = use(params);
   const [profile, setProfile] = useState<any>(null);
   const [articles, setArticles] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -24,7 +25,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
         setCurrentUser(authData);
 
         // If viewing own profile, redirect
-        if (authData?.$id === params.userId) {
+        if (authData?.$id === userId) {
           window.location.href = '/profile';
           return;
         }
@@ -32,17 +33,17 @@ export default function PublicProfile({ params }: { params: { userId: string } }
         // Get profile data
         const profileRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [params.userId] })),
+          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] })),
           { headers: H, credentials: 'include' }
         );
         const profileData = profileRes.ok ? await profileRes.json() : { documents: [] };
         const userProfile = profileData.documents?.[0];
-        setProfile(userProfile || { userId: params.userId }); // Fallback empty profile
+        setProfile(userProfile || { userId: userId }); // Fallback empty profile
 
         // Get their articles
         const articlesRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [params.userId] })) +
+          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userId] })) +
           '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
           '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] })),
           { headers: H, credentials: 'include' }
@@ -55,7 +56,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
           const followRes = await fetch(
             ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
             encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [authData.$id] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [params.userId] })),
+            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })),
             { headers: H, credentials: 'include' }
           );
           const followData = followRes.ok ? await followRes.json() : { documents: [] };
@@ -66,7 +67,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
       }
       setLoading(false);
     })();
-  }, [params.userId]);
+  }, [userId]);
 
   const toggleFollow = async () => {
     if (!currentUser) {
@@ -78,7 +79,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
         const followRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
           encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [currentUser.$id] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [params.userId] })),
+          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })),
           { headers: H, credentials: 'include' }
         );
         const followData = await followRes.json();
@@ -96,7 +97,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
           method: 'POST',
           headers: { ...H, 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ data: { followerId: currentUser.$id, followingId: params.userId } }),
+          body: JSON.stringify({ data: { followerId: currentUser.$id, followingId: userId } }),
         });
         setIsFollowing(true);
       }
