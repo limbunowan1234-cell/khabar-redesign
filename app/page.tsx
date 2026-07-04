@@ -107,6 +107,7 @@ function HeroSection({ articles, isDarkMode }: any) {
           );
         })}
       </div>
+      </div>
     </div>
   );
 }
