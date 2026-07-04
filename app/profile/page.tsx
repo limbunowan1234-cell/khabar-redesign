@@ -287,6 +287,54 @@ export default function ProfilePage() {
               )
             )}
           </div>
+
+            {/* FAVORITES */}
+            {activeTab === 'favorites' && (
+              favorites.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: isDarkMode ? '#666' : '#ccc' }}>
+                  <div style={{ fontSize: '40px', marginBottom: '12px' }}>heart</div>
+                  <p style={{ fontWeight: '600', margin: 0, color: isDarkMode ? '#aaa' : '#666' }}>No favorites yet</p>
+                  <p style={{ fontSize: '13px', margin: '8px 0 0', color: isDarkMode ? '#666' : '#aaa' }}>Like articles to save them here!</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {favorites.map((a: any) => (
+                    <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <div style={{ display: 'flex', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px', alignItems: 'center' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '4px' }}>{a.title}</div>
+                          <div style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#aaa' }}>{a.category} - {(a.views || 0).toLocaleString()} views</div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )
+            )}
+
+            {/* BOOKMARKS */}
+            {activeTab === 'bookmarks' && (
+              bookmarks.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: isDarkMode ? '#666' : '#ccc' }}>
+                  <div style={{ fontSize: '40px', marginBottom: '12px' }}>bookmark</div>
+                  <p style={{ fontWeight: '600', margin: 0, color: isDarkMode ? '#aaa' : '#666' }}>No bookmarks yet</p>
+                  <p style={{ fontSize: '13px', margin: '8px 0 0', color: isDarkMode ? '#666' : '#aaa' }}>Save articles to read later!</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {bookmarks.map((a: any) => (
+                    <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <div style={{ display: 'flex', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px', alignItems: 'center' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '4px' }}>{a.title}</div>
+                          <div style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#aaa' }}>{a.category} - {(a.views || 0).toLocaleString()} views</div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )
+            )}
         </div>
 
         {/* LOGOUT */}
