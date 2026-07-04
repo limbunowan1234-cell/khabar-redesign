@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -28,6 +28,11 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [publishing, setPublishing] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [photoType, setPhotoType] = useState('story');
+  const [photoTitle, setPhotoTitle] = useState('');
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [view, setView] = useState('manage');
@@ -96,6 +101,59 @@ export default function AdminPage() {
     } catch {
       window.open('https://github.com/limbunowan1234-cell/Khabar-darjeeling/releases/download/v1.0.0/KhabarDarjeeling-v1.0.0.2.apk', '_blank');
     }
+  }
+
+  async function loadPhotos() {
+    try {
+      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/photos/documents?queries[]=' +
+        encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
+        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
+        { headers: H, credentials: 'include' }
+      );
+      if (res.ok) { const d = await res.json(); setPhotos(d.documents || []); }
+    } catch {}
+  }
+
+  function getImageUrl2(fileId: string) {
+    return endpoint + '/storage/buckets/' + bucketId + '/files/' + fileId + '/view?project=' + projectId;
+  }
+
+  async function handlePhotoUpload(e: any) {
+    const files = Array.from(e.target.files) as File[];
+    if (!files.length) return;
+    setUploadingPhotos(true);
+    setError('');
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > 10 * 1024 * 1024) continue;
+        setUploadProgress((i+1) + ' of ' + files.length);
+        const formData = new FormData();
+        formData.append('fileId', 'unique()');
+        formData.append('file', file);
+        const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
+        if (!res.ok) continue;
+        const data = await res.json();
+        await fetch(endpoint + '/databases/' + dbId + '/collections/photos/documents', {
+          method: 'POST',
+          headers: { ...H, 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ documentId: 'unique()', data: { imageFileId: data.$id, type: photoType, title: photoTitle, createdAt: new Date().toISOString() } })
+        });
+      }
+      setPhotoTitle('');
+      await loadPhotos();
+    } catch (err: any) { setError(err.message || 'Photo upload failed'); }
+    setUploadingPhotos(false);
+    setUploadProgress('');
+  }
+
+  async function handleDeletePhoto(photoId: string) {
+    if (!confirm('Delete this photo?')) return;
+    try {
+      await fetch(endpoint + '/databases/' + dbId + '/collections/photos/documents/' + photoId, { method: 'DELETE', headers: H, credentials: 'include' });
+      await loadPhotos();
+    } catch {}
   }
 
   async function handleImageUpload(e: any) {
@@ -256,6 +314,7 @@ export default function AdminPage() {
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={() => setView('manage')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'manage' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'manage' ? '#0F4C5C' : 'white' }}>Manage</button>
             <button onClick={() => setView('publish')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'publish' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'publish' ? '#0F4C5C' : 'white' }}>+ Publish</button>
+              <button onClick={() => setView('photos')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'photos' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'photos' ? '#0F4C5C' : 'white' }}>+ Photos</button>
           </div>
         </div>
       </div>
@@ -382,6 +441,37 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {view === 'photos' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxWidth: '900px', margin: '0 auto' }}>
+            <h2 style={{ color: '#0F4C5C', marginBottom: '24px', borderBottom: '2px solid #D4AF37', paddingBottom: '10px' }}>Photo Management</h2>
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#333' }}>Photo Type</label>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+                <button type='button' onClick={() => setPhotoType('story')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: photoType === 'story' ? '2px solid #0F4C5C' : '1px solid #ddd', backgroundColor: photoType === 'story' ? '#0F4C5C' : 'white', color: photoType === 'story' ? 'white' : '#333', cursor: 'pointer', fontWeight: '600' }}>Photo Story</button>
+                <button type='button' onClick={() => setPhotoType('ad')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: photoType === 'ad' ? '2px solid #0F4C5C' : '1px solid #ddd', backgroundColor: photoType === 'ad' ? '#0F4C5C' : 'white', color: photoType === 'ad' ? 'white' : '#333', cursor: 'pointer', fontWeight: '600' }}>Ad Banner</button>
+              </div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#333' }}>Title (optional)</label>
+              <input type='text' value={photoTitle} onChange={(e) => setPhotoTitle(e.target.value)} placeholder='e.g. Tea Garden Sunset' style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', marginBottom: '16px' }} />
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#333' }}>Upload Photos (select multiple)</label>
+              <input type='file' accept='image/*' multiple onChange={handlePhotoUpload} disabled={uploadingPhotos} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#fafafa' }} />
+              {uploadingPhotos && <p style={{ color: '#0F4C5C', marginTop: '8px', fontSize: '14px' }}>Uploading {uploadProgress}...</p>}
+            </div>
+            <h3 style={{ color: '#0F4C5C', marginBottom: '16px' }}>Uploaded Photos ({photos.length})</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '14px' }}>
+              {photos.map((p: any) => (
+                <div key={p.$id} style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid #eee', position: 'relative' }}>
+                  <img src={getImageUrl2(p.imageFileId)} alt={p.title || 'Photo'} style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
+                  <div style={{ padding: '8px', backgroundColor: '#fafafa' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '700', color: p.type === 'ad' ? '#c41e3a' : '#0F4C5C', textTransform: 'uppercase' }}>{p.type === 'ad' ? 'Ad Banner' : 'Photo Story'}</span>
+                    {p.title && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#333' }}>{p.title}</p>}
+                  </div>
+                  <button onClick={() => handleDeletePhoto(p.$id)} style={{ position: 'absolute', top: '6px', right: '6px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', fontSize: '14px' }}>x</button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
