@@ -138,7 +138,7 @@ export default function PublicProfile({ params }: { params: Promise<{ userId: st
           method: 'POST',
           headers: { ...H, 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ data: { followerId: currentUser.$id, followingId: userId, followerName: currentUser.name, createdAt: new Date().toISOString() } }),
+          body: JSON.stringify({ documentId: 'unique()', data: { followerId: currentUser.$id, followingId: userId, followerName: currentUser.name, createdAt: new Date().toISOString() } }),
         });
         setIsFollowing(true);
         setFollowerCount((c) => c + 1);
