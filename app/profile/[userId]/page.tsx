@@ -23,7 +23,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
         const authData = authRes.ok ? await authRes.json() : null;
         setCurrentUser(authData);
 
-        // If viewing own profile, they should use /profile instead
+        // If viewing own profile, redirect
         if (authData?.$id === params.userId) {
           window.location.href = '/profile';
           return;
@@ -37,7 +37,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
         );
         const profileData = profileRes.ok ? await profileRes.json() : { documents: [] };
         const userProfile = profileData.documents?.[0];
-        setProfile(userProfile);
+        setProfile(userProfile || { userId: params.userId }); // Fallback empty profile
 
         // Get their articles
         const articlesRes = await fetch(
@@ -50,7 +50,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
         const articlesData = articlesRes.ok ? await articlesRes.json() : { documents: [] };
         setArticles(articlesData.documents || []);
 
-        // Check if current user follows this profile
+        // Check if current user follows
         if (authData?.$id) {
           const followRes = await fetch(
             ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
@@ -62,7 +62,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
           setIsFollowing(followData.documents.length > 0);
         }
       } catch (err) {
-        console.error('Profile load error:', err);
+        console.error('Load error:', err);
       }
       setLoading(false);
     })();
@@ -75,7 +75,6 @@ export default function PublicProfile({ params }: { params: { userId: string } }
     }
     try {
       if (isFollowing) {
-        // Unfollow — delete the follow record
         const followRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
           encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [currentUser.$id] })) +
@@ -93,7 +92,6 @@ export default function PublicProfile({ params }: { params: { userId: string } }
           setIsFollowing(false);
         }
       } else {
-        // Follow
         await fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents', {
           method: 'POST',
           headers: { ...H, 'Content-Type': 'application/json' },
@@ -103,13 +101,17 @@ export default function PublicProfile({ params }: { params: { userId: string } }
         setIsFollowing(true);
       }
     } catch (err) {
-      console.error('Follow toggle error:', err);
+      console.error('Follow error:', err);
     }
   };
 
   if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>;
-  if (!profile) return <div style={{ padding: '20px', textAlign: 'center' }}>User not found</div>;
+  if (!profile || articles.length === 0) return <div style={{ padding: '20px', textAlign: 'center' }}>User not found</div>;
 
+  const displayName = profile?.displayName || articles[0]?.submitterName || 'User';
+  const userName = profile?.userName || 'user';
+  const bio = profile?.bio || '';
+  const avatar = profile?.avatarUrl || '';
   const totalViews = articles.reduce((sum, a) => sum + (a.views || 0), 0);
 
   return (
@@ -119,7 +121,7 @@ export default function PublicProfile({ params }: { params: { userId: string } }
           ← Back
         </Link>
 
-        {/* Profile Header */}
+        {/* Header */}
         <div style={{ textAlign: 'center', padding: '30px 20px', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#eee'), marginBottom: '30px' }}>
           <div
             style={{
@@ -137,17 +139,17 @@ export default function PublicProfile({ params }: { params: { userId: string } }
               overflow: 'hidden',
             }}
           >
-            {profile.avatarUrl ? (
-              <img src={profile.avatarUrl} alt={profile.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {avatar ? (
+              <img src={avatar} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              (profile.displayName || 'U')[0].toUpperCase()
+              displayName[0].toUpperCase()
             )}
           </div>
           <h1 style={{ margin: '0 0 4px', fontSize: '28px', fontWeight: 800, color: isDarkMode ? '#fff' : '#1a1a1a' }}>
-            {profile.displayName || profile.userName}
+            {displayName}
           </h1>
-          <p style={{ margin: '0 0 20px', color: isDarkMode ? '#aaa' : '#666', fontSize: '14px' }}>@{profile.userName}</p>
-          {profile.bio && <p style={{ margin: '0 0 20px', color: isDarkMode ? '#ccc' : '#555', fontSize: '15px' }}>{profile.bio}</p>}
+          <p style={{ margin: '0 0 20px', color: isDarkMode ? '#aaa' : '#666', fontSize: '14px' }}>@{userName}</p>
+          {bio && <p style={{ margin: '0 0 20px', color: isDarkMode ? '#ccc' : '#555', fontSize: '15px' }}>{bio}</p>}
 
           <button
             onClick={toggleFollow}
@@ -178,37 +180,33 @@ export default function PublicProfile({ params }: { params: { userId: string } }
           </div>
         </div>
 
-        {/* Articles Grid */}
+        {/* Articles */}
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '20px' }}>
-            Latest Articles
+            Articles
           </h2>
-          {articles.length === 0 ? (
-            <p style={{ textAlign: 'center', color: isDarkMode ? '#666' : '#aaa' }}>No articles yet</p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-              {articles.map((article) => (
-                <Link key={article.$id} href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div style={{ background: isDarkMode ? '#1a1a1a' : '#f9f9f9', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s' }}>
-                    <div style={{ height: '160px', background: '#ddd', overflow: 'hidden' }}>
-                      {article.imageUrl && <img src={article.imageUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                    </div>
-                    <div style={{ padding: '12px' }}>
-                      <div style={{ fontSize: '13px', color: '#c41e3a', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase' }}>
-                        {article.category}
-                      </div>
-                      <h3 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700, color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: 1.3 }}>
-                        {article.title}
-                      </h3>
-                      <p style={{ margin: 0, fontSize: '12px', color: isDarkMode ? '#999' : '#888' }}>
-                        {article.views || 0} views
-                      </p>
-                    </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {articles.map((article) => (
+              <Link key={article.$id} href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ background: isDarkMode ? '#1a1a1a' : '#f9f9f9', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer' }}>
+                  <div style={{ height: '160px', background: '#ddd', overflow: 'hidden' }}>
+                    {article.imageUrl && <img src={article.imageUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
+                  <div style={{ padding: '12px' }}>
+                    <div style={{ fontSize: '13px', color: '#c41e3a', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase' }}>
+                      {article.category}
+                    </div>
+                    <h3 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700, color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: 1.3 }}>
+                      {article.title}
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '12px', color: isDarkMode ? '#999' : '#888' }}>
+                      {article.views || 0} views
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>
