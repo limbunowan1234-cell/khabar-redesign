@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import AuthProvider from '@/components/AuthProvider';
 
 const SITE = 'https://khabardarjeeling.space';
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body style={{ margin: 0, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5223539471824662" crossOrigin="anonymous" strategy="afterInteractive" />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
