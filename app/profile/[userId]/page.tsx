@@ -7,40 +7,54 @@ const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
 
+function getImageUrl(article: any): string {
+  const id = article.imageFileId;
+  if (!id || ['Text', 'null', 'undefined', ''].includes(String(id))) return '';
+  if (String(id).startsWith('http')) return id;
+  return ENDPOINT + '/storage/buckets/article-image/files/' + id + '/view?project=' + PROJECT;
+}
+
+const TIERS = [
+  { name: 'New Writer', min: 0, max: 50, color: '#888' },
+  { name: 'Bronze', min: 50, max: 500, color: '#CD7F32' },
+  { name: 'Silver', min: 500, max: 2500, color: '#C0C0C0' },
+  { name: 'Gold', min: 2500, max: Infinity, color: '#FFD700' },
+];
+
+function getTier(score: number) {
+  return TIERS.find((t) => score >= t.min && score < t.max) || TIERS[0];
+}
+
 export default function PublicProfile({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params);
   const [profile, setProfile] = useState<any>(null);
   const [articles, setArticles] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [totalLikes, setTotalLikes] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        // Get current user
         const authRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
         const authData = authRes.ok ? await authRes.json() : null;
         setCurrentUser(authData);
 
-        // If viewing own profile, redirect
         if (authData?.$id === userId) {
           window.location.href = '/profile';
           return;
         }
 
-        // Get profile data
         const profileRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' +
           encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] })),
           { headers: H, credentials: 'include' }
         );
         const profileData = profileRes.ok ? await profileRes.json() : { documents: [] };
-        const userProfile = profileData.documents?.[0];
-        setProfile(userProfile || { userId: userId }); // Fallback empty profile
+        setProfile(profileData.documents?.[0] || { userId });
 
-        // Get their articles
         const articlesRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
           encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userId] })) +
@@ -49,9 +63,37 @@ export default function PublicProfile({ params }: { params: Promise<{ userId: st
           { headers: H, credentials: 'include' }
         );
         const articlesData = articlesRes.ok ? await articlesRes.json() : { documents: [] };
-        setArticles(articlesData.documents || []);
+        const arts = articlesData.documents || [];
+        setArticles(arts);
 
-        // Check if current user follows
+        // Count total likes across their articles
+        let likesSum = 0;
+        for (const a of arts) {
+          const likesRes = await fetch(
+            ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' +
+            encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] })) +
+            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })),
+            { headers: H, credentials: 'include' }
+          );
+          if (likesRes.ok) {
+            const ld = await likesRes.json();
+            likesSum += ld.total || 0;
+          }
+        }
+        setTotalLikes(likesSum);
+
+        // Follower count
+        const followersRes = await fetch(
+          ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
+          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })) +
+          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })),
+          { headers: H, credentials: 'include' }
+        );
+        if (followersRes.ok) {
+          const fd = await followersRes.json();
+          setFollowerCount(fd.total || 0);
+        }
+
         if (authData?.$id) {
           const followRes = await fetch(
             ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
@@ -86,129 +128,148 @@ export default function PublicProfile({ params }: { params: Promise<{ userId: st
         const followId = followData.documents?.[0]?.$id;
         if (followId) {
           await fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents/' + followId, {
-            method: 'DELETE',
-            headers: H,
-            credentials: 'include',
+            method: 'DELETE', headers: H, credentials: 'include',
           });
           setIsFollowing(false);
+          setFollowerCount((c) => Math.max(0, c - 1));
         }
       } else {
         await fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents', {
           method: 'POST',
           headers: { ...H, 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ data: { followerId: currentUser.$id, followingId: userId } }),
+          body: JSON.stringify({ data: { followerId: currentUser.$id, followingId: userId, followerName: currentUser.name, createdAt: new Date().toISOString() } }),
         });
         setIsFollowing(true);
+        setFollowerCount((c) => c + 1);
       }
     } catch (err) {
       console.error('Follow error:', err);
     }
   };
 
-  if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>;
-  if (!profile || articles.length === 0) return <div style={{ padding: '20px', textAlign: 'center' }}>User not found</div>;
+  if (loading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+      <div style={{ width: '36px', height: '36px', border: '3px solid #eee', borderTopColor: '#c41e3a', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+  if (!profile || articles.length === 0) return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: '#fff' }}>
+      <div style={{ fontSize: '40px' }}>👤</div>
+      <p style={{ fontSize: '17px', fontWeight: 700, color: '#333' }}>User not found</p>
+      <Link href="/" style={{ color: '#c41e3a', fontWeight: 700, textDecoration: 'none' }}>← Back to Home</Link>
+    </div>
+  );
 
   const displayName = profile?.displayName || articles[0]?.submitterName || 'User';
-  const userName = profile?.userName || 'user';
+  const userName = profile?.userName || displayName.toLowerCase().replace(/\s+/g, '');
   const bio = profile?.bio || '';
-  const avatar = profile?.avatarUrl || '';
+  const avatar = profile?.avatarUrl || articles[0]?.submitterAvatar || '';
   const totalViews = articles.reduce((sum, a) => sum + (a.views || 0), 0);
+  const score = totalViews + totalLikes;
+  const tier = getTier(score);
+  const nextTier = TIERS[TIERS.indexOf(tier) + 1];
+  const progress = nextTier ? Math.min(100, ((score - tier.min) / (nextTier.min - tier.min)) * 100) : 100;
+
+  const featured = articles[0];
+  const rest = articles.slice(1);
 
   return (
-    <div style={{ minHeight: '100vh', background: isDarkMode ? '#0a0a0a' : '#fff', paddingBottom: '100px' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
-        <Link href="/" style={{ color: '#c41e3a', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
-          ← Back
-        </Link>
+    <div style={{ minHeight: '100vh', background: '#fff', paddingBottom: '100px' }}>
+      {/* BANNER */}
+      <div style={{ height: '160px', background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 60%, #f5c518 160%)', position: 'relative' }}>
+        <Link href="/" style={{ position: 'absolute', top: '16px', left: '16px', color: 'white', textDecoration: 'none', fontSize: '14px', fontWeight: 700, background: 'rgba(0,0,0,0.25)', padding: '6px 14px', borderRadius: '20px' }}>← Back</Link>
+      </div>
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', padding: '30px 20px', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#eee'), marginBottom: '30px' }}>
-          <div
-            style={{
-              width: '120px',
-              height: '120px',
-              margin: '0 auto 16px',
-              borderRadius: '50%',
-              backgroundColor: '#c41e3a',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '48px',
-              fontWeight: 800,
-              overflow: 'hidden',
-            }}
-          >
-            {avatar ? (
-              <img src={avatar} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              displayName[0].toUpperCase()
-            )}
+      <div style={{ maxWidth: '680px', margin: '0 auto', padding: '0 16px' }}>
+        {/* AVATAR (overlapping banner) */}
+        <div style={{ marginTop: '-52px', marginBottom: '12px' }}>
+          <div style={{ width: '104px', height: '104px', borderRadius: '50%', border: '4px solid #fff', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '42px', fontWeight: 800, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+            {avatar ? <img src={avatar} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : displayName[0].toUpperCase()}
           </div>
-          <h1 style={{ margin: '0 0 4px', fontSize: '28px', fontWeight: 800, color: isDarkMode ? '#fff' : '#1a1a1a' }}>
-            {displayName}
-          </h1>
-          <p style={{ margin: '0 0 20px', color: isDarkMode ? '#aaa' : '#666', fontSize: '14px' }}>@{userName}</p>
-          {bio && <p style={{ margin: '0 0 20px', color: isDarkMode ? '#ccc' : '#555', fontSize: '15px' }}>{bio}</p>}
+        </div>
 
-          <button
-            onClick={toggleFollow}
-            style={{
-              background: isFollowing ? (isDarkMode ? '#333' : '#f0f0f0') : '#c41e3a',
-              color: isFollowing ? (isDarkMode ? '#fff' : '#1a1a1a') : 'white',
-              border: isFollowing ? ('1px solid ' + (isDarkMode ? '#555' : '#ddd')) : 'none',
-              padding: '10px 28px',
-              borderRadius: '20px',
-              fontSize: '14px',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
+        {/* NAME + FOLLOW */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+          <div>
+            <h1 style={{ margin: '0 0 2px', fontSize: '24px', fontWeight: 800, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {displayName}
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#fff', background: tier.color, padding: '3px 10px', borderRadius: '12px' }}>{tier.name}</span>
+            </h1>
+            <p style={{ margin: 0, color: '#657786', fontSize: '15px' }}>@{userName}</p>
+          </div>
+          <button onClick={toggleFollow} style={{ background: isFollowing ? '#fff' : '#c41e3a', color: isFollowing ? '#c41e3a' : '#fff', border: '1.5px solid #c41e3a', padding: '8px 22px', borderRadius: '20px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
             {isFollowing ? 'Following' : 'Follow'}
           </button>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '40px', flexWrap: 'wrap' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#c41e3a' }}>{articles.length}</div>
-            <div style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', marginTop: '4px' }}>Articles</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#c41e3a' }}>{totalViews.toLocaleString()}</div>
-            <div style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', marginTop: '4px' }}>Total Views</div>
-          </div>
+        {bio && <p style={{ margin: '12px 0', color: '#1a1a1a', fontSize: '15px', lineHeight: 1.5 }}>{bio~�t</p>}
+
+        {/* STATS ROW */}
+        <div style={{ display: 'flex', gap: '20px', margin: '14px 0', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '14px', color: '#657786' }}><b style={{ color: '#1a1a1a' }}>{articles.length}</b> Articles</span>
+          <span style={{ fontSize: '14px', color: '#657786' }}><b style={{ color: '#1a1a1a' }}>{followerCount}</b> Followers</span>
+          <span style={{ fontSize: '14px', color: '#657786' }}><b style={{ color: '#1a1a1a' }}>{totalViews.toLocaleString()}</b> Views</span>
+          <span style={{ fontSize: '14px', color: '#657786' }}><b style={{ color: '#1a1a1a' }}>{totalLikes}</b> Likes</span>
         </div>
 
-        {/* Articles */}
-        <div>
-          <h2 style={{ fontSize: '18px', fontWeight: 800, color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '20px' }}>
-            Articles
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-            {articles.map((article) => (
-              <Link key={article.$id} href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ background: isDarkMode ? '#1a1a1a' : '#f9f9f9', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer' }}>
-                  <div style={{ height: '160px', background: '#ddd', overflow: 'hidden' }}>
-                    {article.imageUrl && <img src={article.imageUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                  </div>
-                  <div style={{ padding: '12px' }}>
-                    <div style={{ fontSize: '13px', color: '#c41e3a', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase' }}>
-                      {article.category}
-                    </div>
-                    <h3 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700, color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: 1.3 }}>
-                      {article.title}
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '12px', color: isDarkMode ? '#999' : '#888' }}>
-                      {article.views || 0} views
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))}
+        {/* TIER PROGRESS */}
+        <div style={{ background: '#f7f7f7', borderRadius: '14px', padding: '16px', margin: '16px 0 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: tier.color }}>● {tier.name}</span>
+            <span style={{ fontSize: '12px', color: '#888' }}>{score.toLocaleString()} pts</span>
           </div>
+          <div style={{ height: '8px', background: '#e5e5e5', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ width: progress + '%', height: '100%', background: 'linear-gradient(90deg, ' + tier.color + ', #f5c518)', borderRadius: '4px', transition: 'width 0.6s' }} />
+          </div>
+          {nextTier && (
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>
+              {(nextTier.min - score).toLocaleString()} pts to <b style={{ color: nextTier.color }}>{nextTier.name}</b>
+            </p>
+          )}
         </div>
+
+        {/* FEATURED ARTICLE (big card) */}
+        {featured && (() => {
+          const img = getImageUrl(featured);
+          return (
+            <Link href={'/article/' + featured.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '20px', border: '1px solid #eee', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+                <div style={{ height: '220px', background: '#e5e5e5', position: 'relative' }}>
+                  {img && <img src={img} alt={featured.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.75))' }} />
+                  <span style={{ position: 'absolute', top: '12px', left: '12px', background: '#c41e3a', color: '#fff', padding: '4px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>{featured.category}</span>
+                  <h2 style={{ position: 'absolute', bottom: '12px', left: '14px', right: '14px', margin: 0, fontSize: '18px', fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{featured.title}</h2>
+                </div>
+                <div style={{ padding: '10px 14px', fontSize: '12px', color: '#888' }}>{(featured.views || 0).toLocaleString()} views</div>
+              </div>
+            </Link>
+          );
+        })()}
+
+        {/* REST — list with thumbnails */}
+        {rest.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {rest.map((article) => {
+              const img = getImageUrl(article);
+              return (
+                <Link key={article.$id} href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div style={{ display: 'flex', gap: '14px', padding: '14px 4px', borderBottom: '1px solid #f0f0f0', alignItems: 'center' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '11px', color: '#c41e3a', fontWeight: 700, marginBottom: '4px', textTransform: 'uppercase' }}>{article.category}</div>
+                      <h3 style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.35 }}>{article.title}</h3>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#999' }}>{(article.views || 0).toLocaleString()} views</p>
+                    </div>
+                    <div style={{ width: '92px', height: '68px', borderRadius: '10px', background: '#e5e5e5', overflow: 'hidden', flexShrink: 0 }}>
+                      {img && <img src={img} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
