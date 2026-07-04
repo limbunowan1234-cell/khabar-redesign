@@ -205,7 +205,6 @@ export default function AdminPage() {
     } catch (err: any) { setError(err.message || 'Failed to post story'); }
     setPostingStory(false);
   }
-  }
 
   async function handleImageUpload(e: any) {
     const file = e.target.files[0];
