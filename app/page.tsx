@@ -84,10 +84,6 @@ function HeroSection({ articles, isDarkMode }: any) {
         <p style={{ fontSize: '16px', margin: 0, opacity: 0.95, fontWeight: '500' }}>The Digital Home of Darjeeling</p>
       </div>
 
-      <style>{`.top-creators-sidebar-desktop { display: none; } .top-creators-mobile { display: block; padding: 0 20px 16px; } @media (min-width: 1024px) { .top-creators-sidebar-desktop { display: block; width: 280px; flex-shrink: 0; order: 2; } .hero-layout { display: flex; gap: 24px; } .hero-main { order: 1; } .top-creators-mobile { display: none; } }`}</style>
-      {/* MOBILE TOP CREATORS CAROUSEL */}
-      <div className='top-creators-mobile'>
-        <TopCreators />
       </div>
       {/* 3 FEATURED ARTICLES */}
       <div className='hero-layout' style={{ padding: '20px' }}>
@@ -428,6 +424,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [activeNav, setActiveNav] = useState('home');
   const [showMenu, setShowMenu] = useState(false);
+  const [showTopCreators, setShowTopCreators] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
 
   useEffect(() => {
@@ -771,11 +768,11 @@ export default function Home() {
             { id: 'search', href: '#', icon: '🔍', label: 'Search' },
             { id: 'post', href: '/post', icon: '✍️', label: 'Post' },
             { id: 'contest', href: '/contest', icon: '🏆', label: 'Contest' },
-            { id: 'profile', href: user ? '/profile' : '/auth', icon: '??', label: user ? 'Profile' : 'Login' },
+            { id: 'profile', href: user ? '/profile' : '/auth', icon: 'ðŸ‘¤', label: user ? 'Profile' : 'Login' },
             ...(isAdmin ? [{ id: 'admin', href: '/admin', icon: '⚙️', label: 'Admin' }] : []),
           ].map((item) => (
             <Link key={item.id} href={item.href} style={{ flex: 1, textDecoration: 'none' }}>
-              <div onClick={() => { setActiveNav(item.id); if (item.id === 'search') { window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => { const el = document.getElementById('mobile-search'); if (el) el.focus(); }, 300); } }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px', cursor: 'pointer' }}>
+              <div onClick={(e) => { if (item.id === 'creators') { e.preventDefault(); setShowTopCreators(true); return; } setActiveNav(item.id); if (item.id === 'search') { window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => { const el = document.getElementById('mobile-search'); if (el) el.focus(); }, 300); } }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px', cursor: 'pointer' }}>
                 <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: activeNav === item.id ? '#c41e3a' : isDarkMode ? '#2a2a2a' : '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2px' }}>
                   <span style={{ fontSize: '16px' }}>{item.icon}</span>
                 </div>
@@ -785,6 +782,17 @@ export default function Home() {
           ))}
         </nav>
       )}
+
+        {/* TOP CREATORS MODAL */}
+        {showTopCreators && (
+          <div onClick={() => setShowTopCreators(false)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '16px', padding: '20px', maxWidth: '360px', width: '100%', maxHeight: '80vh', overflowY: 'auto', position: 'relative' }}>
+              <button onClick={() => setShowTopCreators(false)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: isDarkMode ? '#aaa' : '#999' }}>x</button>
+              <TopCreators />
+            </div>
+          </div>
+        )}
+
         <SiteFooter isDarkMode={isDarkMode} />
 
       {!isMobile && (
