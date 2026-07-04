@@ -230,46 +230,26 @@ export default function PublicProfile({ params }: { params: Promise<{ userId: st
           )}
         </div>
 
-        {/* FEATURED ARTICLE (big card) */}
-        {featured && (() => {
-          const img = getImageUrl(featured);
-          return (
-            <Link href={'/article/' + featured.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '20px', border: '1px solid #eee', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-                <div style={{ height: '220px', background: '#e5e5e5', position: 'relative' }}>
-                  {img && <img src={img} alt={featured.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.75))' }} />
-                  <span style={{ position: 'absolute', top: '12px', left: '12px', background: '#c41e3a', color: '#fff', padding: '4px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>{featured.category}</span>
-                  <h2 style={{ position: 'absolute', bottom: '12px', left: '14px', right: '14px', margin: 0, fontSize: '18px', fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{featured.title}</h2>
-                </div>
-                <div style={{ padding: '10px 14px', fontSize: '12px', color: '#888' }}>{(featured.views || 0).toLocaleString()} views</div>
-              </div>
-            </Link>
-          );
-        })()}
-
-        {/* REST — list with thumbnails */}
-        {rest.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {rest.map((article) => {
-              const img = getImageUrl(article);
-              return (
-                <Link key={article.$id} href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div style={{ display: 'flex', gap: '14px', padding: '14px 4px', borderBottom: '1px solid #f0f0f0', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '11px', color: '#c41e3a', fontWeight: 700, marginBottom: '4px', textTransform: 'uppercase' }}>{article.category}</div>
-                      <h3 style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.35 }}>{article.title}</h3>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#999' }}>{(article.views || 0).toLocaleString()} views</p>
-                    </div>
-                    <div style={{ width: '92px', height: '68px', borderRadius: '10px', background: '#e5e5e5', overflow: 'hidden', flexShrink: 0 }}>
-                      {img && <img src={img} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                    </div>
+        {/* NEWS GALLERY - 2 column bigger cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          {articles.map((article) => {
+            const img = getImageUrl(article);
+            return (
+              <Link key={article.$id} href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                  <div style={{ height: '140px', background: '#e5e5e5', position: 'relative' }}>
+                    {img && <img src={img} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    <span style={{ position: 'absolute', top: '8px', left: '8px', background: '#c41e3a', color: '#fff', padding: '3px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' }}>{article.category}</span>
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+                  <div style={{ padding: '10px 12px' }}>
+                    <h3 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
+                    <p style={{ margin: 0, fontSize: '11px', color: '#999' }}>{(article.views || 0).toLocaleString()} views</p>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
