@@ -204,7 +204,7 @@ export default function PublicProfile({ params }: { params: Promise<{ userId: st
           </button>
         </div>
 
-        {bio && <p style={{ margin: '12px 0', color: '#1a1a1a', fontSize: '15px', lineHeight: 1.5 }}>{bio~�t</p>}
+        {bio && <p style={{ margin: '12px 0', color: '#1a1a1a', fontSize: '15px', lineHeight: 1.5 }}>{bio}</p>}
 
         {/* STATS ROW */}
         <div style={{ display: 'flex', gap: '20px', margin: '14px 0', flexWrap: 'wrap' }}>
