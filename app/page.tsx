@@ -5,6 +5,7 @@ import WeatherWidget from '@/components/WeatherWidget';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
+import TopCreators from '@/components/TopCreators';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const projectId = 'khabardarjeeling';
@@ -84,8 +85,15 @@ function HeroSection({ articles, isDarkMode }: any) {
       </div>
 
       {/* 3 FEATURED ARTICLES */}
-      <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-        {shuffled.map((article) => {
+      <div style={{ display: 'flex', gap: '24px', padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+        {/* LEFT SIDEBAR — Desktop only */}
+        <div style={{ display: 'none', '@media (min-width: 1024px)': { display: 'flex' }, width: '260px', flexShrink: 0 }}>
+          <TopCreators />
+        </div>
+
+        {/* MAIN ARTICLES GRID */}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          {shuffled.map((article) => {
           const img = getImageUrl(article);
           const preview = truncateText(article.content || article.summary || '', 30);
           return (
