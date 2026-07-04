@@ -34,6 +34,8 @@ export default function ProfilePage() {
   const [following, setFollowing] = useState<any[]>([]);
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [activeTab, setActiveTab] = useState('articles');
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [bookmarks, setBookmarks] = useState<any[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -67,6 +69,40 @@ export default function ProfilePage() {
         if (followersRes.ok) { const d = await followersRes.json(); setFollowers(d.documents || []); }
         if (followingRes.ok) { const d = await followingRes.json(); setFollowing(d.documents || []); }
         if (bookmarksRes.ok) { const d = await bookmarksRes.json(); setBookmarkCount(d.total || 0); }
+
+          // Load FAVORITES (liked articles)
+          try {
+            const likesRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' +
+              encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] })) +
+              '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
+              { headers: H, credentials: 'include' });
+            if (likesRes.ok) {
+              const ld = await likesRes.json();
+              const ids = (ld.documents || []).map((x: any) => x.articleId).filter(Boolean);
+              const arts = await Promise.all(ids.map(async (aid: string) => {
+                const r = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents/' + aid, { headers: H, credentials: 'include' });
+                return r.ok ? await r.json() : null;
+              }));
+              setFavorites(arts.filter(Boolean));
+            }
+          } catch {}
+
+          // Load BOOKMARKS (saved articles)
+          try {
+            const bmRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/bookmarks/documents?queries[]=' +
+              encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] })) +
+              '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
+              { headers: H, credentials: 'include' });
+            if (bmRes.ok) {
+              const bd = await bmRes.json();
+              const ids = (bd.documents || []).map((x: any) => x.articleId).filter(Boolean);
+              const arts = await Promise.all(ids.map(async (aid: string) => {
+                const r = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents/' + aid, { headers: H, credentials: 'include' });
+                return r.ok ? await r.json() : null;
+              }));
+              setBookmarks(arts.filter(Boolean));
+            }
+          } catch {}
       } catch {}
       setLoading(false);
     }
@@ -157,6 +193,8 @@ export default function ProfilePage() {
               { id: 'articles', label: '📰 My Articles (' + myArticles.length + ')' },
               { id: 'followers', label: '👥 Followers (' + followers.length + ')' },
               { id: 'following', label: '➕ Following (' + following.length + ')' },
+              { id: 'favorites', label: 'Favorites (' + favorites.length + ')' },
+              { id: 'bookmarks', label: 'Bookmarks (' + bookmarks.length + ')' },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, padding: '14px 8px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', color: activeTab === tab.id ? '#c41e3a' : isDarkMode ? '#888' : '#666', borderBottom: activeTab === tab.id ? '3px solid #c41e3a' : '3px solid transparent', transition: 'all 0.2s' }}>
                 {tab.label}
