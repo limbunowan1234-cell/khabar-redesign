@@ -156,7 +156,9 @@ export default function AdminPage() {
     try {
       await fetch(endpoint + '/databases/' + dbId + '/collections/photos/documents/' + photoId, { method: 'DELETE', headers: H, credentials: 'include' });
       await loadPhotos();
+    } catch {}
   }
+
 
   function togglePhotoSelect(photoId: string) {
     setSelectedPhotoIds(prev => prev.includes(photoId) ? prev.filter(id => id !== photoId) : [...prev, photoId]);
