@@ -84,13 +84,14 @@ function HeroSection({ articles, isDarkMode }: any) {
         <p style={{ fontSize: '16px', margin: 0, opacity: 0.95, fontWeight: '500' }}>The Digital Home of Darjeeling</p>
       </div>
 
-      <style>{`.top-creators-sidebar { display: none; } @media (min-width: 1024px) { .top-creators-sidebar { display: block; width: 260px; flex-shrink: 0; } .hero-layout { display: flex; gap: 24px; } }`}</style>
+      <style>{`.top-creators-sidebar-desktop { display: none; } .top-creators-mobile { display: block; padding: 0 20px 16px; } @media (min-width: 1024px) { .top-creators-sidebar-desktop { display: block; width: 280px; flex-shrink: 0; order: 2; } .hero-layout { display: flex; gap: 24px; } .hero-main { order: 1; } .top-creators-mobile { display: none; } }`}</style>
+      {/* MOBILE TOP CREATORS CAROUSEL */}
+      <div className='top-creators-mobile'>
+        <TopCreators />
+      </div>
       {/* 3 FEATURED ARTICLES */}
       <div className='hero-layout' style={{ padding: '20px' }}>
-        <div className='top-creators-sidebar'>
-          <TopCreators />
-        </div>
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        <div className='hero-main' style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           {shuffled.map((article) => {
           const img = getImageUrl(article);
           const preview = truncateText(article.content || article.summary || '', 30);
@@ -107,6 +108,9 @@ function HeroSection({ articles, isDarkMode }: any) {
           );
         })}
       </div>
+        <div className='top-creators-sidebar-desktop'>
+          <TopCreators />
+        </div>
       </div>
     </div>
   );
@@ -763,12 +767,12 @@ export default function Home() {
             {isMobile && (
         <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#eee'), display: 'flex', zIndex: '200', boxShadow: '0 -2px 10px rgba(0,0,0,0.1)' }}>
           {[
-            { id: 'home', href: '/', icon: '??', label: 'Home' },
-            { id: 'search', href: '#', icon: '??', label: 'Search' },
-            { id: 'post', href: '/post', icon: '??', label: 'Post' },
-            { id: 'contest', href: '/contest', icon: '??', label: 'Contest' },
+            { id: 'home', href: '/', icon: '🏠', label: 'Home' },
+            { id: 'search', href: '#', icon: '🔍', label: 'Search' },
+            { id: 'post', href: '/post', icon: '✍️', label: 'Post' },
+            { id: 'contest', href: '/contest', icon: '🏆', label: 'Contest' },
             { id: 'profile', href: user ? '/profile' : '/auth', icon: '??', label: user ? 'Profile' : 'Login' },
-            ...(isAdmin ? [{ id: 'admin', href: '/admin', icon: '??', label: 'Admin' }] : []),
+            ...(isAdmin ? [{ id: 'admin', href: '/admin', icon: '⚙️', label: 'Admin' }] : []),
           ].map((item) => (
             <Link key={item.id} href={item.href} style={{ flex: 1, textDecoration: 'none' }}>
               <div onClick={() => { setActiveNav(item.id); if (item.id === 'search') { window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => { const el = document.getElementById('mobile-search'); if (el) el.focus(); }, 300); } }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px', cursor: 'pointer' }}>
