@@ -22,8 +22,8 @@ export default function SiteFooter({ isDarkMode }: { isDarkMode?: boolean }) {
           <div style={{ flex: '1 1 140px' }}>
             <div style={{ fontSize: '13px', fontWeight: 700, color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Follow</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" style={linkStyle}>Facebook</a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={linkStyle}>Instagram</a>
+              <a href="https://www.facebook.com/profile.php?id=61590708777947" target="_blank" rel="noopener noreferrer" style={linkStyle}>Facebook</a>
+              <a href="https://www.instagram.com/khabardarjeeling_2026" target="_blank" rel="noopener noreferrer" style={linkStyle}>Instagram</a>
               <a href="https://wa.me/message" target="_blank" rel="noopener noreferrer" style={linkStyle}>WhatsApp</a>
             </div>
           </div>

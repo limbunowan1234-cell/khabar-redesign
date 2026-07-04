@@ -32,7 +32,7 @@ export default function ContactPage() {
             </div>
           </a>
 
-          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
+          <a href="https://www.facebook.com/profile.php?id=61590708777947" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
             <span style={{ fontSize: '24px' }}>📘</span>
             <div>
               <div style={{ fontWeight: 700, fontSize: '15px' }}>Facebook</div>
@@ -40,7 +40,7 @@ export default function ContactPage() {
             </div>
           </a>
 
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
+          <a href="https://www.instagram.com/khabardarjeeling_2026" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
             <span style={{ fontSize: '24px' }}>📷</span>
             <div>
               <div style={{ fontWeight: 700, fontSize: '15px' }}>Instagram</div>
