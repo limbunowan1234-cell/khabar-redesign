@@ -80,18 +80,16 @@ function HeroSection({ articles, isDarkMode }: any) {
     <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
       {/* HERO GRADIENT */}
       <div style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)', padding: '40px 24px', textAlign: 'center', color: 'white' }}>
-        <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.2' }}>??? ??????????</h1>
+        <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.2' }}>खबर दार्जिलिङ</h1>
         <p style={{ fontSize: '16px', margin: 0, opacity: 0.95, fontWeight: '500' }}>The Digital Home of Darjeeling</p>
       </div>
 
+      <style>{`.top-creators-sidebar { display: none; } @media (min-width: 1024px) { .top-creators-sidebar { display: block; width: 260px; flex-shrink: 0; } .hero-layout { display: flex; gap: 24px; } }`}</style>
       {/* 3 FEATURED ARTICLES */}
-      <div style={{ display: 'flex', gap: '24px', padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
-        {/* LEFT SIDEBAR — Desktop only */}
-        <div style={{ display: 'none', '@media (min-width: 1024px)': { display: 'flex' }, width: '260px', flexShrink: 0 }}>
+      <div className='hero-layout' style={{ padding: '20px' }}>
+        <div className='top-creators-sidebar'>
           <TopCreators />
         </div>
-
-        {/* MAIN ARTICLES GRID */}
         <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           {shuffled.map((article) => {
           const img = getImageUrl(article);
