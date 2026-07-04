@@ -766,7 +766,7 @@ export default function Home() {
             { id: 'search', href: '#', icon: '🔍', label: 'Search' },
             { id: 'post', href: '/post', icon: '✍️', label: 'Post' },
             { id: 'contest', href: '/contest', icon: '🏆', label: 'Contest' },
-            { id: 'profile', href: user ? '/profile' : '/auth', icon: 'ðŸ‘¤', label: user ? 'Profile' : 'Login' },
+            { id: 'profile', href: user ? '/profile' : '/auth', icon: '👤', label: user ? 'Profile' : 'Login' },
             ...(isAdmin ? [{ id: 'admin', href: '/admin', icon: '⚙️', label: 'Admin' }] : []),
           ].map((item) => (
             <Link key={item.id} href={item.href} style={{ flex: 1, textDecoration: 'none' }}>
