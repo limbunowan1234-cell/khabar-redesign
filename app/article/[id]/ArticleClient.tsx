@@ -342,7 +342,7 @@ export default function ArticleClient() {
               )}
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                  <div style={{ fontWeight: "700", fontSize: "15px", color: isDarkMode ? "#fff" : "#1a1a1a" }}>{author}</div>
+                  <Link href={"/profile/" + article.submitterId} style={{ textDecoration: "none", color: "inherit" }}><div style={{ fontWeight: "700", fontSize: "15px", color: isDarkMode ? "#fff" : "#1a1a1a", cursor: "pointer" }}>{author}</div></Link>
                   {article.submitterId && <AuthorBadge submitterId={article.submitterId} size="sm" />}
                   {user && article.submitterId && article.submitterId !== user.$id && (
                     <button onClick={() => handleFollow(article.submitterId, author)} disabled={followLoading} style={{ backgroundColor: following ? "transparent" : "#c41e3a", color: following ? "#c41e3a" : "white", border: "1px solid #c41e3a", padding: "4px 12px", borderRadius: "16px", cursor: "pointer", fontWeight: "700", fontSize: "12px" }}>
@@ -442,7 +442,7 @@ export default function ArticleClient() {
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                          <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a' }}>{c.authorName || 'Anonymous'}</div>
+                          <Link href={"/profile/" + c.userId} style={{ textDecoration: "none", color: "inherit" }}><div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', cursor: "pointer" }}>{c.authorName || 'Anonymous'}</div></Link>
                           {c.createdAt && <div style={{ fontSize: '11px', color: isDarkMode ? '#666' : '#bbb' }}>{fmtDate(c.createdAt)}</div>}
                         </div>
                         <p style={{ margin: '0 0 8px', fontSize: '14px', color: isDarkMode ? '#ccc' : '#444', lineHeight: '1.5' }}>{c.commentText}</p>
@@ -492,7 +492,7 @@ export default function ArticleClient() {
                               </div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                                  <div style={{ fontWeight: '700', fontSize: '13px', color: isDarkMode ? '#fff' : '#1a1a1a' }}>{r.authorName || 'Anonymous'}</div>
+                                  <Link href={"/profile/" + r.userId} style={{ textDecoration: "none", color: "inherit" }}><div style={{ fontWeight: '700', fontSize: '13px', color: isDarkMode ? '#fff' : '#1a1a1a', cursor: "pointer" }}>{r.authorName || 'Anonymous'}</div></Link>
                                   {r.createdAt && <div style={{ fontSize: '10px', color: isDarkMode ? '#666' : '#bbb' }}>{fmtDate(r.createdAt)}</div>}
                                 </div>
                                 <p style={{ margin: '0 0 4px', fontSize: '13px', color: isDarkMode ? '#ccc' : '#444', lineHeight: '1.4' }}>{r.commentText}</p>
