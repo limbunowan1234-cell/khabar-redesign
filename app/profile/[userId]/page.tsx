@@ -184,7 +184,7 @@ export default function PublicProfile({ params }: { params: Promise<{ userId: st
 
       <div style={{ maxWidth: '680px', margin: '0 auto', padding: '0 16px' }}>
         {/* AVATAR (overlapping banner) */}
-        <div style={{ marginTop: '-52px', marginBottom: '12px' }}>
+        <div style={{ marginTop: '-52px', marginBottom: '12px', position: 'relative', zIndex: 10 }}>
           <div style={{ width: '104px', height: '104px', borderRadius: '50%', border: '4px solid #fff', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '42px', fontWeight: 800, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
             {avatar ? <img src={avatar} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : displayName[0].toUpperCase()}
           </div>
