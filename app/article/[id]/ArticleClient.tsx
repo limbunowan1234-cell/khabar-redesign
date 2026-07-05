@@ -380,6 +380,20 @@ export default function ArticleClient() {
           <div style={{ fontSize: '17px', lineHeight: '1.9', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif' }}>
             {article.content || article.summary}
           </div>
+
+          {article.galleryImageIds && article.galleryImageIds.length > 0 && (
+            <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '20px 28px 28px', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '14px' }}>Photo Gallery ({article.galleryImageIds.length + 1})</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
+                {article.galleryImageIds.map((fileId: string, i: number) => (
+                  <div key={i} style={{ borderRadius: '10px', overflow: 'hidden', aspectRatio: '1', backgroundColor: '#e5e5e5' }}>
+                    <img src={getImageUrl({ imageFileId: fileId })} alt={'Gallery photo ' + (i + 1)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {article.category && (
             <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#aaa' : '#888' }}>Tags:</span>
