@@ -96,7 +96,7 @@ function HeroSection({ articles, isDarkMode }: any) {
                 <div style={{ fontSize: '11px', fontWeight: '700', color: '#c41e3a', textTransform: 'uppercase', marginBottom: '6px' }}>{article.category || 'News'}</div>
                 <h3 style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', margin: '0 0 6px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
                 <p style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', margin: '0 0 8px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
-                <div style={{ fontSize: '10px', color: isDarkMode ? '#777' : '#999' }}>?? {(article.views || 0).toLocaleString()}</div>
+                <div style={{ fontSize: '10px', color: isDarkMode ? '#777' : '#999' }}>👁 {(article.views || 0).toLocaleString()}</div>
               </div>
             </Link>
           );
@@ -397,7 +397,7 @@ function BreakingNewsSidebar({ articles, isDarkMode }: any) {
   if (breaking.length === 0) return null;
   return (
     <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px', borderLeft: '4px solid #c41e3a' }}>
-      <h3 style={{ fontSize: '13px', fontWeight: '800', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>?? Breaking News</h3>
+      <h3 style={{ fontSize: '13px', fontWeight: '800', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>🔴 Breaking News</h3>
       {breaking.map((a: any, i: number) => (
         <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ paddingBottom: '10px', marginBottom: i < breaking.length - 1 ? '10px' : 0, borderBottom: i < breaking.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f5f5f5') : 'none' }}>
