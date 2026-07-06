@@ -12,10 +12,22 @@ export async function getArticles() {
   return data.documents || [];
 }
 
-export async function getArticle(id: string) {
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${id}`, { headers: H, credentials: 'include' });
-  if (!res.ok) return null;
-  return res.json();
+export async function getArticle(idOrSlug: string) {
+  try {
+    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'slug', values: [idOrSlug] }));
+    const slugRes = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents?queries[]=${q}`, { headers: H, credentials: 'include' });
+    if (slugRes.ok) {
+      const slugData = await slugRes.json();
+      if (slugData.documents && slugData.documents.length > 0) return slugData.documents[0];
+    }
+  } catch {}
+  try {
+    const res = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${idOrSlug}`, { headers: H, credentials: 'include' });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 export async function getCurrentUser() {
@@ -193,13 +205,13 @@ export async function toggleCommentLike(commentId: string, userId: string, artic
 }
 
 
-export async function incrementViews(articleId: string) {
+export async function incrementViews(idOrSlug: string) {
   try {
-    const article = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${articleId}`, { headers: H, credentials: 'include' });
-    if (!article.ok) return false;
-    const data = await article.json();
-    const newViews = (data.views || 0) + 1;
-    const upd = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${articleId}`, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { views: newViews } }) });
+    const a = await getArticle(idOrSlug);
+    if (!a) return false;
+    const realId = a.$id;
+    const newViews = (a.views || 0) + 1;
+    const upd = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${realId}`, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { views: newViews } }) });
     return upd.ok;
   } catch {
     return false;
