@@ -235,7 +235,7 @@ export default function PublicProfile({ params }: { params: Promise<{ userId: st
           {articles.map((article) => {
             const img = getImageUrl(article);
             return (
-              <Link key={article.$id} href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Link key={article.$id} href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                   <div style={{ height: '140px', background: img ? '#e5e5e5' : 'linear-gradient(135deg, #c41e3a 0%, #a01830 60%, #f5c518 140%)', position: 'relative' }}>
                     {img ? <img src={img} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', textAlign: 'center' }}><span style={{ color: '#fff', fontSize: '13px', fontWeight: 700, opacity: 0.9 }}>{article.title}</span></div>}

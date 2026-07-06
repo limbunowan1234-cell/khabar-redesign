@@ -91,7 +91,7 @@ function HeroSection({ articles, isDarkMode }: any) {
           const img = getImageUrl(article);
           const preview = truncateText(article.content || article.summary || '', 30);
           return (
-            <Link key={article.$id} href={'/article/' + article.$id} style={{ textDecoration: 'none', display: 'block', borderRadius: '10px', overflow: 'hidden', transition: 'transform 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
+            <Link key={article.$id} href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', display: 'block', borderRadius: '10px', overflow: 'hidden', transition: 'transform 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
               {img && <img src={img} alt={article.title} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
               <div style={{ padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9' }}>
                 <div style={{ fontSize: '11px', fontWeight: '700', color: '#c41e3a', textTransform: 'uppercase', marginBottom: '6px' }}>{article.category || 'News'}</div>
@@ -121,7 +121,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
   if (!featured) {
     if (hasImage) {
       return (
-        <Link href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', marginBottom: '20px', display: 'grid', gridTemplateColumns: '1.4fr 1fr', minHeight: '220px' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.15)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)'; }}>
             <div style={{ position: 'relative', overflow: 'hidden' }}>
               <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: '220px' }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.background = 'linear-gradient(135deg,' + catColor + ',#1a1a1a)'; (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -153,7 +153,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
       );
     } else {
       return (
-        <Link href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.12)', marginBottom: '20px', minHeight: '160px', position: 'relative', background: 'linear-gradient(135deg,' + catColor + ' 0%,' + catColor + 'cc 60%,#1a1a1a 100%)' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.2)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.12)'; }}>
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 12px)' }} />
             <div style={{ position: 'relative', padding: '28px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '160px', boxSizing: 'border-box' }}>
@@ -187,7 +187,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
 
   if (hasImage) {
     return (
-      <Link href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', marginBottom: '12px', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateX(4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateX(0)'; }}>
           <div style={{ width: '4px', backgroundColor: catColor, flexShrink: 0 }} />
           <img src={imgUrl} alt={article.title} style={{ width: '110px', height: '90px', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -205,7 +205,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
     );
   } else {
     return (
-      <Link href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', marginBottom: '12px', cursor: 'pointer', background: 'linear-gradient(135deg,' + catColor + '15,' + catColor + '05)', border: '1px solid ' + catColor + '33' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateX(4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateX(0)'; }}>
           <div style={{ width: '6px', backgroundColor: catColor, flexShrink: 0 }} />
           <div style={{ padding: '14px 16px', flex: 1, minWidth: 0 }}>
@@ -239,7 +239,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
   if (isDiscover) {
     if (hasImage) {
       return (
-        <Link href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '12px' }}>
             <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
               <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.background = 'linear-gradient(135deg,' + catColor + ',#1a1a1a)'; (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -264,7 +264,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
       );
     } else {
       return (
-        <Link href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginBottom: '12px', background: 'linear-gradient(135deg,' + catColor + ' 0%,' + catColor + 'aa 60%,#1a1a1a 100%)', position: 'relative' }}>
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 10px)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', padding: '20px 16px' }}>
@@ -289,7 +289,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
 
   if (hasImage) {
     return (
-      <Link href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '12px', display: 'flex' }}>
           <div style={{ width: '4px', backgroundColor: getCategoryColor(article.category), flexShrink: 0 }} />
           <img src={imgUrl} alt={article.title} style={{ width: '100px', height: '90px', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -305,7 +305,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
     );
   } else {
     return (
-      <Link href={'/article/' + article.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '12px', display: 'flex', background: isDarkMode ? '#1e1e1e' : 'white', border: '1px solid ' + catColor + '33' }}>
           <div style={{ width: '6px', backgroundColor: catColor, flexShrink: 0 }} />
           <div style={{ padding: '12px', flex: 1, minWidth: 0 }}>

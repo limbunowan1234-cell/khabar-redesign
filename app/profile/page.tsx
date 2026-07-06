@@ -216,7 +216,7 @@ export default function ProfilePage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {myArticles.map((a: any) => (
-                    <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{ display: 'flex', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px', alignItems: 'center' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.title}</div>
@@ -299,7 +299,7 @@ export default function ProfilePage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {favorites.map((a: any) => (
-                    <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{ display: 'flex', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px', alignItems: 'center' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '4px' }}>{a.title}</div>
@@ -323,7 +323,7 @@ export default function ProfilePage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {bookmarks.map((a: any) => (
-                    <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{ display: 'flex', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px', alignItems: 'center' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '4px' }}>{a.title}</div>
