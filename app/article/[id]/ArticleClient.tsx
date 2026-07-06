@@ -380,14 +380,14 @@ export default function ArticleClient() {
         {/* CONTENT */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '28px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
           <div style={{ fontSize: '17px', lineHeight: '1.9', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif' }}>
-            {article.content || article.summary}
+            {article.category === 'Photo Story' ? '' : (article.content || article.summary)}
           </div>
 
           {article.galleryImageIds && article.galleryImageIds.length > 0 && (
             <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '20px 28px 28px', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
               <h3 style={{ fontSize: '15px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '14px' }}>Photo Gallery ({article.galleryImageIds.length + 1})</h3>
               <div
-                style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#000', aspectRatio: '4/5', maxHeight: '520px' }}
+                style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#000', aspectRatio: '16/10', maxHeight: '480px' }}
                 onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
                 onTouchEnd={(e) => {
                   const diff = touchStartX - e.changedTouches[0].clientX;
@@ -395,7 +395,7 @@ export default function ArticleClient() {
                   if (diff < -50) setGalleryIndex((i) => Math.max(i - 1, 0));
                 }}
               >
-                <img src={getImageUrl({ imageFileId: article.galleryImageIds[galleryIndex] })} alt={'Gallery photo ' + (galleryIndex + 1)} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', backgroundColor: '#000' }} />
+                <img src={getImageUrl({ imageFileId: article.galleryImageIds[galleryIndex] })} alt={'Gallery photo ' + (galleryIndex + 1)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', backgroundColor: '#000' }} />
                 {galleryIndex > 0 && (
                   <button onClick={() => setGalleryIndex((i) => Math.max(i - 1, 0))} style={{ position: 'absolute', top: '50%', left: '10px', transform: 'translateY(-50%)', width: '38px', height: '38px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&lsaquo;</button>
                 )}
