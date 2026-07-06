@@ -353,9 +353,9 @@ export default function ArticleClient() {
                   )}
                 </div>
                 <div style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#888', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {article.publishedAt && <span>📅 {fmtDate(article.publishedAt)}</span>}
-                  {article.location && <span>📍 {article.location}</span>}
-                  <span>? {readingTime(article.content)}</span>
+                  {article.publishedAt && <span>{fmtDate(article.publishedAt)}</span>}
+                  {article.location && <span>{article.location}</span>}
+                  <span>{readingTime(article.content)}</span>
                   {article.views > 0 && <span>👁 {article.views.toLocaleString()}</span>}
                 </div>
               </div>
