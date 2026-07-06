@@ -93,7 +93,7 @@ function HeroSection({ articles, isDarkMode }: any) {
       <div className='hero-layout' style={{ padding: '20px' }}>
         <div className='hero-main' style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           {shuffled.map((article) => {
-          const img = getThumbUrl(article, 400);
+          const img = getImageUrl(article);
           const preview = truncateText(article.content || article.summary || '', 30);
           return (
             <Link key={article.$id} href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', display: 'block', borderRadius: '10px', overflow: 'hidden', transition: 'transform 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
@@ -114,7 +114,7 @@ function HeroSection({ articles, isDarkMode }: any) {
 }
 
 function DesktopCard({ article, isDarkMode, featured }: any) {
-  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getThumbUrl(article, 500);
+  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
   const author = article.submitterName || article.authorName || 'Staff Reporter';
   const catColor = getCategoryColor(article.category);
   const hasImage = !!imgUrl;
@@ -231,7 +231,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
 }
 
 function MobileCard({ article, isDarkMode, index }: any) {
-  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getThumbUrl(article, 350);
+  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
   const author = article.submitterName || article.authorName || 'Staff Reporter';
   const catColor = getCategoryColor(article.category);
   const hasImage = !!imgUrl;
