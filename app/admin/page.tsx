@@ -229,6 +229,40 @@ export default function AdminPage() {
     setUploadingImage(false);
   }
 
+  async function handleBackfillSlugs() {
+    if (!confirm('Generate slugs for all articles missing one? This may take a moment.')) return;
+    setError(''); setSuccess('');
+    try {
+      let updated = 0;
+      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [500] })), { headers: H, credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const all = data.documents || [];
+        for (const a of all) {
+          if (a.slug) continue;
+          const base = (a.title || '')
+            .toLowerCase()
+            .normalize('NFKD')
+            .replace(/[^\x00-\x7F]/g, '')
+            .replace(/[^a-z0-9\s-]/g, '')
+            .trim()
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .slice(0, 60)
+            .replace(/^-+|-+$/g, '');
+          const slug = (base ? base + '-' : 'news-') + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+          await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + a.$id, {
+            method: 'PATCH', headers: HJ, credentials: 'include',
+            body: JSON.stringify({ data: { slug } })
+          });
+          updated++;
+        }
+      }
+      setSuccess('Generated slugs for ' + updated + ' articles!');
+      await loadArticles();
+    } catch (err: any) { setError(err.message || 'Backfill failed'); }
+  }
+
   function generateSlug(text: string): string {
     const base = (text || '')
       .toLowerCase()
@@ -410,6 +444,7 @@ export default function AdminPage() {
             </div>
 
             <button onClick={trackApkDownload} style={{ width: '100%', padding: '14px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '16px', marginBottom: '24px' }}>Download APK</button>
+              <button onClick={handleBackfillSlugs} style={{ width: '100%', padding: '12px', backgroundColor: '#0F4C5C', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '14px', marginBottom: '24px' }}>Generate Slugs for All Articles</button>
 
             <div style={{ display: 'flex', gap: '0', marginBottom: '16px', borderBottom: '2px solid #ddd' }}>
               {['all', 'breaking', 'featured', 'contest'].map((tab) => (
