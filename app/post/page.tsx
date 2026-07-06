@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -79,13 +79,28 @@ export default function PostPage() {
     setError('');
     setSuccess('');
     try {
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
+      function generateSlug(text: string): string {
+  const base = (text || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^\x00-\x7F]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 60)
+    .replace(/^-+|-+$/g, '');
+  const suffix = Date.now().toString(36);
+  return (base ? base + '-' : 'news-') + suffix;
+}
+const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
         method: 'POST', headers: HJ, credentials: 'include',
         body: JSON.stringify({
           documentId: 'unique()',
           data: {
             title: title.trim(),
             content: content.trim(),
+            slug: generateSlug(title),
             category,
             location: location || 'Darjeeling',
             imageFileId: imageFileId || null,
