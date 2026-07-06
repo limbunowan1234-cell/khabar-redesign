@@ -87,6 +87,8 @@ export default function ArticleClient() {
   const [commentLikes, setCommentLikes] = useState<Record<string, number>>({});
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
   const [replyText, setReplyText] = useState('');
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState(0);
   const [postingReply, setPostingReply] = useState(false);
 
   const isAdmin = (user as any)?.labels?.includes("admin") || user?.email === "nowanad@gmail.com";
@@ -384,12 +386,30 @@ export default function ArticleClient() {
           {article.galleryImageIds && article.galleryImageIds.length > 0 && (
             <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '20px 28px 28px', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
               <h3 style={{ fontSize: '15px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '14px' }}>Photo Gallery ({article.galleryImageIds.length + 1})</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
-                {article.galleryImageIds.map((fileId: string, i: number) => (
-                  <div key={i} style={{ borderRadius: '10px', overflow: 'hidden', aspectRatio: '1', backgroundColor: '#e5e5e5' }}>
-                    <img src={getImageUrl({ imageFileId: fileId })} alt={'Gallery photo ' + (i + 1)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                  </div>
-                ))}
+              <div
+                style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#000', aspectRatio: '4/5', maxHeight: '520px' }}
+                onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
+                onTouchEnd={(e) => {
+                  const diff = touchStartX - e.changedTouches[0].clientX;
+                  if (diff > 50) setGalleryIndex((i) => Math.min(i + 1, article.galleryImageIds.length - 1));
+                  if (diff < -50) setGalleryIndex((i) => Math.max(i - 1, 0));
+                }}
+              >
+                <img src={getImageUrl({ imageFileId: article.galleryImageIds[galleryIndex] })} alt={'Gallery photo ' + (galleryIndex + 1)} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', backgroundColor: '#000' }} />
+                {galleryIndex > 0 && (
+                  <button onClick={() => setGalleryIndex((i) => Math.max(i - 1, 0))} style={{ position: 'absolute', top: '50%', left: '10px', transform: 'translateY(-50%)', width: '38px', height: '38px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&lsaquo;</button>
+                )}
+                {galleryIndex < article.galleryImageIds.length - 1 && (
+                  <button onClick={() => setGalleryIndex((i) => Math.min(i + 1, article.galleryImageIds.length - 1))} style={{ position: 'absolute', top: '50%', right: '10px', transform: 'translateY(-50%)', width: '38px', height: '38px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&rsaquo;</button>
+                )}
+                <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '700' }}>
+                  {galleryIndex + 1} / {article.galleryImageIds.length}
+                </div>
+                <div style={{ position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '5px' }}>
+                  {article.galleryImageIds.map((_: string, i: number) => (
+                    <div key={i} onClick={() => setGalleryIndex(i)} style={{ width: '6px', height: '6px', borderRadius: '50%', cursor: 'pointer', backgroundColor: i === galleryIndex ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                  ))}
+                </div>
               </div>
             </div>
           )}
