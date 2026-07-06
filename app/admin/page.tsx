@@ -229,6 +229,21 @@ export default function AdminPage() {
     setUploadingImage(false);
   }
 
+  function generateSlug(text: string): string {
+    const base = (text || '')
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[^\x00-\x7F]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .slice(0, 60)
+      .replace(/^-+|-+$/g, '');
+    const suffix = Date.now().toString(36);
+    return (base ? base + '-' : 'news-') + suffix;
+  }
+
   async function handlePublish(e: any) {
     e.preventDefault();
     if (!title || !content) { setError('Title and content required'); return; }
@@ -241,6 +256,7 @@ export default function AdminPage() {
           documentId: 'unique()',
           data: {
             title, content, category, location: location || 'Darjeeling',
+              slug: generateSlug(title),
             imageFileId: imageFileId || null,
             youtube_id: youtubeId || null,
             isBreaking, isFeatured, isContestEntry,
