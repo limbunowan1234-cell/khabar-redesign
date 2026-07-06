@@ -550,7 +550,7 @@ export default function ArticleClient() {
         {/* BACK */}
         <div style={{ textAlign: 'center', paddingBottom: '40px' }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
-            <button style={{ backgroundColor: '#c41e3a', color: 'white', padding: '12px 32px', border: 'none', borderRadius: '24px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', boxShadow: '0 4px 12px rgba(196,30,58,0.3)' }}>? Back to Home</button>
+            <button style={{ backgroundColor: '#c41e3a', color: 'white', padding: '12px 32px', border: 'none', borderRadius: '24px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', boxShadow: '0 4px 12px rgba(196,30,58,0.3)' }}> Back to Home</button>
           </Link>
         </div>
       </div>
