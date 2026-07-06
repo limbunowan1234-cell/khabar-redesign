@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: 'Khabar Darjeeling - The Digital Home of Darjeeling',
     template: '%s | Khabar Darjeeling',
   },
-  description: 'Latest news from Darjeeling, Kalimpong, Kurseong and the Gorkha community � politics, sports, culture, tea gardens, tourism and more.',
+  description: 'Latest news from Darjeeling, Kalimpong, Kurseong and the Gorkha community - politics, sports, culture, tea gardens, tourism and more.',
   applicationName: 'Khabar Darjeeling',
   alternates: { canonical: SITE },
   openGraph: {

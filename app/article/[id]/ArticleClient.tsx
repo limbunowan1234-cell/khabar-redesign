@@ -348,7 +348,7 @@ export default function ArticleClient() {
                   {article.submitterId && <AuthorBadge submitterId={article.submitterId} size="sm" />}
                   {user && article.submitterId && article.submitterId !== user.$id && (
                     <button onClick={() => handleFollow(article.submitterId, author)} disabled={followLoading} style={{ backgroundColor: following ? "transparent" : "#c41e3a", color: following ? "#c41e3a" : "white", border: "1px solid #c41e3a", padding: "4px 12px", borderRadius: "16px", cursor: "pointer", fontWeight: "700", fontSize: "12px" }}>
-                      {followLoading ? "..." : following ? "? Following" : "+ Follow"}
+                      {followLoading ? "..." : following ? "Following" : "+ Follow"}
                     </button>
                   )}
                 </div>

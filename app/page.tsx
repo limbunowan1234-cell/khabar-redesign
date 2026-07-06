@@ -142,9 +142,9 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: isDarkMode ? '#777' : '#999' }}>
                   <span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
-                  <span>�</span>
+                  <span> - </span>
                   <span>{readingTime(article.content)}</span>
-                  {article.views > 0 && <span>� {article.views.toLocaleString()} views</span>}
+                  {article.views > 0 && <span>{article.views.toLocaleString()} views</span>}
                 </div>
               </div>
             </div>
@@ -174,7 +174,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
                 </div>
                 <div style={{ display: 'flex', gap: '10px', fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
                   <span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
-                  <span>�</span>
+                  <span> - </span>
                   <span>{readingTime(article.content)}</span>
                 </div>
               </div>
@@ -197,7 +197,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
               <h3 style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
             </div>
             <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: isDarkMode ? '#999' : '#888' }}>
-              <span>{author}</span><span>�</span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span><span>�</span><span>{readingTime(article.content)}</span>
+              <span>{author}</span><span> - </span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span><span> - </span><span>{readingTime(article.content)}</span>
             </div>
           </div>
         </div>
@@ -218,8 +218,8 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: isDarkMode ? '#777' : '#999' }}>
               <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: catColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: '700' }}>{getInitials(author)}</div>
               <span style={{ fontWeight: '600', color: isDarkMode ? '#bbb' : '#555' }}>{author}</span>
-              <span>�</span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
-              <span>�</span><span>{readingTime(article.content)}</span>
+              <span> - </span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
+              <span> - </span><span>{readingTime(article.content)}</span>
             </div>
           </div>
         </div>
@@ -312,7 +312,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
             <span style={{ backgroundColor: catColor, color: 'white', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' }}>{article.category}</span>
             <h3 style={{ fontSize: '14px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: '6px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
             <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: isDarkMode ? '#999' : '#888' }}>
-              <span>{author}</span><span>�</span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
+              <span>{author}</span><span> - </span><span>{fmtDate(article.publishedAt || article.$createdAt)}</span>
             </div>
           </div>
         </div>
@@ -749,7 +749,7 @@ export default function Home() {
             </div>
             <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>About</h3>
-              <p style={{ fontSize: '13px', color: isDarkMode ? '#aaa' : '#666', lineHeight: '1.6', margin: '0 0 12px' }}>The Digital Home of Darjeeling � bringing you the latest news from the hills, tea gardens, and Gorkha community.</p>
+              <p style={{ fontSize: '13px', color: isDarkMode ? '#aaa' : '#666', lineHeight: '1.6', margin: '0 0 12px' }}>The Digital Home of Darjeeling - bringing you the latest news from the hills, tea gardens, and Gorkha community.</p>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {['Darjeeling', 'Kalimpong', 'GTA', 'Tea Gardens', 'Politics'].map(tag => (
                   <span key={tag} onClick={() => setSelectedCategory(tag)} style={{ padding: '4px 10px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f0f0f0', color: isDarkMode ? '#ddd' : '#555', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>{tag}</span>
@@ -796,7 +796,7 @@ export default function Home() {
 
       {!isMobile && (
         <footer style={{ backgroundColor: isDarkMode ? '#1e1e1e' : '#1a1a1a', color: '#aaa', padding: '24px 20px', textAlign: 'center', marginTop: '40px' }}>
-          <p style={{ margin: 0, fontSize: '14px' }}>� 2026 Khabar Darjeeling. All rights reserved.</p>
+          <p style={{ margin: 0, fontSize: '14px' }}>(c) 2026 Khabar Darjeeling. All rights reserved.</p>
         </footer>
       )}
     </div>
