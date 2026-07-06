@@ -23,7 +23,7 @@ function describe(code: number): { label: string; icon: string } {
   return { label: 'Clear', icon: '\uD83C\uDF24\uFE0F' };
 }
 
-function getAlert(code: number, maxTemp: number): string | null {
+function getAlert(code: number, maxTemp: number | null): string | null {
   if (code >= 95) return 'Thunderstorm warning - avoid outdoor travel';
   if (code >= 82 && code <= 86) return 'Heavy rain/snow showers expected';
   if (code >= 65 && code <= 67) return 'Heavy rain alert - landslide risk in hill areas';
