@@ -31,6 +31,11 @@ function getImageUrl(article: any): string {
   return ENDPOINT + '/storage/buckets/article-image/files/' + article.imageFileId + '/view?project=' + projectId;
 }
 
+function getThumbUrl(article: any, width: number): string {
+  if (!article.imageFileId) return '';
+  return ENDPOINT + '/storage/buckets/article-image/files/' + article.imageFileId + '/preview?width=' + width + '&quality=70&project=' + projectId;
+}
+
 function truncateText(text: string, words: number): string {
   if (!text) return '';
   const w = text.split(' ').slice(0, words).join(' ');
@@ -88,7 +93,7 @@ function HeroSection({ articles, isDarkMode }: any) {
       <div className='hero-layout' style={{ padding: '20px' }}>
         <div className='hero-main' style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           {shuffled.map((article) => {
-          const img = getImageUrl(article);
+          const img = getThumbUrl(article, 400);
           const preview = truncateText(article.content || article.summary || '', 30);
           return (
             <Link key={article.$id} href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', display: 'block', borderRadius: '10px', overflow: 'hidden', transition: 'transform 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
@@ -109,7 +114,7 @@ function HeroSection({ articles, isDarkMode }: any) {
 }
 
 function DesktopCard({ article, isDarkMode, featured }: any) {
-  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
+  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getThumbUrl(article, 500);
   const author = article.submitterName || article.authorName || 'Staff Reporter';
   const catColor = getCategoryColor(article.category);
   const hasImage = !!imgUrl;
@@ -226,7 +231,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
 }
 
 function MobileCard({ article, isDarkMode, index }: any) {
-  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
+  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getThumbUrl(article, 350);
   const author = article.submitterName || article.authorName || 'Staff Reporter';
   const catColor = getCategoryColor(article.category);
   const hasImage = !!imgUrl;
