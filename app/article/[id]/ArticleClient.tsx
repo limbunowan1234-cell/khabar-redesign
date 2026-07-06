@@ -1,9 +1,10 @@
-'use client';
+﻿'use client';
 import AuthorBadge from '@/components/AuthorBadge';
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike, incrementViews } from '@/lib/appwrite';
 import { useAuthStore } from '@/lib/authStore';
 
@@ -306,8 +307,8 @@ export default function ArticleClient() {
 
       {/* HERO IMAGE */}
       {imgUrl && (
-        <div style={{ position: 'relative', width: '100%', maxHeight: '500px', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
-          <img src={imgUrl} alt={article.title} style={{ width: '100%', maxHeight: '500px', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
+        <div style={{ position: 'relative', width: '100%', height: '500px', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
+          <Image src={imgUrl} alt={article.title} fill sizes='100vw' priority style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.7) 100%)' }} />
           {article.category && <div style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: '#c41e3a', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>{article.category}</div>}
           {article.isBreaking && <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: '#f5c518', color: '#1a1a1a', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700' }}>🔴 BREAKING</div>}
