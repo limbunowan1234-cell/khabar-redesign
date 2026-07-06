@@ -20,9 +20,20 @@ function clean(text: string, max = 120): string {
   return t.length > max ? t.slice(0, max).trim() + '...' : t;
 }
 
-async function fetchArticle(id: string): Promise<any> {
+async function fetchArticle(idOrSlug: string): Promise<any> {
   try {
-    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents/' + id, {
+    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'slug', values: [idOrSlug] }));
+    const slugRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q, {
+      headers: { 'X-Appwrite-Project': PROJECT },
+      next: { revalidate: 300 },
+    });
+    if (slugRes.ok) {
+      const slugData = await slugRes.json();
+      if (slugData.documents && slugData.documents.length > 0) return slugData.documents[0];
+    }
+  } catch {}
+  try {
+    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents/' + idOrSlug, {
       headers: { 'X-Appwrite-Project': PROJECT },
       next: { revalidate: 300 },
     });
@@ -40,7 +51,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const title = a.title || 'Khabar Darjeeling';
   const description = clean(a.content || a.summary || '');
   const image = imgUrl(a);
-  const url = SITE + '/article/' + id;
+  const url = SITE + '/article/' + (a.slug || id);
   const author = a.submitterName || a.authorName || 'Khabar Darjeeling';
   const published = a.publishedAt || a.$createdAt;
   return {
