@@ -103,9 +103,6 @@ function HeroSection({ articles, isDarkMode }: any) {
           );
         })}
       </div>
-        <div className='top-creators-sidebar-desktop'>
-          <TopCreators />
-        </div>
       </div>
     </div>
   );
@@ -706,6 +703,7 @@ export default function Home() {
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
             <WeatherWidget variant="card" isDarkMode={isDarkMode} />
             <BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />
+              <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
             <TopTen articles={articles} isDarkMode={isDarkMode} />
             <ContestPreview articles={articles} isDarkMode={isDarkMode} />
             <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
