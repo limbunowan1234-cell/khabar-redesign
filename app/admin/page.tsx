@@ -36,6 +36,7 @@ export default function AdminPage() {
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
   const [postingStory, setPostingStory] = useState(false);
   const [storyTitle, setStoryTitle] = useState('');
+  const [coverPhotoId, setCoverPhotoId] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [view, setView] = useState('manage');
@@ -171,8 +172,9 @@ export default function AdminPage() {
     setError('');
     try {
       const selectedPhotos = photos.filter((p: any) => selectedPhotoIds.includes(p.$id));
-      const mainImageId = selectedPhotos[0].imageFileId;
-      const galleryIds = selectedPhotos.slice(1).map((p: any) => p.imageFileId);
+      const coverPhoto = selectedPhotos.find((p: any) => p.$id === coverPhotoId) || selectedPhotos[0];
+      const mainImageId = coverPhoto.imageFileId;
+      const galleryIds = selectedPhotos.filter((p: any) => p.$id !== coverPhoto.$id).map((p: any) => p.imageFileId);
       const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
         method: 'POST', headers: HJ, credentials: 'include',
         body: JSON.stringify({
@@ -200,7 +202,7 @@ export default function AdminPage() {
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Failed to post story'); }
       setSuccess('Photo story posted as article!');
-      setSelectedPhotoIds([]);
+      setSelectedPhotoIds([]); setCoverPhotoId(''); setCoverPhotoId('');
       setStoryTitle('');
     } catch (err: any) { setError(err.message || 'Failed to post story'); }
     setPostingStory(false);
@@ -525,6 +527,9 @@ export default function AdminPage() {
                 <div key={p.$id} style={{ borderRadius: '10px', overflow: 'hidden', border: selectedPhotoIds.includes(p.$id) ? '3px solid #0F4C5C' : '1px solid #eee', position: 'relative' }}>
                   {p.type === 'story' && (
                     <input type='checkbox' checked={selectedPhotoIds.includes(p.$id)} onChange={() => togglePhotoSelect(p.$id)} style={{ position: 'absolute', top: '6px', left: '6px', width: '20px', height: '20px', zIndex: 5, cursor: 'pointer' }} />
+                  )}
+                  {p.type === 'story' && selectedPhotoIds.includes(p.$id) && (
+                    <button onClick={() => setCoverPhotoId(p.$id)} style={{ position: 'absolute', top: '6px', right: '32px', width: '24px', height: '24px', borderRadius: '50%', border: 'none', backgroundColor: coverPhotoId === p.$id ? '#f5c518' : 'rgba(0,0,0,0.5)', color: coverPhotoId === p.$id ? '#1a1a1a' : '#fff', fontSize: '13px', cursor: 'pointer', zIndex: 5 }} title='Set as cover'>*</button>
                   )}
                   <img src={getImageUrl2(p.imageFileId)} alt={p.title || 'Photo'} style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
                   <div style={{ padding: '8px', backgroundColor: '#fafafa' }}>
