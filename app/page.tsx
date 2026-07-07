@@ -2,6 +2,7 @@
 import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
+import WeatherWarning from '@/components/WeatherWarning';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
@@ -707,6 +708,7 @@ export default function Home() {
           <aside>
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
             <WeatherWidget variant="card" isDarkMode={isDarkMode} />
+            <WeatherWarning isDarkMode={isDarkMode} />
             <BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />
               <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
