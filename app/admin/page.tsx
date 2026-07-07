@@ -351,6 +351,11 @@ function generateSlug(text: string): string {
     setIsFeatured(article.isFeatured);
     setIsContestEntry(article.isContestEntry);
     setImageFileId(article.imageFileId);
+    try {
+      const t = article.trackerData ? JSON.parse(article.trackerData) : null;
+      setTrackerTitle(t?.title || '');
+      setTrackerLines(t?.items ? t.items.map((it: any) => it.label + ': ' + it.value).join('\n') : '');
+    } catch { setTrackerTitle(''); setTrackerLines(''); }
     setImagePreview(article.imageFileId ? getImageUrl(article.imageFileId) : '');
     setView('edit');
   }
@@ -368,6 +373,7 @@ function generateSlug(text: string): string {
             title, content, category, location: location || 'Darjeeling',
             imageFileId: imageFileId || null,
             youtube_id: youtubeId || null,
+            trackerData: parseTracker(trackerTitle, trackerLines),
             isBreaking, isFeatured, isContestEntry
           }
         })
@@ -648,6 +654,13 @@ function generateSlug(text: string): string {
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>YouTube Video ID (Optional)</label>
                 <input value={youtubeId} onChange={(e) => setYoutubeId(e.target.value)} placeholder="e.g. dQw4w9WgXcQ" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
+
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Live Tracker Title (Optional)</label>
+                  <input value={trackerTitle} onChange={(e) => setTrackerTitle(e.target.value)} placeholder="e.g. GTA Power Tracker" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', marginBottom: '10px' }} />
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Tracker Items (one per line: Label: Value)</label>
+                  <textarea value={trackerLines} onChange={(e) => setTrackerLines(e.target.value)} placeholder="BGPM: 19 seats" rows={4} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', fontFamily: 'monospace' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: '500' }}>
