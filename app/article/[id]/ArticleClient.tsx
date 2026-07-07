@@ -111,6 +111,7 @@ export default function ArticleClient() {
   const [commentLikes, setCommentLikes] = useState<Record<string, number>>({});
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
   const [replyText, setReplyText] = useState('');
+  const [readProgress, setReadProgress] = useState(0);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState(0);
   const [postingReply, setPostingReply] = useState(false);
@@ -194,6 +195,17 @@ export default function ArticleClient() {
     load();
   }, [id, user]);
 
+  useEffect(() => {
+    function handleScroll() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0;
+      setReadProgress(pct);
+    }
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   async function handleLike() {
     if (!user) { window.location.href = '/auth'; return; }
     if (likeProcessing) return;
@@ -276,7 +288,7 @@ export default function ArticleClient() {
 
   if (!article) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-      <div style={{ fontSize: '48px' }}>📰</div>
+      <div style={{ fontSize: '48px' }}>{String.fromCodePoint(0x1F4F0)}</div>
       <p style={{ fontSize: '18px', fontWeight: '600', color: '#333' }}>Article not found</p>
       <Link href="/"><button style={{ backgroundColor: '#c41e3a', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Back to Home</button></Link>
     </div>
@@ -299,6 +311,7 @@ export default function ArticleClient() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5' }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, height: '3px', width: readProgress + '%', backgroundColor: '#c41e3a', zIndex: 999, transition: 'width 0.1s ease-out' }} />
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
