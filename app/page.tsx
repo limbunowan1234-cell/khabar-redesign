@@ -616,6 +616,7 @@ export default function Home() {
       {isMobile && !searchQuery && selectedCategory === 'All' && (
         <div style={{ padding: '10px 16px 0' }}>
           <WeatherWidget variant="banner" isDarkMode={isDarkMode} />
+          <WeatherWarning isDarkMode={isDarkMode} />
           <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '12px', padding: '12px 16px', textDecoration: 'none', marginBottom: '8px' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: '700', fontSize: '13px' }}>Download our Android App</div>
