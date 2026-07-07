@@ -55,6 +55,35 @@ function extractTags(title: string, category: string, location: string): string[
   return deduped.slice(0, 3);
 }
 
+function renderContent(content: string, isDarkMode: boolean) {
+  if (!content) return null;
+  const paragraphs = content.split(/\n+/).filter(p => p.trim().length > 0);
+  let firstParaDone = false;
+  return paragraphs.map((para, i) => {
+    const trimmed = para.trim();
+    if (trimmed.startsWith('>')) {
+      const quoteText = trimmed.replace(/^>+\s*/, '');
+      return (
+        <blockquote key={i} style={{ margin: '28px 0', padding: '4px 0 4px 20px', borderLeft: '4px solid #c41e3a', fontStyle: 'italic', fontSize: '21px', lineHeight: '1.6', color: isDarkMode ? '#f0c0c0' : '#7a1020', fontFamily: 'Georgia, serif' }}>
+          {quoteText}
+        </blockquote>
+      );
+    }
+    if (!firstParaDone) {
+      firstParaDone = true;
+      const firstChar = trimmed.charAt(0);
+      const rest = trimmed.slice(1);
+      return (
+        <p key={i} style={{ margin: '0 0 20px' }}>
+          <span style={{ float: 'left', fontSize: '64px', lineHeight: '52px', fontWeight: '800', paddingRight: '8px', paddingTop: '4px', color: '#c41e3a', fontFamily: 'Georgia, serif' }}>{firstChar}</span>
+          {rest}
+        </p>
+      );
+    }
+    return <p key={i} style={{ margin: '0 0 20px' }}>{trimmed}</p>;
+  });
+}
+
 function readingTime(content: string): string {
   const words = (content || '').split(' ').length;
   return Math.max(1, Math.ceil(words / 200)) + ' min read';
@@ -417,7 +446,7 @@ export default function ArticleClient() {
         {/* CONTENT */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '28px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
           <div style={{ fontSize: '17px', lineHeight: '1.9', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif' }}>
-            {article.category === 'Photo Story' ? '' : (article.content || article.summary)}
+            {article.category === 'Photo Story' ? '' : renderContent(article.content || article.summary, isDarkMode)}
           </div>
 
           {article.galleryImageIds && article.galleryImageIds.length > 0 && (
