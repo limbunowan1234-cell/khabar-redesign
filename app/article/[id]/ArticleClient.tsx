@@ -443,6 +443,25 @@ export default function ArticleClient() {
           </div>
         )}
 
+        {article.trackerData && (() => {
+          let tracker: any = null;
+          try { tracker = JSON.parse(article.trackerData); } catch {}
+          if (!tracker || !tracker.items || tracker.items.length === 0) return null;
+          return (
+            <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '20px 28px', borderTop: '3px solid #c41e3a', margin: '0 0 2px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: '800', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 14px' }}>Live: {tracker.title}</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {tracker.items.map((item: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < tracker.items.length - 1 ? '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') : 'none' }}>
+                    <span style={{ fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>{item.label}</span>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* CONTENT */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '28px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
           <div style={{ fontSize: '17px', lineHeight: '1.9', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif' }}>
