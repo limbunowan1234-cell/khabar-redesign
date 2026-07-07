@@ -311,7 +311,7 @@ export default function ArticleClient() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5' }}>
-      <div style={{ position: 'fixed', top: 0, left: 0, height: '3px', width: readProgress + '%', backgroundColor: '#c41e3a', zIndex: 999, transition: 'width 0.1s ease-out' }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, height: '3px', width: readProgress + '%', backgroundColor: '#f5c518', zIndex: 999, transition: 'width 0.1s ease-out' }} />
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
