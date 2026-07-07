@@ -48,6 +48,8 @@ export default function AdminPage() {
   const [category, setCategory] = useState('Darjeeling');
   const [location, setLocation] = useState('Darjeeling');
   const [youtubeId, setYoutubeId] = useState('');
+  const [trackerTitle, setTrackerTitle] = useState('');
+  const [trackerLines, setTrackerLines] = useState('');
   const [isBreaking, setIsBreaking] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isContestEntry, setIsContestEntry] = useState(false);
@@ -263,7 +265,19 @@ export default function AdminPage() {
     } catch (err: any) { setError(err.message || 'Backfill failed'); }
   }
 
-  function generateSlug(text: string): string {
+  function parseTracker(title: string, lines: string): string {
+  if (!title.trim() && !lines.trim()) return '';
+  const items = lines.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+    const parts = l.split(':');
+    const label = parts[0]?.trim() || '';
+    const value = parts.slice(1).join(':').trim() || '';
+    return { label, value };
+  }).filter(item => item.label);
+  if (items.length === 0 && !title.trim()) return '';
+  return JSON.stringify({ title: title.trim() || 'Tracker', items });
+}
+
+function generateSlug(text: string): string {
     const base = (text || '')
       .toLowerCase()
       .normalize('NFKD')
@@ -291,6 +305,7 @@ export default function AdminPage() {
           data: {
             title, content, category, location: location || 'Darjeeling',
               slug: generateSlug(title),
+              trackerData: parseTracker(trackerTitle, trackerLines),
             imageFileId: imageFileId || null,
             youtube_id: youtubeId || null,
             isBreaking, isFeatured, isContestEntry,
@@ -522,6 +537,13 @@ export default function AdminPage() {
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>YouTube Video ID (Optional)</label>
                 <input value={youtubeId} onChange={(e) => setYoutubeId(e.target.value)} placeholder="e.g. dQw4w9WgXcQ" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
+
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Live Tracker Title (Optional)</label>
+                  <input value={trackerTitle} onChange={(e) => setTrackerTitle(e.target.value)} placeholder="e.g. GTA Power Tracker" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', marginBottom: '10px' }} />
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Tracker Items (one per line: Label: Value)</label>
+                  <textarea value={trackerLines} onChange={(e) => setTrackerLines(e.target.value)} placeholder="BGPM: 19 seats" rows={4} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', fontFamily: 'monospace' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: '500' }}>
