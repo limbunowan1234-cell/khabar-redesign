@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import AuthorBadge from '@/components/AuthorBadge';
 
 import { useEffect, useState } from 'react';
@@ -30,6 +30,29 @@ function getInitials(name: string): string {
 function fmtDate(s: string): string {
   try { return new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }); }
   catch { return ''; }
+}
+
+function extractTags(title: string, category: string, location: string): string[] {
+  if (!title) return [];
+  const words = title.split(/\s+/);
+  const stopwords = new Set(['The', 'A', 'An', 'In', 'On', 'At', 'For', 'And', 'Or', 'But', 'Is', 'Are', 'Was', 'Were', 'To', 'Of', 'With', 'By', 'From', 'After', 'Before', 'How', 'Why', 'What', 'When', 'Life']);
+  const phrases: string[] = [];
+  let current: string[] = [];
+  for (const w of words) {
+    const clean = w.replace(/[^a-zA-Z0-9']/g, '');
+    if (clean.length > 0 && clean[0] === clean[0].toUpperCase() && /[a-zA-Z]/.test(clean[0]) && !stopwords.has(clean)) {
+      current.push(clean);
+    } else {
+      if (current.length > 0) phrases.push(current.join(' '));
+      current = [];
+    }
+  }
+  if (current.length > 0) phrases.push(current.join(' '));
+
+  const existing = new Set([category, location].filter(Boolean).map(s => s.toLowerCase()));
+  const unique = phrases.filter(p => p.length > 2 && !existing.has(p.toLowerCase()));
+  const deduped = Array.from(new Set(unique));
+  return deduped.slice(0, 3);
 }
 
 function readingTime(content: string): string {
@@ -418,7 +441,7 @@ export default function ArticleClient() {
           {article.category && (
             <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#aaa' : '#888' }}>Tags:</span>
-              {[article.category, article.location].filter(Boolean).map((tag, i) => (
+              {[...[article.category, article.location].filter(Boolean), ...extractTags(article.title, article.category, article.location)].map((tag, i) => (
                 <span key={i} style={{ backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5', color: '#c41e3a', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', border: '1px solid #c41e3a22' }}>{tag}</span>
               ))}
             </div>
