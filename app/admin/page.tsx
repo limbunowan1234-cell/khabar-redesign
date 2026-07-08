@@ -331,6 +331,24 @@ function generateSlug(text: string): string {
     setPublishing(false);
   }
 
+  async function toggleWeeklyPick(articleId: string, currentValue: boolean) {
+    try {
+      let issueNum = null;
+      if (!currentValue) {
+        const q = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: 'weeklyIssue' }));
+        const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })), { headers: H, credentials: 'include' });
+        const data = await res.json();
+        const highest = data.documents?.[0]?.weeklyIssue || 0;
+        issueNum = highest + 1;
+      }
+      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
+        method: 'PATCH', headers: HJ, credentials: 'include',
+        body: JSON.stringify({ data: { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null } })
+      });
+      await loadArticles();
+    } catch { setError('Weekly toggle failed'); }
+  }
+
   async function handleDelete(articleId: string, title: string) {
     if (!confirm('Delete ' + title + '? This cannot be undone.')) return;
     try {
@@ -501,6 +519,7 @@ function generateSlug(text: string): string {
                       <button onClick={() => handleEdit(article)} style={{ padding: '6px 12px', backgroundColor: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Edit</button>
                       <button onClick={() => toggleFeatured(article.$id, !article.isFeatured)} style={{ padding: '6px 12px', backgroundColor: '#fff3e0', color: '#e65100', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{article.isFeatured ? 'Unfeature' : 'Feature'}</button>
                       <button onClick={() => toggleBreaking(article.$id, !article.isBreaking)} style={{ padding: '6px 12px', backgroundColor: '#ffebee', color: '#c41e3a', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{article.isBreaking ? 'Unbreak' : 'Breaking'}</button>
+                      <button onClick={() => toggleWeeklyPick(article.$id, !!article.isWeeklyPick)} style={{ padding: '6px 12px', backgroundColor: article.isWeeklyPick ? '#7a1f1f' : '#f3e5f5', color: article.isWeeklyPick ? '#fff' : '#6a1b9a', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{article.isWeeklyPick ? 'In Weekly' : 'Add to Weekly'}</button>
                       <Link href={'/article/' + article.$id}><button style={{ padding: '6px 12px', backgroundColor: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', width: '100%' }}>View</button></Link>
                       <button onClick={() => handleDelete(article.$id, article.title)} style={{ padding: '6px 12px', backgroundColor: '#ffebee', color: '#c41e3a', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Delete</button>
                     </div>
