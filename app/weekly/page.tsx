@@ -30,6 +30,7 @@ export default function WeeklyPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -114,7 +115,7 @@ export default function WeeklyPage() {
           <p style={{ textAlign: 'center', fontSize: '12px', color: '#c41e3a', letterSpacing: '3px', textTransform: 'uppercase', margin: '8px 0 0', fontWeight: 700 }}>Voice of Hills</p>
         </div>
 
-        <Link href={'/article/' + (lead.slug || lead.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <div onClick={() => setExpandedId(expandedId === lead.$id ? null : lead.$id)} style={{ cursor: 'pointer' }}>
           <div style={{ padding: '22px 28px', borderBottom: '1px solid #eee' }}>
             <div style={{ display: 'inline-block', backgroundColor: '#fbe4e4', color: '#c41e3a', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '3px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Lead Story</div>
             {leadImg && (
@@ -123,17 +124,22 @@ export default function WeeklyPage() {
               </div>
             )}
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '26px', fontWeight: 500, lineHeight: 1.3, margin: '0 0 10px', color: '#1a1a1a' }}>{lead.title}</h2>
-            <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.6, margin: '0 0 12px' }}>
-              {(lead.content || '').replace(/<[^>]*>/g, '').slice(0, 160)}...
+            <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>
+              {expandedId === lead.$id ? (lead.content || '').replace(/<[^>]*>/g, '') : (lead.content || '').replace(/<[^>]*>/g, '').slice(0, 160) + '...'}
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#888' }}>
-              <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: '#c41e3a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700 }}>
-                {(lead.submitterName || lead.authorName || 'S').charAt(0).toUpperCase()}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#888' }}>
+                <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: '#c41e3a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700 }}>
+                  {(lead.submitterName || lead.authorName || 'S').charAt(0).toUpperCase()}
+                </div>
+                <span>By {lead.submitterName || lead.authorName || 'Staff Reporter'}</span>
               </div>
-              <span>By {lead.submitterName || lead.authorName || 'Staff Reporter'}</span>
+              {expandedId === lead.$id && (
+                <Link href={'/article/' + (lead.slug || lead.$id)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textDecoration: 'none' }}>Comments &amp; more -&gt;</Link>
+              )}
             </div>
           </div>
-        </Link>
+        </div>
 
         {secondary.length > 0 && (() => {
           const bySection: Record<string, any[]> = {};
@@ -156,15 +162,21 @@ export default function WeeklyPage() {
                         const color = DOT_COLORS[dotIdx % DOT_COLORS.length];
                         dotIdx++;
                         return (
-                          <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: i < items.length - 1 ? '1px solid #eee' : 'none' }}>
+                          <div key={a.$id} onClick={() => setExpandedId(expandedId === a.$id ? null : a.$id)} style={{ cursor: 'pointer', padding: '12px 0', borderBottom: i < items.length - 1 ? '1px solid #eee' : 'none' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a', lineHeight: 1.4 }}>{a.title}</div>
                                 <div style={{ fontSize: '12px', color: '#999', marginTop: '3px' }}>By {a.submitterName || a.authorName || 'Staff Reporter'}</div>
                               </div>
                             </div>
-                          </Link>
+                            {expandedId === a.$id && (
+                              <div style={{ marginTop: '10px', paddingLeft: '18px' }}>
+                                <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, margin: '0 0 8px', whiteSpace: 'pre-wrap' }}>{(a.content || '').replace(/<[^>]*>/g, '')}</p>
+                                <Link href={'/article/' + (a.slug || a.$id)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textDecoration: 'none' }}>Comments &amp; more -&gt;</Link>
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
