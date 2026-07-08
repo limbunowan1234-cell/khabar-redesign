@@ -582,7 +582,7 @@ export default function ArticleClient() {
                             </button>
                           )}
                           {canDelete && (
-                            <button className="del-btn" onClick={() => handleDelete(c.$id)}>🗑 Delete</button>
+                            <button className="del-btn" onClick={() => handleDelete(c.$id)}>🗑️ Delete</button>
                           )}
                         </div>
                       </div>
@@ -623,7 +623,7 @@ export default function ArticleClient() {
                                 </div>
                                 <p style={{ margin: '0 0 4px', fontSize: '13px', color: isDarkMode ? '#ccc' : '#444', lineHeight: '1.4' }}>{r.commentText}</p>
                                 {canDeleteReply && (
-                                  <button className="del-btn" onClick={() => handleDelete(r.$id)} style={{ fontSize: '11px' }}>🗑 Delete</button>
+                                  <button className="del-btn" onClick={() => handleDelete(r.$id)} style={{ fontSize: '11px' }}>🗑️ Delete</button>
                                 )}
                               </div>
                             </div>

@@ -119,22 +119,22 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
   const author = article.submitterName || article.authorName || 'Staff Reporter';
   const catColor = getCategoryColor(article.category);
   const hasImage = !!imgUrl;
-  const preview = truncateText(article.content || '', 50); // 50-word preview
+  const preview = truncateText(article.content || '', 65); // 65-word preview
 
   if (!featured) {
     if (hasImage) {
       return (
         <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', marginBottom: '20px', display: 'grid', gridTemplateColumns: '1.4fr 1fr', minHeight: '220px' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.15)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)'; }}>
+          <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', marginBottom: '20px', display: 'grid', gridTemplateColumns: '1.4fr 1fr', height: '220px' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.15)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)'; }}>
             <div style={{ position: 'relative', overflow: 'hidden' }}>
-              <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: '220px' }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.background = 'linear-gradient(135deg,' + catColor + ',#1a1a1a)'; (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.background = 'linear-gradient(135deg,' + catColor + ',#1a1a1a)'; (e.target as HTMLImageElement).style.display = 'none'; }} />
               <div style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: catColor, color: 'white', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' }}>{article.category}</div>
               {article.isFeatured && <div style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: '#f5c518', color: '#1a1a1a', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '700' }}>FEATURED</div>}
               {article.isBreaking && <div style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: '#c41e3a', color: 'white', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '700' }}>BREAKING</div>}
             </div>
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderLeft: '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f0f0f0') }}>
               <div>
-                <h2 style={{ fontSize: '18px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.35', margin: '0 0 10px' }}>{article.title}</h2>
+                <h2 style={{ fontSize: '18px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.35', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h2>
                 {/* NEW: 50-word preview */}
                 <p style={{ color: isDarkMode ? '#bbb' : '#666', fontSize: '13px', lineHeight: '1.6', margin: '0 0 16px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
               </div>
