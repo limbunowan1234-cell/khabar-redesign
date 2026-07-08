@@ -334,7 +334,9 @@ function generateSlug(text: string): string {
   async function toggleWeeklyPick(articleId: string, currentValue: boolean) {
     try {
       let issueNum = null;
+      let sectionName = '';
       if (!currentValue) {
+        sectionName = prompt('Section name for this story (e.g. Community Voices, Ground Reports):', '') || 'Community Voices';
         const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'weeklyLive', values: [true] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: 'weeklyIssue' }));
         const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })), { headers: H, credentials: 'include' });
         const data = await res.json();
@@ -343,7 +345,7 @@ function generateSlug(text: string): string {
       }
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
         method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null, weeklyLive: false } })
+        body: JSON.stringify({ data: { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null, weeklyLive: false, weeklySection: !currentValue ? sectionName : null } })
       });
       await loadArticles();
     } catch { setError('Weekly toggle failed'); }
