@@ -123,7 +123,7 @@ function CategorySections({ articles, isDarkMode, onSelectCategory }: any) {
     grouped[a.category].push(a);
   }
   const cats = Object.keys(grouped)
-    .filter(c => grouped[c].length >= 3)
+    .filter(c => grouped[c].length >= 5)
     .sort((a, b) => {
       const ai = priorityCats.indexOf(a);
       const bi = priorityCats.indexOf(b);
@@ -139,20 +139,28 @@ function CategorySections({ articles, isDarkMode, onSelectCategory }: any) {
   return (
     <div>
       {cats.map((cat) => {
-        const items = grouped[cat].slice(0, 3);
+        const items = grouped[cat].slice(0, 5);
+        const dotColor = getCategoryColor(cat);
         return (
           <div key={cat} style={{ marginBottom: '28px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-              <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <span style={{ width: '4px', height: '20px', backgroundColor: dotColor, borderRadius: '2px', display: 'inline-block' }} />
               <h2 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>{cat}</h2>
               <button onClick={() => onSelectCategory(cat)} style={{ marginLeft: 'auto', fontSize: '12px', fontWeight: '700', color: '#c41e3a', background: 'none', border: 'none', cursor: 'pointer' }}>View All -&gt;</button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-              {items.map((article: any) => (
-                <div key={article.$id}>
-                  <DesktopCard article={article} isDarkMode={isDarkMode} featured={false} />
-                </div>
-              ))}
+            <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '4px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              {items.map((article: any, idx: number) => {
+                const author = article.submitterName || article.authorName || 'Staff Reporter';
+                return (
+                  <a key={article.$id} href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: idx < items.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f0f0f0') : 'none' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: dotColor, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '15px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4' }}>{article.title}</div>
+                      <div style={{ fontSize: '12px', color: isDarkMode ? '#999' : '#888', marginTop: '4px' }}>By {author}</div>
+                    </div>
+                  </a>
+                );
+              })}
             </div>
           </div>
         );
