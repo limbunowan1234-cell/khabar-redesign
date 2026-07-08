@@ -343,7 +343,7 @@ function generateSlug(text: string): string {
       }
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
         method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null } })
+        body: JSON.stringify({ data: { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null, weeklyLive: false } })
       });
       await loadArticles();
     } catch { setError('Weekly toggle failed'); }
