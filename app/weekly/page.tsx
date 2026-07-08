@@ -120,8 +120,8 @@ export default function WeeklyPage() {
           <div style={{ padding: '22px 28px', borderBottom: '1px solid #eee' }}>
             <div style={{ display: 'inline-block', backgroundColor: '#fbe4e4', color: '#c41e3a', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '3px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Lead Story</div>
             {leadImg && (
-              <div style={{ width: '100%', height: '220px', borderRadius: '4px', overflow: 'hidden', marginBottom: '14px', backgroundColor: '#eee' }}>
-                <img src={leadImg} alt={lead.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ width: '100%', maxHeight: '320px', borderRadius: '4px', overflow: 'hidden', marginBottom: '14px', backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src={leadImg} alt={lead.title} style={{ width: '100%', maxHeight: '320px', objectFit: 'contain' }} />
               </div>
             )}
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '26px', fontWeight: 500, lineHeight: 1.3, margin: '0 0 10px', color: '#1a1a1a' }}>{lead.title}</h2>
