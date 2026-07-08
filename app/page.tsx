@@ -114,6 +114,53 @@ function HeroSection({ articles, isDarkMode }: any) {
   );
 }
 
+function CategorySections({ articles, isDarkMode, onSelectCategory }: any) {
+  const priorityCats = ['Politics', 'Culture', 'Tourism', 'Sports', 'Tea Gardens', 'Education'];
+  const grouped: Record<string, any[]> = {};
+  for (const a of articles) {
+    if (!a.category) continue;
+    if (!grouped[a.category]) grouped[a.category] = [];
+    grouped[a.category].push(a);
+  }
+  const cats = Object.keys(grouped)
+    .filter(c => grouped[c].length >= 3)
+    .sort((a, b) => {
+      const ai = priorityCats.indexOf(a);
+      const bi = priorityCats.indexOf(b);
+      if (ai === -1 && bi === -1) return grouped[b].length - grouped[a].length;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    })
+    .slice(0, 4);
+
+  if (cats.length === 0) return null;
+
+  return (
+    <div>
+      {cats.map((cat) => {
+        const items = grouped[cat].slice(0, 3);
+        return (
+          <div key={cat} style={{ marginBottom: '28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
+              <h2 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>{cat}</h2>
+              <button onClick={() => onSelectCategory(cat)} style={{ marginLeft: 'auto', fontSize: '12px', fontWeight: '700', color: '#c41e3a', background: 'none', border: 'none', cursor: 'pointer' }}>View All -&gt;</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              {items.map((article: any) => (
+                <div key={article.$id}>
+                  <DesktopCard article={article} isDarkMode={isDarkMode} featured={false} />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function DesktopCard({ article, isDarkMode, featured }: any) {
   const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
   const author = article.submitterName || article.authorName || 'Staff Reporter';
@@ -688,6 +735,9 @@ export default function Home() {
                 </div>
                 <DesktopCard article={featuredArticle} isDarkMode={isDarkMode} featured={true} />
               </div>
+            )}
+            {!searchQuery && selectedCategory === 'All' && (
+              <CategorySections articles={articles} isDarkMode={isDarkMode} onSelectCategory={setSelectedCategory} />
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
