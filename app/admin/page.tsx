@@ -50,6 +50,7 @@ export default function AdminPage() {
   const [youtubeId, setYoutubeId] = useState('');
   const [trackerTitle, setTrackerTitle] = useState('');
   const [trackerLines, setTrackerLines] = useState('');
+  const [weeklyPicks, setWeeklyPicks] = useState<any[]>([]);
   const [isBreaking, setIsBreaking] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isContestEntry, setIsContestEntry] = useState(false);
@@ -351,6 +352,58 @@ function generateSlug(text: string): string {
     } catch { setError('Weekly toggle failed'); }
   }
 
+  async function loadWeeklyPicks() {
+    try {
+      const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'isWeeklyPick', values: [true] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'weeklyLive', values: [false] }));
+      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderAsc', attribute: 'weeklyOrder' })), { headers: H, credentials: 'include' });
+      const data = await res.json();
+      setWeeklyPicks(data.documents || []);
+    } catch { setError('Failed to load weekly picks'); }
+  }
+
+  async function moveWeeklyPick(articleId: string, direction: 'up' | 'down') {
+    const idx = weeklyPicks.findIndex((a) => a.$id === articleId);
+    if (idx === -1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= weeklyPicks.length) return;
+    const a = weeklyPicks[idx];
+    const b = weeklyPicks[swapIdx];
+    try {
+      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + a.$id, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { weeklyOrder: swapIdx } }) });
+      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + b.$id, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { weeklyOrder: idx } }) });
+      await loadWeeklyPicks();
+    } catch { setError('Reorder failed'); }
+  }
+
+  async function changeSection(articleId: string) {
+    const newSection = prompt('New section name:', '');
+    if (!newSection) return;
+    try {
+      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { weeklySection: newSection } }) });
+      await loadWeeklyPicks();
+    } catch { setError('Section change failed'); }
+  }
+
+  async function setLeadStory(articleId: string) {
+    try {
+      for (const p of weeklyPicks) {
+        if (p.isWeeklyLead) {
+          await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + p.$id, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { isWeeklyLead: false } }) });
+        }
+      }
+      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { isWeeklyLead: true } }) });
+      await loadWeeklyPicks();
+    } catch { setError('Set lead failed'); }
+  }
+
+  async function removeFromWeekly(articleId: string) {
+    if (!confirm('Remove this story from the Weekly?')) return;
+    try {
+      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { isWeeklyPick: false, weeklyIssue: null, weeklySection: null, isWeeklyLead: false, weeklyOrder: 0 } }) });
+      await loadWeeklyPicks();
+    } catch { setError('Remove failed'); }
+  }
+
   async function handleDelete(articleId: string, title: string) {
     if (!confirm('Delete ' + title + '? This cannot be undone.')) return;
     try {
@@ -458,6 +511,7 @@ function generateSlug(text: string): string {
             <button onClick={() => setView('manage')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'manage' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'manage' ? '#0F4C5C' : 'white' }}>Manage</button>
             <button onClick={() => setView('publish')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'publish' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'publish' ? '#0F4C5C' : 'white' }}>+ Publish</button>
               <button onClick={() => setView('photos')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'photos' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'photos' ? '#0F4C5C' : 'white' }}>+ Photos</button>
+              <button onClick={() => { setView('weekly'); loadWeeklyPicks(); }} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'weekly' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'weekly' ? '#0F4C5C' : 'white' }}>Weekly</button>
           </div>
         </div>
       </div>
@@ -642,6 +696,37 @@ function generateSlug(text: string): string {
             </div>
           </div>
         )}
+        {view === 'weekly' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxWidth: '900px', margin: '0 auto' }}>
+            <h2 style={{ color: '#0F4C5C', marginBottom: '8px', borderBottom: '2px solid #D4AF37', paddingBottom: '10px' }}>Weekly Editor</h2>
+            <p style={{ fontSize: '13px', color: '#888', marginBottom: '20px' }}>Draft picks for the next issue. Goes live automatically on Sunday.</p>
+            <button onClick={loadWeeklyPicks} style={{ padding: '8px 16px', backgroundColor: '#0F4C5C', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', marginBottom: '20px' }}>Refresh List</button>
+            {weeklyPicks.length === 0 ? (
+              <p style={{ color: '#888', fontSize: '14px' }}>No picks yet. Go to Manage and click 'Add to Weekly' on articles.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {weeklyPicks.map((a: any, i: number) => (
+                  <div key={a.$id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', backgroundColor: a.isWeeklyLead ? '#fff8e1' : '#f9f9f9', borderRadius: '8px', border: a.isWeeklyLead ? '2px solid #D4AF37' : '1px solid #eee' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <button onClick={() => moveWeeklyPick(a.$id, 'up')} disabled={i === 0} style={{ background: 'none', border: 'none', cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.3 : 1, fontSize: '14px' }}>Up</button>
+                      <button onClick={() => moveWeeklyPick(a.$id, 'down')} disabled={i === weeklyPicks.length - 1} style={{ background: 'none', border: 'none', cursor: i === weeklyPicks.length - 1 ? 'default' : 'pointer', opacity: i === weeklyPicks.length - 1 ? 0.3 : 1, fontSize: '14px' }}>Down</button>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#1a1a1a', marginBottom: '4px' }}>{a.isWeeklyLead && 'LEAD - '}{a.title}</div>
+                      <div style={{ fontSize: '12px', color: '#888' }}>Section: {a.weeklySection || 'None'}</div>
+                    </div>
+                    <button onClick={() => changeSection(a.$id)} style={{ padding: '6px 12px', backgroundColor: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Change Section</button>
+                    {!a.isWeeklyLead && (
+                      <button onClick={() => setLeadStory(a.$id)} style={{ padding: '6px 12px', backgroundColor: '#fff3e0', color: '#e65100', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Make Lead</button>
+                    )}
+                    <button onClick={() => removeFromWeekly(a.$id)} style={{ padding: '6px 12px', backgroundColor: '#ffebee', color: '#c41e3a', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Remove</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
 
         {view === 'edit' && editingArticle && (
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
