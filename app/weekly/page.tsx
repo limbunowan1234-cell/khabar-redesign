@@ -1,0 +1,170 @@
+'use client';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
+const PROJECT = 'khabardarjeeling';
+const DB = 'Khabar_db';
+const H = { 'X-Appwrite-Project': PROJECT };
+
+const DOT_COLORS = ['#c41e3a', '#2e7d32', '#7b1fa2', '#e65100', '#1565c0', '#00838f'];
+
+function fmtDateRange(articles: any[]): string {
+  if (articles.length === 0) return '';
+  const dates = articles.map(a => new Date(a.publishedAt || a.$createdAt)).sort((a, b) => a.getTime() - b.getTime());
+  const start = dates[0];
+  const end = dates[dates.length - 1];
+  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
+  return start.toLocaleDateString('en-US', opts) + ' - ' + end.toLocaleDateString('en-US', { ...opts, year: 'numeric' });
+}
+
+function getImageUrl(fileId: string): string {
+  if (!fileId) return '';
+  return ENDPOINT + '/storage/buckets/article-image/files/' + fileId + '/view?project=' + PROJECT;
+}
+
+export default function WeeklyPage() {
+  const [allIssues, setAllIssues] = useState<number[]>([]);
+  const [currentIssue, setCurrentIssue] = useState<number | null>(null);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const wantsPreview = params.get('preview') === 'true';
+        const issueParam = params.get('issue');
+
+        const authRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
+        const authData = authRes.ok ? await authRes.json() : null;
+        const adminCheck = authData?.labels?.includes('admin') || authData?.email === 'nowanad@gmail.com';
+        setIsAdmin(!!adminCheck);
+
+        const liveField = (wantsPreview && adminCheck) ? 'isWeeklyPick' : 'weeklyLive';
+        setPreviewMode(wantsPreview && adminCheck);
+
+        const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: liveField, values: [true] }));
+        const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [200] })), { headers: H, credentials: 'include' });
+        if (!res.ok) { setLoading(false); return; }
+        const data = await res.json();
+        const docs = data.documents || [];
+
+        const issueNumbers = Array.from(new Set(docs.map((d: any) => d.weeklyIssue).filter(Boolean))).sort((a: any, b: any) => b - a) as number[];
+        setAllIssues(issueNumbers);
+
+        const targetIssue = issueParam ? parseInt(issueParam) : issueNumbers[0];
+        setCurrentIssue(targetIssue || null);
+
+        const issueArticles = docs.filter((d: any) => d.weeklyIssue === targetIssue);
+        setArticles(issueArticles);
+      } catch (e) {
+        console.error(e);
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '36px', height: '36px', border: '3px solid #eee', borderTopColor: '#c41e3a', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    );
+  }
+
+  if (!currentIssue || articles.length === 0) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '20px', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '22px' }}>No edition yet</h2>
+        <p style={{ color: '#888', fontSize: '14px' }}>Check back Sunday for the next issue of Khabar Darjeeling Weekly.</p>
+        <Link href="/" style={{ color: '#c41e3a', fontWeight: 700, textDecoration: 'none', marginTop: '10px' }}>Back to Home</Link>
+      </div>
+    );
+  }
+
+  const lead = articles[0];
+  const secondary = articles.slice(1);
+  const dateRange = fmtDateRange(articles);
+  const leadImg = getImageUrl(lead.imageFileId);
+
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#fdfaf5', paddingBottom: '60px' }}>
+      {previewMode && (
+        <div style={{ backgroundColor: '#7a1f1f', color: '#fff', textAlign: 'center', padding: '10px', fontSize: '13px', fontWeight: 700 }}>
+          PREVIEW MODE - This issue is not live yet
+        </div>
+      )}
+
+      <div style={{ maxWidth: '680px', margin: '0 auto', padding: '20px 16px 0' }}>
+        <Link href="/" style={{ color: '#c41e3a', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>&larr; Back to Home</Link>
+      </div>
+
+      <div style={{ maxWidth: '680px', margin: '20px auto 0', backgroundColor: '#fff', border: '1px solid #e5e0d5', borderRadius: '4px', overflow: 'hidden' }}>
+
+        <div style={{ padding: '24px 28px 18px', borderBottom: '3px double #1a1a1a' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666', marginBottom: '10px' }}>
+            <span>Issue No. {String(currentIssue).padStart(2, '0')}</span>
+            <span>{dateRange}</span>
+          </div>
+          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: '32px', fontWeight: 500, textAlign: 'center', letterSpacing: '1px', margin: 0, color: '#1a1a1a' }}>Khabar Darjeeling Weekly</h1>
+          <p style={{ textAlign: 'center', fontSize: '12px', color: '#c41e3a', letterSpacing: '3px', textTransform: 'uppercase', margin: '8px 0 0', fontWeight: 700 }}>Voice of Hills</p>
+        </div>
+
+        <Link href={'/article/' + (lead.slug || lead.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div style={{ padding: '22px 28px', borderBottom: '1px solid #eee' }}>
+            <div style={{ display: 'inline-block', backgroundColor: '#fbe4e4', color: '#c41e3a', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '3px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Lead Story</div>
+            {leadImg && (
+              <div style={{ width: '100%', height: '220px', borderRadius: '4px', overflow: 'hidden', marginBottom: '14px', backgroundColor: '#eee' }}>
+                <img src={leadImg} alt={lead.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            )}
+            <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '26px', fontWeight: 500, lineHeight: 1.3, margin: '0 0 10px', color: '#1a1a1a' }}>{lead.title}</h2>
+            <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.6, margin: '0 0 12px' }}>
+              {(lead.content || '').replace(/<[^>]*>/g, '').slice(0, 160)}...
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#888' }}>
+              <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: '#c41e3a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700 }}>
+                {(lead.submitterName || lead.authorName || 'S').charAt(0).toUpperCase()}
+              </div>
+              <span>By {lead.submitterName || lead.authorName || 'Staff Reporter'}</span>
+            </div>
+          </div>
+        </Link>
+
+        {secondary.length > 0 && (
+          <div style={{ padding: '18px 28px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>Also This Week</p>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {secondary.map((a: any, i: number) => (
+                <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: i < secondary.length - 1 ? '1px solid #eee' : 'none' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: DOT_COLORS[i % DOT_COLORS.length], flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a', lineHeight: 1.4 }}>{a.title}</div>
+                      <div style={{ fontSize: '12px', color: '#999', marginTop: '3px' }}>By {a.submitterName || a.authorName || 'Staff Reporter'}</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {allIssues.length > 1 && (
+          <div style={{ padding: '14px 28px', backgroundColor: '#f7f4ee', textAlign: 'center', borderTop: '1px solid #e5e0d5' }}>
+            <span style={{ fontSize: '12px', color: '#666', marginRight: '10px' }}>Back issues:</span>
+            {allIssues.filter(n => n !== currentIssue).map((n) => (
+              <Link key={n} href={'/weekly?issue=' + n} style={{ fontSize: '12px', color: '#c41e3a', textDecoration: 'none', marginRight: '10px', fontWeight: 600 }}>
+                Issue {String(n).padStart(2, '0')}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
