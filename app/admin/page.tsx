@@ -335,7 +335,7 @@ function generateSlug(text: string): string {
     try {
       let issueNum = null;
       if (!currentValue) {
-        const q = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: 'weeklyIssue' }));
+        const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'weeklyLive', values: [true] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: 'weeklyIssue' }));
         const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })), { headers: H, credentials: 'include' });
         const data = await res.json();
         const highest = data.documents?.[0]?.weeklyIssue || 0;
