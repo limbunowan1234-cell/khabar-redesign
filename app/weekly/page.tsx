@@ -135,24 +135,45 @@ export default function WeeklyPage() {
           </div>
         </Link>
 
-        {secondary.length > 0 && (
-          <div style={{ padding: '18px 28px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>Also This Week</p>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {secondary.map((a: any, i: number) => (
-                <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: i < secondary.length - 1 ? '1px solid #eee' : 'none' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: DOT_COLORS[i % DOT_COLORS.length], flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a', lineHeight: 1.4 }}>{a.title}</div>
-                      <div style={{ fontSize: '12px', color: '#999', marginTop: '3px' }}>By {a.submitterName || a.authorName || 'Staff Reporter'}</div>
+        {secondary.length > 0 && (() => {
+          const bySection: Record<string, any[]> = {};
+          for (const a of secondary) {
+            const sec = a.weeklySection || 'More This Week';
+            if (!bySection[sec]) bySection[sec] = [];
+            bySection[sec].push(a);
+          }
+          const sectionNames = Object.keys(bySection);
+          let dotIdx = 0;
+          return (
+            <div style={{ padding: '18px 28px' }}>
+              {sectionNames.map((sectionName) => {
+                const items = bySection[sectionName];
+                return (
+                  <div key={sectionName} style={{ marginBottom: '20px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 10px', borderBottom: '2px solid #c41e3a', paddingBottom: '6px' }}>{sectionName}</p>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {items.map((a: any, i: number) => {
+                        const color = DOT_COLORS[dotIdx % DOT_COLORS.length];
+                        dotIdx++;
+                        return (
+                          <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: i < items.length - 1 ? '1px solid #eee' : 'none' }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a', lineHeight: 1.4 }}>{a.title}</div>
+                                <div style={{ fontSize: '12px', color: '#999', marginTop: '3px' }}>By {a.submitterName || a.authorName || 'Staff Reporter'}</div>
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {allIssues.length > 1 && (
           <div style={{ padding: '14px 28px', backgroundColor: '#f7f4ee', textAlign: 'center', borderTop: '1px solid #e5e0d5' }}>
