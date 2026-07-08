@@ -104,7 +104,8 @@ export default function WeeklyPage() {
         <Link href="/" style={{ color: '#c41e3a', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>&larr; Back to Home</Link>
       </div>
 
-      <div style={{ maxWidth: '680px', margin: '20px auto 0', backgroundColor: '#fff', border: '1px solid #e5e0d5', borderRadius: '4px', overflow: 'hidden' }}>
+      <style>{`.weekly-container { max-width: 680px; } .weekly-sections { column-count: 1; } @media (min-width: 900px) { .weekly-container { max-width: 920px; } .weekly-sections { column-count: 2; column-gap: 32px; column-rule: 1px solid #eee; } .weekly-section-item { break-inside: avoid; } }`}</style>
+      <div className='weekly-container' style={{ margin: '20px auto 0', backgroundColor: '#fff', border: '1px solid #e5e0d5', borderRadius: '4px', overflow: 'hidden' }}>
 
         <div style={{ padding: '24px 28px 18px', borderBottom: '3px double #1a1a1a' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666', marginBottom: '10px' }}>
@@ -151,11 +152,11 @@ export default function WeeklyPage() {
           const sectionNames = Object.keys(bySection);
           let dotIdx = 0;
           return (
-            <div style={{ padding: '18px 28px' }}>
+            <div className='weekly-sections' style={{ padding: '18px 28px' }}>
               {sectionNames.map((sectionName) => {
                 const items = bySection[sectionName];
                 return (
-                  <div key={sectionName} style={{ marginBottom: '20px' }}>
+                  <div key={sectionName} className='weekly-section-item' style={{ marginBottom: '20px' }}>
                     <p style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 10px', borderBottom: '2px solid #c41e3a', paddingBottom: '6px' }}>{sectionName}</p>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {items.map((a: any, i: number) => {
