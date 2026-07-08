@@ -87,8 +87,8 @@ export default function WeeklyPage() {
     );
   }
 
-  const lead = articles[0];
-  const secondary = articles.slice(1);
+  const lead = articles.find((a: any) => a.isWeeklyLead) || articles[0];
+  const secondary = articles.filter((a: any) => a.$id !== lead.$id);
   const dateRange = fmtDateRange(articles);
   const leadImg = getImageUrl(lead.imageFileId);
 

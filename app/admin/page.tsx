@@ -266,7 +266,26 @@ export default function AdminPage() {
     } catch (err: any) { setError(err.message || 'Backfill failed'); }
   }
 
-  function parseTracker(title: string, lines: string): string {
+  function getTimeUntilSunday(): string {
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(now.getTime() + istOffset);
+  const dayOfWeek = istNow.getUTCDay();
+  const daysUntilSunday = (7 - dayOfWeek) % 7;
+  const nextSunday = new Date(istNow);
+  nextSunday.setUTCDate(istNow.getUTCDate() + daysUntilSunday);
+  nextSunday.setUTCHours(0, 0, 0, 0);
+  if (daysUntilSunday === 0 && istNow.getUTCHours() < 1) {
+    return 'Publishing today';
+  }
+  const target = daysUntilSunday === 0 ? new Date(nextSunday.getTime() + 7 * 24 * 60 * 60 * 1000) : nextSunday;
+  const diffMs = target.getTime() - istNow.getTime();
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  return days + 'd ' + hours + 'h until publish';
+}
+
+function parseTracker(title: string, lines: string): string {
   if (!title.trim() && !lines.trim()) return '';
   const items = lines.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
     const parts = l.split(':');
@@ -350,6 +369,20 @@ function generateSlug(text: string): string {
       });
       await loadArticles();
     } catch { setError('Weekly toggle failed'); }
+  }
+
+  async function publishWeeklyNow() {
+    if (!confirm('Publish this issue right now? It will go live immediately.')) return;
+    try {
+      for (const a of weeklyPicks) {
+        await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + a.$id, {
+          method: 'PATCH', headers: HJ, credentials: 'include',
+          body: JSON.stringify({ data: { weeklyLive: true } })
+        });
+      }
+      alert('Issue published!');
+      await loadWeeklyPicks();
+    } catch { setError('Publish failed'); }
   }
 
   async function loadWeeklyPicks() {
@@ -699,8 +732,14 @@ function generateSlug(text: string): string {
         {view === 'weekly' && (
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxWidth: '900px', margin: '0 auto' }}>
             <h2 style={{ color: '#0F4C5C', marginBottom: '8px', borderBottom: '2px solid #D4AF37', paddingBottom: '10px' }}>Weekly Editor</h2>
-            <p style={{ fontSize: '13px', color: '#888', marginBottom: '20px' }}>Draft picks for the next issue. Goes live automatically on Sunday.</p>
-            <button onClick={loadWeeklyPicks} style={{ padding: '8px 16px', backgroundColor: '#0F4C5C', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', marginBottom: '20px' }}>Refresh List</button>
+            <p style={{ fontSize: '13px', color: '#888', marginBottom: '10px' }}>Draft picks for the next issue. Goes live automatically on Sunday.</p>
+            <div style={{ display: 'inline-block', backgroundColor: '#fff3e0', color: '#e65100', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '700', marginBottom: '16px' }}>{getTimeUntilSunday()}</div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              <button onClick={loadWeeklyPicks} style={{ padding: '8px 16px', backgroundColor: '#0F4C5C', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Refresh List</button>
+              <a href='/weekly?preview=true' target='_blank' style={{ padding: '8px 16px', backgroundColor: '#D4AF37', color: '#0F4C5C', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '13px', textDecoration: 'none', display: 'inline-block' }}>Preview Issue</a>
+              <button onClick={publishWeeklyNow} style={{ padding: '8px 16px', backgroundColor: '#c41e3a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Publish Now</button>
+            </div>
+            <p style={{ fontSize: '12px', color: weeklyPicks.length >= 4 && weeklyPicks.length <= 6 ? '#2e7d32' : '#e65100', fontWeight: '600', marginBottom: '16px' }}>{weeklyPicks.length} picks (recommended: 4-6)</p>
             {weeklyPicks.length === 0 ? (
               <p style={{ color: '#888', fontSize: '14px' }}>No picks yet. Go to Manage and click 'Add to Weekly' on articles.</p>
             ) : (
