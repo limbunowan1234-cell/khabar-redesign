@@ -232,7 +232,7 @@ export default function WeeklyPage() {
                             {(pdfMode || expandedId === a.$id) && (
                               <div style={{ marginTop: '10px', paddingLeft: '18px' }}>
                                 <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, margin: '0 0 8px', whiteSpace: 'pre-wrap' }}>{(a.content || '').replace(/<[^>]*>/g, '')}</p>
-                                <Link href={'/article/' + (a.slug || a.$id)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textDecoration: 'none' }}>Comments &amp; more -&gt;</Link>
+{!pdfMode && (                                <Link href={'/article/' + (a.slug || a.$id)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textDecoration: 'none' }}>Comments &amp; more -&gt;</Link>)}
                               </div>
                             )}
                           </div>
