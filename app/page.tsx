@@ -80,7 +80,7 @@ function getTopArticles(articles: any[], period: string): any[] {
 
 // HERO SECTION WITH 3 FEATURED ARTICLES
 function HeroSection({ articles, isDarkMode }: any) {
-  const shuffled = [...articles].sort(() => Math.random() - 0.5).slice(0, 3);
+  const shuffled = [...articles].sort(() => Math.random() - 0.5).slice(0, 2);
   if (shuffled.length === 0) return null;
 
   return (
