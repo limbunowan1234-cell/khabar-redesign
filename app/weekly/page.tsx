@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
@@ -31,6 +31,29 @@ export default function WeeklyPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => { document.body.removeChild(script); };
+  }, []);
+
+  function downloadPdf() {
+    if (!printRef.current || !(window as any).html2pdf) return;
+    setDownloading(true);
+    const opt = {
+      margin: 0.3,
+      filename: 'Khabar-Darjeeling-Weekly-Issue-' + String(currentIssue).padStart(2, '0') + '.pdf',
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    (window as any).html2pdf().set(opt).from(printRef.current).save().then(() => setDownloading(false)).catch(() => setDownloading(false));
+  }
 
   useEffect(() => {
     (async () => {
@@ -100,12 +123,13 @@ export default function WeeklyPage() {
         </div>
       )}
 
-      <div style={{ maxWidth: '680px', margin: '0 auto', padding: '20px 16px 0' }}>
-        <Link href="/" style={{ color: '#c41e3a', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>&larr; Back to Home</Link>
+      <div className='weekly-container' style={{ margin: '0 auto', padding: '20px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link href='/' style={{ color: '#c41e3a', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>&larr; Back to Home</Link>
+        <button onClick={downloadPdf} disabled={downloading} style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', opacity: downloading ? 0.6 : 1 }}>{downloading ? 'Preparing PDF...' : 'Download PDF'}</button>
       </div>
 
       <style>{`.weekly-container { max-width: 680px; } .weekly-sections { column-count: 1; } @media (min-width: 900px) { .weekly-container { max-width: 920px; } .weekly-sections { column-count: 2; column-gap: 32px; column-rule: 1px solid #eee; } .weekly-section-item { break-inside: avoid; } }`}</style>
-      <div className='weekly-container' style={{ margin: '20px auto 0', backgroundColor: '#fff', border: '1px solid #e5e0d5', borderRadius: '4px', overflow: 'hidden' }}>
+      <div ref={printRef} className='weekly-container' style={{ margin: '20px auto 0', backgroundColor: '#fff', border: '1px solid #e5e0d5', borderRadius: '4px', overflow: 'hidden' }}>
 
         <div style={{ padding: '24px 28px 18px', borderBottom: '3px double #1a1a1a' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666', marginBottom: '10px' }}>
