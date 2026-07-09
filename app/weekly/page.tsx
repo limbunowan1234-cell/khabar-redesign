@@ -66,6 +66,7 @@ export default function WeeklyPage() {
       filename: 'Khabar-Darjeeling-Weekly-Issue-' + String(currentIssue).padStart(2, '0') + '.pdf',
       image: { type: 'jpeg', quality: 0.95 },
       html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+      pagebreak: { mode: ['css', 'avoid-all'], avoid: ['.weekly-section-item', '.weekly-lead-block'] },
       jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
     try {
@@ -151,7 +152,7 @@ export default function WeeklyPage() {
         <button onClick={downloadPdf} disabled={downloading} style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', opacity: downloading ? 0.6 : 1 }}>{downloading ? 'Preparing PDF...' : 'Download PDF'}</button>
       </div>
 
-      <style>{`.weekly-container { max-width: 680px; } .weekly-sections { column-count: 1; } @media (min-width: 900px) { .weekly-container { max-width: 920px; } .weekly-sections { column-count: 2; column-gap: 32px; column-rule: 1px solid #eee; } .weekly-section-item { break-inside: avoid; } }`}</style>
+      <style>{`.weekly-container { max-width: 680px; } .weekly-sections { column-count: 1; } .weekly-section-item { break-inside: avoid; page-break-inside: avoid; } .weekly-lead-block { break-inside: avoid; page-break-inside: avoid; } @media (min-width: 900px) { .weekly-container { max-width: 920px; } .weekly-sections { column-count: 2; column-gap: 32px; column-rule: 1px solid #eee; } }`}</style>
       <div ref={printRef} className='weekly-container' style={{ margin: '20px auto 0', backgroundColor: '#fff', border: '1px solid #e5e0d5', borderRadius: '4px', overflow: 'hidden' }}>
 
         <div style={{ padding: '24px 28px 18px', borderBottom: '3px double #1a1a1a' }}>
@@ -163,7 +164,7 @@ export default function WeeklyPage() {
           <p style={{ textAlign: 'center', fontSize: '12px', color: '#c41e3a', letterSpacing: '3px', textTransform: 'uppercase', margin: '8px 0 0', fontWeight: 700 }}>Voice of Hills</p>
         </div>
 
-        <div onClick={() => setExpandedId(expandedId === lead.$id ? null : lead.$id)} style={{ cursor: 'pointer' }}>
+        <div className='weekly-lead-block' onClick={() => setExpandedId(expandedId === lead.$id ? null : lead.$id)} style={{ cursor: 'pointer' }}>
           <div style={{ padding: '22px 28px', borderBottom: '1px solid #eee' }}>
             <div style={{ display: 'inline-block', backgroundColor: '#fbe4e4', color: '#c41e3a', fontSize: '11px', fontWeight: 700, padding: '3px 12px', borderRadius: '3px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Lead Story</div>
             {leadImg && (
