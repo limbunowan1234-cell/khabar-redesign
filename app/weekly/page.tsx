@@ -70,7 +70,16 @@ export default function WeeklyPage() {
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     try {
-      await (window as any).html2pdf().set(opt).from(printRef.current).save();
+      const worker = (window as any).html2pdf().set(opt).from(printRef.current);
+      const pdfBlob = await worker.toPdf().get('pdf');
+      const totalPages = pdfBlob.internal.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        pdfBlob.setPage(p);
+        pdfBlob.setFontSize(9);
+        pdfBlob.setTextColor(150);
+        pdfBlob.text('Page ' + p + ' of ' + totalPages, pdfBlob.internal.pageSize.getWidth() / 2, pdfBlob.internal.pageSize.getHeight() - 8, { align: 'center' });
+      }
+      pdfBlob.save('Khabar-Darjeeling-Weekly-Issue-' + String(currentIssue).padStart(2, '0') + '.pdf');
     } catch (e) {
       console.error(e);
     }
