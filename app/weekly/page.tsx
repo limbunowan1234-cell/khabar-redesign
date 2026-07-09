@@ -213,6 +213,11 @@ export default function WeeklyPage() {
                           <div key={a.$id} onClick={() => setExpandedId(expandedId === a.$id ? null : a.$id)} style={{ cursor: 'pointer', padding: '12px 0', borderBottom: i < items.length - 1 ? '1px solid #eee' : 'none' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
+                              {getImageUrl(a.imageFileId) && (
+                                <div style={{ width: '48px', height: '48px', borderRadius: '4px', overflow: 'hidden', backgroundColor: '#eee', flexShrink: 0 }}>
+                                  <img src={getImageUrl(a.imageFileId)} alt={a.title} crossOrigin='anonymous' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                              )}
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a', lineHeight: 1.4 }}>{a.title}</div>
                                 <div style={{ fontSize: '12px', color: '#999', marginTop: '3px' }}>By {a.submitterName || a.authorName || 'Staff Reporter'}</div>
