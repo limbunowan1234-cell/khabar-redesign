@@ -20,7 +20,7 @@ function fmtDateRange(articles: any[]): string {
 
 function getImageUrl(fileId: string): string {
   if (!fileId) return '';
-  return ENDPOINT + '/storage/buckets/article-image/files/' + fileId + '/view?project=' + PROJECT;
+  return '/api/image-proxy?id=' + fileId;
 }
 
 export default function WeeklyPage() {
