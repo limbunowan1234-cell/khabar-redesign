@@ -140,7 +140,7 @@ export default function WeeklyPage() {
   const leadImg = getImageUrl(lead.imageFileId);
   
   // Detect if lead story is short (<500 words = short)
-  const leadWordCount = (lead.content || ''').replace(/<[^>]*>/g, ''').split(/\s+/).length;
+  const leadWordCount = (lead.content || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
   const leadIsShort = leadWordCount < 500;
   const useOptionB = pdfMode && leadIsShort;
 
