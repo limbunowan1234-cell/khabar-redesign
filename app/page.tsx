@@ -285,6 +285,99 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
     );
   }
 }
+function FeaturedCarousel({ articles, isDarkMode }: any) {
+  const featured = articles.filter((a: any) => a.isFeatured);
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (featured.length <= 1) return;
+    const timer = setInterval(() => {
+      setIdx((i: number) => (i + 1) % featured.length);
+    }, 5500);
+    return () => clearInterval(timer);
+  }, [featured.length]);
+
+  if (featured.length === 0) return null;
+
+  const article = featured[idx];
+  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
+  const catColor = getCategoryColor(article.category);
+  const author = article.submitterName || article.authorName || 'Staff Reporter';
+  const preview = truncateText(article.content || '', 30);
+
+  function goTo(i: number) { setIdx(i); }
+  function prev() { setIdx((i: number) => (i - 1 + featured.length) % featured.length); }
+  function next() { setIdx((i: number) => (i + 1) % featured.length); }
+
+  return (
+    <div style={{ marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+        <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
+        <h2 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Featured Story</h2>
+      </div>
+      <style>{`
+        @media (max-width: 640px) {
+          .featured-carousel { height: 280px !important; }
+          .featured-carousel-caption { padding: 18px 18px 16px !important; }
+          .featured-carousel-title { font-size: 19px !important; max-width: 100% !important; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+          .featured-carousel-desc { max-width: 100% !important; font-size: 12px !important; }
+        }
+      `}</style>
+
+      <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none' }}>
+        <div className='featured-carousel' style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', height: '420px', boxShadow: '0 8px 30px rgba(0,0,0,0.18)', backgroundColor: '#1a1a1a' }}>
+          {imgUrl ? (
+            <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.4s' }} key={article.$id} />
+          ) : (
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,' + catColor + ' 0%,#1a1a1a 100%)' }} />
+          )}
+
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)' }} />
+
+          {featured.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.preventDefault(); prev(); }}
+                style={{ position: 'absolute', top: '50%', left: '16px', transform: 'translateY(-50%)', width: '38px', height: '38px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', fontSize: '18px', fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+              >‹</button>
+              <button
+                onClick={(e) => { e.preventDefault(); next(); }}
+                style={{ position: 'absolute', top: '50%', right: '16px', transform: 'translateY(-50%)', width: '38px', height: '38px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', fontSize: '18px', fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+              >›</button>
+            </>
+          )}
+
+          <div className='featured-carousel-caption' style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '32px 36px 28px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+              <span style={{ backgroundColor: catColor, color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>{article.category}</span>
+              {article.isBreaking && <span style={{ backgroundColor: '#f5c518', color: '#1a1a1a', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>BREAKING</span>}
+            </div>
+            <h2 className='featured-carousel-title' style={{ fontSize: '30px', fontWeight: '900', color: 'white', lineHeight: '1.25', margin: '0 0 10px', textShadow: '0 2px 10px rgba(0,0,0,0.5)', maxWidth: '85%' }}>{article.title}</h2>
+            <p className='featured-carousel-desc' style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', lineHeight: '1.6', margin: '0 0 16px', maxWidth: '70%', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', border: '2px solid rgba(255,255,255,0.4)' }}>{getInitials(author)}</div>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.9)' }}>{author}</span>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}> - {readingTime(article.content)}</span>
+            </div>
+          </div>
+
+          {featured.length > 1 && (
+            <div style={{ position: 'absolute', bottom: '14px', right: '20px', display: 'flex', gap: '6px' }}>
+              {featured.map((_: any, i: number) => (
+                <button
+                  key={i}
+                  onClick={(e) => { e.preventDefault(); goTo(i); }}
+                  style={{ width: i === idx ? '20px' : '7px', height: '7px', borderRadius: '4px', border: 'none', backgroundColor: i === idx ? '#f5c518' : 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'width 0.3s' }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </Link>
+    </div>
+  );
+}
+
 
 function MobileCard({ article, isDarkMode, index }: any) {
   const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
@@ -531,7 +624,7 @@ export default function Home() {
   const breakingArticles = articles.filter(a => a.isBreaking).slice(0, 6);
   const featuredArticle = articles.find(a => a.isFeatured) || articles[0];
   const trendingArticles = [...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
-  const gridArticles = filtered.filter(a => a.$id !== featuredArticle?.$id);
+  const gridArticles = filtered.filter(a => !a.isFeatured);
   const isAdmin = (user as any)?.labels?.includes('admin') || user?.email === 'nowanad@gmail.com';
 
   if (loading) return (
@@ -695,15 +788,7 @@ export default function Home() {
           {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><HeroSection articles={articles} isDarkMode={isDarkMode} /></div>}
           {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><TopTen articles={articles} isDarkMode={isDarkMode} /></div>}
           {!searchQuery && selectedCategory === 'All' && <ContestPreview articles={articles} isDarkMode={isDarkMode} />}
-          {featuredArticle && !searchQuery && selectedCategory === 'All' && (
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <span style={{ width: '4px', height: '16px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
-                <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Featured</span>
-              </div>
-              <MobileCard article={featuredArticle} isDarkMode={isDarkMode} index={0} />
-            </div>
-          )}
+          {!searchQuery && selectedCategory === 'All' && (<FeaturedCarousel articles={articles} isDarkMode={isDarkMode} />)}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <span style={{ width: '4px', height: '16px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
             <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Results' : 'Latest News'}</span>
@@ -735,15 +820,7 @@ export default function Home() {
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <HeroSection articles={articles} isDarkMode={isDarkMode} />}
             
-            {featuredArticle && !searchQuery && selectedCategory === 'All' && (
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                  <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
-                  <h2 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Featured Story</h2>
-                </div>
-                <DesktopCard article={featuredArticle} isDarkMode={isDarkMode} featured={true} />
-              </div>
-            )}
+            {!searchQuery && selectedCategory === 'All' && (<FeaturedCarousel articles={articles} isDarkMode={isDarkMode} />)}
             {!searchQuery && selectedCategory === 'All' && (
               <CategorySections articles={articles} isDarkMode={isDarkMode} onSelectCategory={setSelectedCategory} />
             )}
