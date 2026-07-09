@@ -62,7 +62,7 @@ export default function WeeklyPage() {
     await new Promise((resolve) => setTimeout(resolve, 300));
     if (printRef.current) await waitForImages(printRef.current);
     const opt = {
-      margin: [0.4, 0.4, 0.4, 0.4],
+      margin: [15, 15, 22, 15], // top, left, bottom(extra for page number), right in mm
       filename: 'Khabar-Darjeeling-Weekly-Issue-' + String(currentIssue).padStart(2, '0') + '.pdf',
       image: { type: 'jpeg', quality: 0.95 },
       html2canvas: { scale: 2, useCORS: true, allowTaint: true },
