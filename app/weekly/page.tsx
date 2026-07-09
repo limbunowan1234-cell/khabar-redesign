@@ -62,12 +62,12 @@ export default function WeeklyPage() {
     await new Promise((resolve) => setTimeout(resolve, 300));
     if (printRef.current) await waitForImages(printRef.current);
     const opt = {
-      margin: 0.3,
+      margin: [0.4, 0.4, 0.4, 0.4],
       filename: 'Khabar-Darjeeling-Weekly-Issue-' + String(currentIssue).padStart(2, '0') + '.pdf',
       image: { type: 'jpeg', quality: 0.95 },
       html2canvas: { scale: 2, useCORS: true, allowTaint: true },
-      pagebreak: { mode: ['css', 'avoid-all'], avoid: ['.weekly-section-item', '.weekly-lead-block'] },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      pagebreak: { mode: 'css', avoid: ['.weekly-article-block'] },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     try {
       await (window as any).html2pdf().set(opt).from(printRef.current).save();
@@ -138,6 +138,11 @@ export default function WeeklyPage() {
   const secondary = articles.filter((a: any) => a.$id !== lead.$id);
   const dateRange = fmtDateRange(articles);
   const leadImg = getImageUrl(lead.imageFileId);
+  
+  // Detect if lead story is short (<500 words = short)
+  const leadWordCount = (lead.content || ''').replace(/<[^>]*>/g, ''').split(/\s+/).length;
+  const leadIsShort = leadWordCount < 500;
+  const useOptionB = pdfMode && leadIsShort;
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#fdfaf5', paddingBottom: '60px' }}>
