@@ -32,6 +32,7 @@ export default function WeeklyPage() {
   const [previewMode, setPreviewMode] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [pdfMode, setPdfMode] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,18 +43,40 @@ export default function WeeklyPage() {
     return () => { document.body.removeChild(script); };
   }, []);
 
-  function downloadPdf() {
+  async function waitForImages(container: HTMLElement) {
+    const imgs = Array.from(container.querySelectorAll('img'));
+    await Promise.all(imgs.map((img) => {
+      if ((img as HTMLImageElement).complete) return Promise.resolve();
+      return new Promise((resolve) => {
+        img.addEventListener('load', resolve);
+        img.addEventListener('error', resolve);
+        setTimeout(resolve, 5000);
+      });
+    }));
+  }
+
+  async function downloadPdf() {
     if (!printRef.current || !(window as any).html2pdf) return;
     setDownloading(true);
+    setPdfMode(true);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    if (printRef.current) await waitForImages(printRef.current);
     const opt = {
       margin: 0.3,
       filename: 'Khabar-Darjeeling-Weekly-Issue-' + String(currentIssue).padStart(2, '0') + '.pdf',
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, allowTaint: true },
       jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
-    (window as any).html2pdf().set(opt).from(printRef.current).save().then(() => setDownloading(false)).catch(() => setDownloading(false));
+    try {
+      await (window as any).html2pdf().set(opt).from(printRef.current).save();
+    } catch (e) {
+      console.error(e);
+    }
+    setPdfMode(false);
+    setDownloading(false);
   }
+
 
   useEffect(() => {
     (async () => {
@@ -150,7 +173,7 @@ export default function WeeklyPage() {
             )}
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '26px', fontWeight: 500, lineHeight: 1.3, margin: '0 0 10px', color: '#1a1a1a' }}>{lead.title}</h2>
             <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>
-              {expandedId === lead.$id ? (lead.content || '').replace(/<[^>]*>/g, '') : (lead.content || '').replace(/<[^>]*>/g, '').slice(0, 160) + '...'}
+              {(pdfMode || expandedId === lead.$id) ? (lead.content || '').replace(/<[^>]*>/g, '') : (lead.content || '').replace(/<[^>]*>/g, '').slice(0, 160) + '...'}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#888' }}>
@@ -195,7 +218,7 @@ export default function WeeklyPage() {
                                 <div style={{ fontSize: '12px', color: '#999', marginTop: '3px' }}>By {a.submitterName || a.authorName || 'Staff Reporter'}</div>
                               </div>
                             </div>
-                            {expandedId === a.$id && (
+                            {(pdfMode || expandedId === a.$id) && (
                               <div style={{ marginTop: '10px', paddingLeft: '18px' }}>
                                 <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, margin: '0 0 8px', whiteSpace: 'pre-wrap' }}>{(a.content || '').replace(/<[^>]*>/g, '')}</p>
                                 <Link href={'/article/' + (a.slug || a.$id)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textDecoration: 'none' }}>Comments &amp; more -&gt;</Link>
