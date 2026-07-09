@@ -157,7 +157,17 @@ export default function WeeklyPage() {
         <button onClick={downloadPdf} disabled={downloading} style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', opacity: downloading ? 0.6 : 1 }}>{downloading ? 'Preparing PDF...' : 'Download PDF'}</button>
       </div>
 
-      <style>{`.weekly-container { max-width: 680px; } .weekly-sections { column-count: 1; } .weekly-section-item { break-inside: avoid; page-break-inside: avoid; margin-bottom: 16px; } .weekly-lead-block { break-inside: avoid; page-break-inside: avoid; } @media (min-width: 900px) { .weekly-container { max-width: 920px; } .weekly-sections:not(.pdf-mode) { column-count: 2; column-gap: 32px; column-rule: 1px solid #eee; } }`}</style>
+      <style>{`
+        .weekly-container { max-width: 680px; }
+        .weekly-sections { column-count: 1; }
+        .weekly-section-item { break-inside: avoid; page-break-inside: avoid; margin-bottom: 16px; }
+        .weekly-lead-block { break-inside: avoid; page-break-inside: avoid; }
+        .weekly-lead-block.pdf-mode { page-break-after: ${useOptionB ? "avoid" : "always"}; }
+        .weekly-article-block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px; }
+        .page-number { text-align: center; font-size: 11px; color: #999; margin-top: 16px; }
+        @media (min-width: 900px) { .weekly-container { max-width: 920px; } .weekly-sections:not(.pdf-mode) { column-count: 2; column-gap: 32px; column-rule: 1px solid #eee; } }
+        @page { size: a4 portrait; margin: 0.5in; }
+      `}</style>
       <div ref={printRef} className='weekly-container' style={{ margin: '20px auto 0', backgroundColor: '#fff', border: '1px solid #e5e0d5', borderRadius: '4px', overflow: 'hidden' }}>
 
         <div style={{ padding: '24px 28px 18px', borderBottom: '3px double #1a1a1a' }}>
@@ -188,7 +198,7 @@ export default function WeeklyPage() {
                 </div>
                 <span>By {lead.submitterName || lead.authorName || 'Staff Reporter'}</span>
               </div>
-              {expandedId === lead.$id && (
+              {!pdfMode && expandedId === lead.$id && (
                 <Link href={'/article/' + (lead.slug || lead.$id)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textDecoration: 'none' }}>Comments &amp; more -&gt;</Link>
               )}
             </div>
@@ -246,7 +256,7 @@ export default function WeeklyPage() {
           );
         })()}
 
-        {allIssues.length > 1 && (
+{!pdfMode && allIssues.length > 1 && (
           <div style={{ padding: '14px 28px', backgroundColor: '#f7f4ee', textAlign: 'center', borderTop: '1px solid #e5e0d5' }}>
             <span style={{ fontSize: '12px', color: '#666', marginRight: '10px' }}>Back issues:</span>
             {allIssues.filter(n => n !== currentIssue).map((n) => (
