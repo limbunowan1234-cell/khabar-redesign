@@ -5,6 +5,7 @@ import WeatherWidget from '@/components/WeatherWidget';
 import WeatherWarning from '@/components/WeatherWarning';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import NotificationBell from '@/components/NotificationBell';
 import { useAuthStore } from '@/lib/authStore';
 import TopCreators from '@/components/TopCreators';
 import AdBanner from '@/components/AdBanner';
@@ -714,6 +715,7 @@ export default function Home() {
               <Link href="/contest" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Contest</button></Link>
               {user ? (
                 <>
+                  <NotificationBell light={true} />
                   <Link href="/profile" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Profile</button></Link>
                   {isAdmin && <Link href="/admin" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Admin</button></Link>}
                   <button onClick={() => logOut()} style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Logout</button>
