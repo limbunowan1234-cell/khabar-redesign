@@ -5,14 +5,11 @@ const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT || 'mailto:nowanad@gmail.com',
-  process.env.VAPID_PUBLIC_KEY || '',
-  process.env.VAPID_PRIVATE_KEY || ''
-);
-
 export async function POST(req: Request) {
   try {
+    if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+      webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:nowanad@gmail.com', process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+    }
     const body = await req.json();
     const { userId, type, message, articleId, articleSlug, fromUserName, title, url } = body;
 
