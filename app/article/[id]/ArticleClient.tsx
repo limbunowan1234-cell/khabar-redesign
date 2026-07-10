@@ -121,6 +121,19 @@ async function deleteComment(commentId: string) {
   return res.ok;
 }
 
+async function notifyUser(targetUserId: string, fromUserId: string, type: string, message: string, articleId: string, articleSlug: string, fromUserName: string) {
+  if (!targetUserId || targetUserId === fromUserId) return; // do not notify yourself
+  try {
+    await fetch('/api/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: targetUserId, type, message, articleId, articleSlug, fromUserName, title: 'Khabar Darjeeling' })
+    });
+  } catch (err) {
+    console.error('Notify failed:', err);
+  }
+}
+
 export default function ArticleClient() {
   const params = useParams();
   const id = params?.id as string;
@@ -240,6 +253,7 @@ export default function ArticleClient() {
     if (likeProcessing) return;
     setLikeProcessing(true);
     const nowLiked = await toggleArticleLike(id, user.$id);
+    if (nowLiked) notifyUser(article.submitterId, user.$id, 'like', (user.name || 'Someone') + ' liked your article', id, article.slug || id, user.name || 'User');
     setLiked(nowLiked);
     setLikeCount((c) => nowLiked ? c + 1 : Math.max(0, c - 1));
     setLikeProcessing(false);
@@ -269,6 +283,7 @@ export default function ArticleClient() {
     setPosting(true);
     try {
       await createComment(id, user.$id, user.name || 'User', newComment.trim(), null);
+      notifyUser(article.submitterId, user.$id, 'comment', (user.name || 'Someone') + ' commented on your article', id, article.slug || id, user.name || 'User');
       setNewComment('');
       const cms = await fetchComments(id);
       setComments(cms);
@@ -282,6 +297,7 @@ export default function ArticleClient() {
     setPostingReply(true);
     try {
       await createComment(id, user.$id, user.name || 'User', replyText.trim(), parentCommentId);
+      notifyUser(article.submitterId, user.$id, 'reply', (user.name || 'Someone') + ' replied to a comment on your article', id, article.slug || id, user.name || 'User');
       setReplyText('');
       setReplyingTo(null);
       const cms = await fetchComments(id);
