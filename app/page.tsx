@@ -3,7 +3,7 @@ import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
 import WeatherWarning from '@/components/WeatherWarning';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
 import TopCreators from '@/components/TopCreators';
@@ -288,6 +288,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
 function FeaturedCarousel({ articles, isDarkMode }: any) {
   const featured = articles.filter((a: any) => a.isFeatured);
   const [idx, setIdx] = useState(0);
+  const touchStartX = useRef(0);
 
   useEffect(() => {
     if (featured.length <= 1) return;
@@ -325,7 +326,7 @@ function FeaturedCarousel({ articles, isDarkMode }: any) {
       `}</style>
 
       <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none' }}>
-        <div className='featured-carousel' style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', height: '420px', boxShadow: '0 8px 30px rgba(0,0,0,0.18)', backgroundColor: '#1a1a1a' }}>
+        <div onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }} onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStartX.current; if (dx > 50) prev(); else if (dx < -50) next(); }} className='featured-carousel' style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', height: '420px', boxShadow: '0 8px 30px rgba(0,0,0,0.18)', backgroundColor: '#1a1a1a' }}>
           {imgUrl ? (
             <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.4s' }} key={article.$id} />
           ) : (
@@ -337,11 +338,11 @@ function FeaturedCarousel({ articles, isDarkMode }: any) {
           {featured.length > 1 && (
             <>
               <button
-                onClick={(e) => { e.preventDefault(); prev(); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); prev(); }}
                 style={{ position: 'absolute', top: '50%', left: '16px', transform: 'translateY(-50%)', width: '38px', height: '38px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', fontSize: '18px', fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(4px)' }}
               >‹</button>
               <button
-                onClick={(e) => { e.preventDefault(); next(); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); next(); }}
                 style={{ position: 'absolute', top: '50%', right: '16px', transform: 'translateY(-50%)', width: '38px', height: '38px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', fontSize: '18px', fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(4px)' }}
               >›</button>
             </>
@@ -366,7 +367,7 @@ function FeaturedCarousel({ articles, isDarkMode }: any) {
               {featured.map((_: any, i: number) => (
                 <button
                   key={i}
-                  onClick={(e) => { e.preventDefault(); goTo(i); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); goTo(i); }}
                   style={{ width: i === idx ? '20px' : '7px', height: '7px', borderRadius: '4px', border: 'none', backgroundColor: i === idx ? '#f5c518' : 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'width 0.3s' }}
                 />
               ))}
