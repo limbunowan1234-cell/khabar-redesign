@@ -1,17 +1,23 @@
 import webpush from 'web-push';
-import admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 
-function getFirebaseAdmin() {
+function getFirebaseMessaging() {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) return null;
-  if (admin.apps.length > 0) return admin.app();
   try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    return admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    let app;
+    if (getApps().length > 0) {
+      app = getApps()[0];
+    } else {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      app = initializeApp({ credential: cert(serviceAccount) });
+    }
+    return getMessaging(app);
   } catch (err) {
     console.error('Firebase admin init failed:', err);
     return null;
@@ -75,15 +81,15 @@ export async function POST(req: Request) {
 
     // 4. Look up FCM tokens for this user (Android app)
     let fcmResults: any[] = [];
-    const fcmApp = getFirebaseAdmin();
-    if (fcmApp) {
+    const messaging = getFirebaseMessaging();
+    if (messaging) {
       const fcmRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/fcm_tokens/documents?queries[]=' + q, { headers: H });
       const fcmData = await fcmRes.json();
       const tokens = fcmData.documents || [];
 
       fcmResults = await Promise.allSettled(
         tokens.map((t: any) =>
-          admin.messaging().send({
+          messaging.send({
             token: t.token,
             notification: { title: title || 'Khabar Darjeeling', body: message },
             data: { url: url || (articleSlug ? '/article/' + articleSlug : '/') }
