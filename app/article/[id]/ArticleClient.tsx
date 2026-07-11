@@ -210,7 +210,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
     async function load() {
       incrementViews(id);
         const data = await getArticle(id);
-      setArticle(data);
+      if (data) setArticle(data);
       setLoading(false);
       const cms = await fetchComments(id);
       setComments(cms);
@@ -331,7 +331,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
     </div>
   );
 
-  if (!article) return (
+  if (!article && !initialArticle) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
       <div style={{ fontSize: '48px' }}>{String.fromCodePoint(0x1F4F0)}</div>
       <p style={{ fontSize: '18px', fontWeight: '600', color: '#333' }}>Article not found</p>
