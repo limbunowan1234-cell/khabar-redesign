@@ -104,7 +104,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       {jsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       )}
-      <ArticleClient />
+      <ArticleClient initialArticle={a} />
     </>
   );
 }
