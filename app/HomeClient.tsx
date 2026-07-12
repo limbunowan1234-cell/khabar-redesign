@@ -731,6 +731,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           {isMobile && (
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer', fontSize: '12px' }}>{isDarkMode ? 'L' : 'D'}</button>
+              <NotificationBell light={true} />
               <button onClick={() => setShowMenu(true)} style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px' }}>&#9776;</button>
             </div>
           )}
