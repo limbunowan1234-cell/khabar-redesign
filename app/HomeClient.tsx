@@ -668,6 +668,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             <div style={{ padding: '16px' }}>
               {[
                 { href: '/', label: 'Home' },
+                { href: '/weekly', label: 'Weekly Edition' },
                 { href: '/post', label: 'Create Post' },
                 { href: '/contest', label: 'Story Contest 2026' },
                 { href: '/profile', label: 'My Profile' },
@@ -713,6 +714,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <Link href="/post" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Post</button></Link>
               <Link href="/contest" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Contest</button></Link>
+              <Link href="/weekly" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Weekly</button></Link>
               {user ? (
                 <>
                   <NotificationBell light={true} />
