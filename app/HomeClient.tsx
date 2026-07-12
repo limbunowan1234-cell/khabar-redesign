@@ -564,11 +564,11 @@ function BreakingNewsSidebar({ articles, isDarkMode }: any) {
   );
 }
 
-export default function HomeClient() {
+export default function HomeClient({ initialArticles = [] }: { initialArticles?: any[] }) {
   const { initAuth, user, logOut } = useAuthStore();
-  const [articles, setArticles] = useState<any[]>([]);
-  const [filtered, setFiltered] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState<any[]>(initialArticles);
+  const [filtered, setFiltered] = useState<any[]>(initialArticles);
+  const [loading, setLoading] = useState(initialArticles.length === 0);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -602,7 +602,7 @@ export default function HomeClient() {
           encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
           '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
           '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-          { headers: H, credentials: 'include' }
+          { headers: H }
         );
         if (res.ok) {
           const data = await res.json();

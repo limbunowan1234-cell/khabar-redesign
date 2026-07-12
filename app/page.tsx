@@ -81,7 +81,7 @@ export default async function Page() {
         </ul>
       </div>
 
-      <HomeClient />
+      <HomeClient initialArticles={articles} />
     </>
   );
 }
