@@ -1,7 +1,7 @@
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
+const H = { 'X-Appwrite-Project': PROJECT, 'X-Appwrite-Key': process.env.APPWRITE_API_KEY || '', 'Content-Type': 'application/json' };
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization');

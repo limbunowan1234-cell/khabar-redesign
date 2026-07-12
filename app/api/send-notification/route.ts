@@ -5,7 +5,7 @@ import { getMessaging } from 'firebase-admin/messaging';
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
+const H = { 'X-Appwrite-Project': PROJECT, 'X-Appwrite-Key': process.env.APPWRITE_API_KEY || '', 'Content-Type': 'application/json' };
 
 function getFirebaseMessaging() {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) return null;
