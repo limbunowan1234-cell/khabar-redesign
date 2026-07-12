@@ -7,6 +7,22 @@ const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT, 'X-Appwrite-Key': process.env.APPWRITE_API_KEY || '', 'Content-Type': 'application/json' };
 
+let vapidReady = false;
+function setupVapid() {
+  if (vapidReady) return true;
+  const pub = (process.env.VAPID_PUBLIC_KEY || '').trim();
+  const priv = (process.env.VAPID_PRIVATE_KEY || '').trim();
+  if (!pub || !priv) return false;
+  try {
+    webpush.setVapidDetails((process.env.VAPID_SUBJECT || 'mailto:nowanad@gmail.com').trim(), pub, priv);
+    vapidReady = true;
+    return true;
+  } catch (err) {
+    console.error('VAPID setup failed:', err);
+    return false;
+  }
+}
+
 function getFirebaseMessaging() {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) return null;
   try {
@@ -26,87 +42,111 @@ function getFirebaseMessaging() {
 
 export async function POST(req: Request) {
   try {
-    if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-      webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:nowanad@gmail.com', process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
-    }
     const body = await req.json();
     const { userId, type, message, articleId, articleSlug, fromUserName, title, url } = body;
     if (!userId || !message) {
       return Response.json({ error: 'userId and message required' }, { status: 400 });
     }
-    // 1. Write to notifications collection (in-app / profile view)
-    await fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents', {
-      method: 'POST',
-      headers: H,
-      body: JSON.stringify({
-        documentId: 'unique()',
-        data: {
-          userId,
-          type: type || 'general',
-          message,
-          articleId: articleId || null,
-          articleSlug: articleSlug || null,
-          fromUserName: fromUserName || null,
-          read: false,
-          createdAt: new Date().toISOString()
-        },
-        permissions: [
-          'read("user:' + userId + '")',
-          'update("user:' + userId + '")',
-          'delete("user:' + userId + '")'
-        ]
-      })
-    });
 
-    // 2. Look up web push subscriptions for this user (browser)
-    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
-    const subsRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/push_subscriptions/documents?queries[]=' + q, { headers: H });
-    const subsData = await subsRes.json();
-    const subs = subsData.documents || [];
-
-    // 3. Send web push to each browser subscription
-    const webResults = await Promise.allSettled(
-      subs.map((sub: any) =>
-        webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify({ title: title || 'Khabar Darjeeling', body: message, url: url || (articleSlug ? '/article/' + articleSlug : '/') })
-        ).catch(async (err: any) => {
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            await fetch(ENDPOINT + '/databases/' + DB + '/collections/push_subscriptions/documents/' + sub.$id, { method: 'DELETE', headers: H });
-          }
-          throw err;
+    // 1. ALWAYS write to notifications collection first (in-app bell) - independent of push delivery
+    let notificationCreated = false;
+    try {
+      const notifRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents', {
+        method: 'POST',
+        headers: H,
+        body: JSON.stringify({
+          documentId: 'unique()',
+          data: {
+            userId,
+            type: type || 'general',
+            message,
+            articleId: articleId || null,
+            articleSlug: articleSlug || null,
+            fromUserName: fromUserName || null,
+            read: false,
+            createdAt: new Date().toISOString()
+          },
+          permissions: [
+            'read("user:' + userId + '")',
+            'update("user:' + userId + '")',
+            'delete("user:' + userId + '")'
+          ]
         })
-      )
-    );
+      });
+      notificationCreated = notifRes.ok;
+      if (!notifRes.ok) {
+        const errText = await notifRes.text();
+        console.error('notifications write failed:', notifRes.status, errText);
+      }
+    } catch (err) {
+      console.error('notifications write threw:', err);
+    }
 
-    // 4. Look up FCM tokens for this user (Android app)
+    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
+
+    // 2. Web push (best-effort, never blocks the response)
+    let webPushCount = 0;
+    let webResults: any[] = [];
+    if (setupVapid()) {
+      try {
+        const subsRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/push_subscriptions/documents?queries[]=' + q, { headers: H });
+        const subsData = await subsRes.json();
+        const subs = subsData.documents || [];
+        webPushCount = subs.length;
+
+        webResults = await Promise.allSettled(
+          subs.map((sub: any) =>
+            webpush.sendNotification(
+              { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+              JSON.stringify({ title: title || 'Khabar Darjeeling', body: message, url: url || (articleSlug ? '/article/' + articleSlug : '/') })
+            ).catch(async (err: any) => {
+              if (err.statusCode === 410 || err.statusCode === 404) {
+                await fetch(ENDPOINT + '/databases/' + DB + '/collections/push_subscriptions/documents/' + sub.$id, { method: 'DELETE', headers: H });
+              }
+              throw err;
+            })
+          )
+        );
+      } catch (err) {
+        console.error('web push step failed:', err);
+      }
+    }
+
+    // 3. FCM push (best-effort, never blocks the response)
+    let fcmCount = 0;
     let fcmResults: any[] = [];
     const messaging = getFirebaseMessaging();
     if (messaging) {
-      const fcmRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/fcm_tokens/documents?queries[]=' + q, { headers: H });
-      const fcmData = await fcmRes.json();
-      const tokens = fcmData.documents || [];
+      try {
+        const fcmRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/fcm_tokens/documents?queries[]=' + q, { headers: H });
+        const fcmData = await fcmRes.json();
+        const tokens = fcmData.documents || [];
+        fcmCount = tokens.length;
 
-      fcmResults = await Promise.allSettled(
-        tokens.map((t: any) =>
-          messaging.send({
-            token: t.token,
-            notification: { title: title || 'Khabar Darjeeling', body: message },
-            data: { url: url || (articleSlug ? '/article/' + articleSlug : '/') }
-          }).catch(async (err: any) => {
-            if (err.code === 'messaging/registration-token-not-registered' || err.code === 'messaging/invalid-registration-token') {
-              await fetch(ENDPOINT + '/databases/' + DB + '/collections/fcm_tokens/documents/' + t.$id, { method: 'DELETE', headers: H });
-            }
-            throw err;
-          })
-        )
-      );
+        fcmResults = await Promise.allSettled(
+          tokens.map((t: any) =>
+            messaging.send({
+              token: t.token,
+              notification: { title: title || 'Khabar Darjeeling', body: message },
+              data: { url: url || (articleSlug ? '/article/' + articleSlug : '/') }
+            }).catch(async (err: any) => {
+              if (err.code === 'messaging/registration-token-not-registered' || err.code === 'messaging/invalid-registration-token') {
+                await fetch(ENDPOINT + '/databases/' + DB + '/collections/fcm_tokens/documents/' + t.$id, { method: 'DELETE', headers: H });
+              }
+              throw err;
+            })
+          )
+        );
+      } catch (err) {
+        console.error('FCM push step failed:', err);
+      }
     }
 
     return Response.json({
       success: true,
-      webPushNotified: subs.length,
-      fcmNotified: fcmResults.length,
+      notificationCreated,
+      webPushNotified: webPushCount,
+      fcmNotified: fcmCount,
       webResults: webResults.map(r => r.status),
       fcmResults: fcmResults.map(r => r.status)
     });
