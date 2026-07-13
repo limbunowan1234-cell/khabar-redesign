@@ -594,7 +594,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
   {likedComments.has(c.$id) ? "❤️" : "🤍"} {commentLikes[c.$id] || 0}
 </button> {user && (
                             <button className="reply-btn" onClick={() => { setReplyingTo(isReplying ? null : c.$id); setReplyText(''); }} style={{ color: '#c41e3a' }}>
-                              {isReplying ? 'Cancel' : '? Reply'}
+                              {isReplying ? 'Cancel' : '↩️ Reply'}
                             </button>
                           )}
                           {canDelete && (
