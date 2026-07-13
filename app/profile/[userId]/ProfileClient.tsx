@@ -25,15 +25,15 @@ function getTier(score: number) {
   return TIERS.find((t) => score >= t.min && score < t.max) || TIERS[0];
 }
 
-export default function ProfileClient({ userId }: { userId: string }) {
+export default function ProfileClient({ userId, initialProfile, initialArticles = [] }: { userId: string; initialProfile?: any; initialArticles?: any[] }) {
 
-  const [profile, setProfile] = useState<any>(null);
-  const [articles, setArticles] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(initialProfile || null);
+  const [articles, setArticles] = useState<any[]>(initialArticles);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [totalLikes, setTotalLikes] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialProfile && initialArticles.length === 0);
 
   useEffect(() => {
     (async () => {
@@ -53,7 +53,7 @@ export default function ProfileClient({ userId }: { userId: string }) {
           { headers: H, credentials: 'include' }
         );
         const profileData = profileRes.ok ? await profileRes.json() : { documents: [] };
-        setProfile(profileData.documents?.[0] || { userId });
+        if (profileData.documents?.[0]) setProfile(profileData.documents[0]);
 
         const articlesRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
@@ -64,7 +64,7 @@ export default function ProfileClient({ userId }: { userId: string }) {
         );
         const articlesData = articlesRes.ok ? await articlesRes.json() : { documents: [] };
         const arts = articlesData.documents || [];
-        setArticles(arts);
+        if (arts.length > 0) setArticles(arts);
 
         // Count total likes across their articles
         let likesSum = 0;
@@ -154,7 +154,7 @@ export default function ProfileClient({ userId }: { userId: string }) {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
-  if (!profile || articles.length === 0) return (
+  if ((!profile || articles.length === 0) && !initialProfile && (!initialArticles || initialArticles.length === 0)) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: '#fff' }}>
       <div style={{ fontSize: '40px' }}>👤</div>
       <p style={{ fontSize: '17px', fontWeight: 700, color: '#333' }}>User not found</p>

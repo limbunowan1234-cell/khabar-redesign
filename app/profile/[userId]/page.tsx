@@ -5,24 +5,36 @@ const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 
-async function fetchProfileName(userId: string): Promise<string> {
+async function fetchProfileData(userId: string): Promise<{ profile: any; articles: any[] }> {
   try {
-    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userId] }));
-    const res = await fetch(
-      ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q,
+    const profileRes = await fetch(
+      ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' +
+      encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] })),
       { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 300 } }
     );
-    if (!res.ok) return 'Writer';
-    const data = await res.json();
-    return data.documents?.[0]?.submitterName || 'Writer';
+    const profileData = profileRes.ok ? await profileRes.json() : { documents: [] };
+    const profile = profileData.documents?.[0] || null;
+
+    const articlesRes = await fetch(
+      ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
+      encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userId] })) +
+      '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
+      '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] })),
+      { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 300 } }
+    );
+    const articlesData = articlesRes.ok ? await articlesRes.json() : { documents: [] };
+    const articles = articlesData.documents || [];
+
+    return { profile, articles };
   } catch {
-    return 'Writer';
+    return { profile: null, articles: [] };
   }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ userId: string }> }): Promise<Metadata> {
   const { userId } = await params;
-  const name = await fetchProfileName(userId);
+  const { profile, articles } = await fetchProfileData(userId);
+  const name = profile?.displayName || articles[0]?.submitterName || 'Writer';
   const title = name + ' - Khabar Darjeeling';
   const description = 'Read articles and stories by ' + name + ' on Khabar Darjeeling, the digital home of Darjeeling news.';
   return {
@@ -41,5 +53,6 @@ export async function generateMetadata({ params }: { params: Promise<{ userId: s
 
 export default async function Page({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = await params;
-  return <ProfileClient userId={userId} />;
+  const { profile, articles } = await fetchProfileData(userId);
+  return <ProfileClient userId={userId} initialProfile={profile} initialArticles={articles} />;
 }
