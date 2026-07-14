@@ -169,7 +169,8 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
       <style>{`
         .weekly-container { max-width: 680px; }
         .weekly-sections { column-count: 1; }
-        .weekly-section-item { break-inside: avoid; page-break-inside: avoid; margin-bottom: 16px; }
+        .weekly-section-wrapper { margin-bottom: 16px; }
+        .weekly-section-header { page-break-after: avoid; break-after: avoid; }
         .weekly-lead-block { break-inside: avoid; page-break-inside: avoid; }
         .weekly-lead-block.pdf-mode { page-break-after: ${useOptionB ? "avoid" : "always"}; }
         .weekly-article-block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px; }
@@ -228,14 +229,14 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
               {sectionNames.map((sectionName) => {
                 const items = bySection[sectionName];
                 return (
-                  <div key={sectionName} className='weekly-section-item' style={{ marginBottom: '20px' }}>
-                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 10px', borderBottom: '2px solid #c41e3a', paddingBottom: '6px' }}>{sectionName}</p>
+                  <div key={sectionName} className='weekly-section-wrapper' style={{ marginBottom: '20px' }}>
+                    <p className='weekly-section-header' style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 10px', borderBottom: '2px solid #c41e3a', paddingBottom: '6px' }}>{sectionName}</p>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {items.map((a: any, i: number) => {
                         const color = DOT_COLORS[dotIdx % DOT_COLORS.length];
                         dotIdx++;
                         return (
-                          <div key={a.$id} onClick={() => setExpandedId(expandedId === a.$id ? null : a.$id)} style={{ cursor: 'pointer', padding: '12px 0', borderBottom: i < items.length - 1 ? '1px solid #eee' : 'none' }}>
+                          <div key={a.$id} className='weekly-article-block' onClick={() => setExpandedId(expandedId === a.$id ? null : a.$id)} style={{ cursor: 'pointer', padding: '12px 0', borderBottom: i < items.length - 1 ? '1px solid #eee' : 'none' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
                               {getImageUrl(a.imageFileId) && (
