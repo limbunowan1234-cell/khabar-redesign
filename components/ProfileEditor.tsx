@@ -69,9 +69,15 @@ export default function ProfileEditor({ userId, userName }: Props) {
     setSaving(true); setErr('');
     try {
       const data = { userId, displayName, userName: displayName, bio, avatarUrl, bannerTheme };
+      const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
+      const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
+      const checkRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' });
+      const checkData = checkRes.ok ? await checkRes.json() : { documents: [] };
+      const existingId = checkData.documents?.[0]?.$id || null;
+
       let res;
-      if (docId) {
-        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + docId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data }) });
+      if (existingId) {
+        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + existingId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data }) });
       } else {
         res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents', { method: 'POST', headers: HJ, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data }) });
       }
@@ -81,6 +87,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
       setErr('Could not save. Check that Users have Update permission on profiles.');
       setSaving(false);
     }
+
   }
 
   const hasImg = avatarUrl && avatarUrl.indexOf('http') === 0;
