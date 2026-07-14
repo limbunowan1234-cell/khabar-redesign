@@ -131,7 +131,11 @@ export default function ProfileEditor({ userId, userName }: Props) {
                 { id: 'sunrise', name: 'Uplifting', gradient: 'linear-gradient(135deg, #f97316 0%, #db2777 100%)' },
                 { id: 'slate', name: 'Neutral', gradient: 'linear-gradient(135deg, #64748b 0%, #334155 100%)' },
               ].map((t) => (
-                <button key={t.id} type="button" onClick={() => setBannerTheme(t.id)} title={t.name} style={{ height: '38px', borderRadius: '8px', border: bannerTheme === t.id ? '3px solid #1a1a1a' : '2px solid transparent', background: t.gradient, cursor: 'pointer', padding: 0 }} />
+                  <button key={t.id} type="button" onClick={() => setBannerTheme(t.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <span style={{ display: 'block', width: '100%', height: '32px', borderRadius: '8px', border: bannerTheme === t.id ? '3px solid #1a1a1a' : '2px solid transparent', background: t.gradient }} />
+                    <span style={{ fontSize: '9px', fontWeight: bannerTheme === t.id ? 700 : 500, color: bannerTheme === t.id ? '#1a1a1a' : '#888', textAlign: 'center', lineHeight: 1.2 }}>{t.name}</span>
+                  </button>
+
               ))}
             </div>
 
