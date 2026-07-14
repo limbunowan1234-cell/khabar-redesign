@@ -24,6 +24,23 @@ function fmtDate(s: string): string {
   catch { return ''; }
 }
 
+async function fetchArticleByIdOrSlug(aid: string, endpoint: string, db: string, headers: any): Promise<any> {
+  try {
+    const r = await fetch(endpoint + '/databases/' + db + '/collections/articles/documents/' + aid, { headers, credentials: 'include' });
+    if (r.ok) return await r.json();
+  } catch {}
+  try {
+    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'slug', values: [aid] }));
+    const r2 = await fetch(endpoint + '/databases/' + db + '/collections/articles/documents?queries[]=' + q, { headers, credentials: 'include' });
+    if (r2.ok) {
+      const d = await r2.json();
+      return d.documents?.[0] || null;
+    }
+  } catch {}
+  return null;
+}
+
+
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -80,8 +97,7 @@ export default function ProfilePage() {
               const ld = await likesRes.json();
               const ids = (ld.documents || []).map((x: any) => x.articleId).filter(Boolean);
               const arts = await Promise.all(ids.map(async (aid: string) => {
-                const r = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents/' + aid, { headers: H, credentials: 'include' });
-                return r.ok ? await r.json() : null;
+                return await fetchArticleByIdOrSlug(aid, ENDPOINT, DB, H);
               }));
               setFavorites(arts.filter(Boolean));
             }
@@ -97,8 +113,7 @@ export default function ProfilePage() {
               const bd = await bmRes.json();
               const ids = (bd.documents || []).map((x: any) => x.articleId).filter(Boolean);
               const arts = await Promise.all(ids.map(async (aid: string) => {
-                const r = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents/' + aid, { headers: H, credentials: 'include' });
-                return r.ok ? await r.json() : null;
+                return await fetchArticleByIdOrSlug(aid, ENDPOINT, DB, H);
               }));
               setBookmarks(arts.filter(Boolean));
             }
