@@ -175,10 +175,22 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
   const featured = articles[0];
   const rest = articles.slice(1);
 
+  const BANNER_THEMES: Record<string, string> = {
+    crimson: 'linear-gradient(135deg, #c41e3a 0%, #7a1220 100%)',
+    evergreen: 'linear-gradient(135deg, #2e7d32 0%, #1b4d1f 100%)',
+    glacier: 'linear-gradient(135deg, #0ea5e9 0%, #0c4a6e 100%)',
+    golden: 'linear-gradient(135deg, #f59e0b 0%, #92400e 100%)',
+    royal: 'linear-gradient(135deg, #9333ea 0%, #4c1d95 100%)',
+    midnight: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    sunrise: 'linear-gradient(135deg, #f97316 0%, #db2777 100%)',
+    slate: 'linear-gradient(135deg, #64748b 0%, #334155 100%)',
+  };
+  const bannerGradient = BANNER_THEMES[profile?.bannerTheme] || BANNER_THEMES.crimson;
+
   return (
     <div style={{ minHeight: '100vh', background: '#fff', paddingBottom: '100px' }}>
       {/* BANNER */}
-      <div style={{ height: '160px', background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 60%, #f5c518 160%)', position: 'relative' }}>
+      <div style={{ height: '160px', background: bannerGradient, position: 'relative' }}>
         <Link href="/" style={{ position: 'absolute', top: '16px', left: '16px', color: 'white', textDecoration: 'none', fontSize: '14px', fontWeight: 700, background: 'rgba(0,0,0,0.25)', padding: '6px 14px', borderRadius: '20px' }}>← Back</Link>
       </div>
 
