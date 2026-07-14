@@ -79,7 +79,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
       if (existingId) {
         res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + existingId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data }) });
       } else {
-        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents', { method: 'POST', headers: HJ, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data }) });
+        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents', { method: 'POST', headers: HJ, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data: { ...data, joinedAT: new Date().toISOString() } }) });
       }
       if (!res.ok) throw new Error('save');
       window.location.reload();
