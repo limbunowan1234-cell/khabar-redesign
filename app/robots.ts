@@ -11,7 +11,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin', '/auth', '/bookmarks', '/profile$', '/post'],
       },
     ],
-    sitemap: SITE + '/sitemap.xml',
-    host: SITE,
+    sitemap: [SITE + '/sitemap.xml', SITE + '/image-sitemap.xml'],
   };
 }
