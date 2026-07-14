@@ -25,10 +25,13 @@ function fmtDate(s: string): string {
 }
 
 async function fetchArticleByIdOrSlug(aid: string, endpoint: string, db: string, headers: any): Promise<any> {
-  try {
-    const r = await fetch(endpoint + '/databases/' + db + '/collections/articles/documents/' + aid, { headers, credentials: 'include' });
-    if (r.ok) return await r.json();
-  } catch {}
+  const looksLikeSlug = /-/.test(aid) || aid.length > 36;
+  if (!looksLikeSlug) {
+    try {
+      const r = await fetch(endpoint + '/databases/' + db + '/collections/articles/documents/' + aid, { headers, credentials: 'include' });
+      if (r.ok) return await r.json();
+    } catch {}
+  }
   try {
     const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'slug', values: [aid] }));
     const r2 = await fetch(endpoint + '/databases/' + db + '/collections/articles/documents?queries[]=' + q, { headers, credentials: 'include' });
@@ -39,6 +42,7 @@ async function fetchArticleByIdOrSlug(aid: string, endpoint: string, db: string,
   } catch {}
   return null;
 }
+
 
 
 export default function ProfilePage() {
