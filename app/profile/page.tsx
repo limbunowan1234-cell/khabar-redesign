@@ -48,6 +48,7 @@ async function fetchArticleByIdOrSlug(aid: string, endpoint: string, db: string,
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [profileDoc, setProfileDoc] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [myArticles, setMyArticles] = useState<any[]>([]);
@@ -65,6 +66,12 @@ export default function ProfilePage() {
         if (!userRes.ok) { router.push('/auth'); return; }
         const userData = await userRes.json();
         setUser(userData);
+
+        try {
+          const pq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] }));
+          const profRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + pq, { headers: H, credentials: 'include' });
+          if (profRes.ok) { const pd = await profRes.json(); setProfileDoc(pd.documents?.[0] || null); }
+        } catch {}
 
         const [articlesRes, followersRes, followingRes, bookmarksRes] = await Promise.all([
           fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
@@ -145,6 +152,19 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+  const BANNER_THEMES: Record<string, string> = {
+    crimson: 'linear-gradient(135deg, #c41e3a 0%, #7a1220 100%)',
+    evergreen: 'linear-gradient(135deg, #2e7d32 0%, #1b4d1f 100%)',
+    glacier: 'linear-gradient(135deg, #0ea5e9 0%, #0c4a6e 100%)',
+    golden: 'linear-gradient(135deg, #f59e0b 0%, #92400e 100%)',
+    royal: 'linear-gradient(135deg, #9333ea 0%, #4c1d95 100%)',
+    midnight: 'linear-gradient(135deg, #1e293b 0%, 0f172a 100%)',
+    sunrise: 'linear-gradient(135deg, #f97316 0%, #db2777 100%)',
+    slate: 'linear-gradient(135deg, #64748b 0%, #334155 100%)',
+  };
+  const bannerGradient = BANNER_THEMES[profileDoc?.bannerTheme] || BANNER_THEMES.crimson;
+
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -164,7 +184,7 @@ export default function ProfilePage() {
       </header>
 
       {/* PROFILE HERO */}
-      <div style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)', padding: '40px 20px 60px', color: 'white', textAlign: 'center' }}>
+      <div style={{ background: bannerGradient, padding: '40px 20px 60px', color: 'white', textAlign: 'center' }}>
         <ProfileEditor userId={user.$id} userName={user.name} />
         <h1 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 4px' }}>{user.name}</h1>
         <p style={{ fontSize: '14px', opacity: 0.85, margin: '0 0 20px' }}>{user.email}</p>
