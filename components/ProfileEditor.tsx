@@ -20,6 +20,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
   const [docId, setDocId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
+  const [bannerTheme, setBannerTheme] = useState('crimson');
   const [displayName, setDisplayName] = useState(userName || '');
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -38,7 +39,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
         if (row) {
           setDocId(row.$id);
           setAvatarUrl(row.avatarUrl || '');
-          setBio(row.bio || '');
+          setBio(row.bio || ''); setBannerTheme(row.bannerTheme || 'crimson');
           setDisplayName(row.displayName || userName || '');
         }
       })
@@ -67,7 +68,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
   async function save() {
     setSaving(true); setErr('');
     try {
-      const data = { userId, displayName, userName: displayName, bio, avatarUrl };
+      const data = { userId, displayName, userName: displayName, bio, avatarUrl, bannerTheme };
       let res;
       if (docId) {
         res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + docId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data }) });
@@ -111,6 +112,22 @@ export default function ProfileEditor({ userId, userName }: Props) {
             <label style={{ fontSize: '12px', fontWeight: 700, color: '#666' }}>Bio</label>
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={200} placeholder="Tell people about yourself..." style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', margin: '4px 0 4px', boxSizing: 'border-box', fontSize: '14px', resize: 'none', fontFamily: 'inherit' }} />
             <div style={{ fontSize: '11px', color: '#999', textAlign: 'right', marginBottom: '12px' }}>{bio.length}/200</div>
+            <label style={{ fontSize: '12px', fontWeight: 700, color: '#666' }}>Banner Style</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', margin: '6px 0 16px' }}>
+              {[
+                { id: 'crimson', name: 'Strong Opinion', gradient: 'linear-gradient(135deg, #c41e3a 0%, #7a1220 100%)' },
+                { id: 'evergreen', name: 'Greenery', gradient: 'linear-gradient(135deg, #2e7d32 0%, #1b4d1f 100%)' },
+                { id: 'glacier', name: 'Calm Writer', gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0c4a6e 100%)' },
+                { id: 'golden', name: 'Golden Hour', gradient: 'linear-gradient(135deg, #f59e0b 0%, #92400e 100%)' },
+                { id: 'royal', name: 'Culture & Arts', gradient: 'linear-gradient(135deg, #9333ea 0%, #4c1d95 100%)' },
+                { id: 'midnight', name: 'Investigative', gradient: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' },
+                { id: 'sunrise', name: 'Uplifting', gradient: 'linear-gradient(135deg, #f97316 0%, #db2777 100%)' },
+                { id: 'slate', name: 'Neutral', gradient: 'linear-gradient(135deg, #64748b 0%, #334155 100%)' },
+              ].map((t) => (
+                <button key={t.id} type="button" onClick={() => setBannerTheme(t.id)} title={t.name} style={{ height: '38px', borderRadius: '8px', border: bannerTheme === t.id ? '3px solid #1a1a1a' : '2px solid transparent', background: t.gradient, cursor: 'pointer', padding: 0 }} />
+              ))}
+            </div>
+
             {err && <div style={{ fontSize: '12px', color: '#c41e3a', marginBottom: '12px' }}>{err}</div>}
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => setOpen(false)} disabled={saving} style={{ flex: 1, padding: '11px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', color: '#666', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
