@@ -25,9 +25,9 @@ function fmtDate(s: string): string {
   catch { return ''; }
 }
 
-export default function ContestClient() {
-  const [entries, setEntries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function ContestClient({ initialEntries = [] }: { initialEntries?: any[] }) {
+  const [entries, setEntries] = useState<any[]>(initialEntries);
+  const [loading, setLoading] = useState(initialEntries.length === 0);
   const [user, setUser] = useState<any>(null);
   const [sortBy, setSortBy] = useState('score');
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -80,7 +80,7 @@ export default function ContestClient() {
             } catch {}
             return { ...a, _votes: 0 };
           }));
-          setEntries(withVotes);
+          if (withVotes.length > 0) setEntries(withVotes);
 
           try {
             const liked = JSON.parse(localStorage.getItem('kd_liked') || '{}');
