@@ -280,6 +280,22 @@ export default function ProfilePage() {
           ))}
         </div>
 
+        {/* RECENT ACTIVITY */}
+        {recentActivity.length > 0 && (
+          <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', padding: '16px 20px', marginBottom: '24px' }}>
+            <p style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px' }}>Recent Activity</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {recentActivity.map((n: any) => (
+                <div key={n.$id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: n.read ? '#ccc' : '#c41e3a', flexShrink: 0 }} />
+                  <p style={{ margin: 0, fontSize: '13px', color: isDarkMode ? '#ddd' : '#333' }}>{n.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+
         {/* TABS */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
