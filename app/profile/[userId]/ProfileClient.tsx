@@ -25,7 +25,7 @@ function getTier(score: number) {
   return TIERS.find((t) => score >= t.min && score < t.max) || TIERS[0];
 }
 
-export default function ProfileClient({ userId, initialProfile, initialArticles = [] }: { userId: string; initialProfile?: any; initialArticles?: any[] }) {
+export default function ProfileClient({ userId, initialProfile, initialArticles = [], writerRank = null, contestRank = null }: { userId: string; initialProfile?: any; initialArticles?: any[]; writerRank?: number | null; contestRank?: number | null }) {
 
   const [profile, setProfile] = useState<any>(initialProfile || null);
   const [articles, setArticles] = useState<any[]>(initialArticles);
@@ -192,6 +192,17 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
       {/* BANNER */}
       <div style={{ height: '160px', background: bannerGradient, position: 'relative' }}>
         <Link href="/" style={{ position: 'absolute', top: '16px', left: '16px', color: 'white', textDecoration: 'none', fontSize: '14px', fontWeight: 700, background: 'rgba(0,0,0,0.25)', padding: '6px 14px', borderRadius: '20px' }}>← Back</Link>
+        {(writerRank || contestRank) && (
+          <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {contestRank && (
+              <span style={{ background: '#FFD54A', color: '#5A3B00', fontSize: '11px', fontWeight: 700, padding: '5px 10px', borderRadius: '14px' }}>#{contestRank} Contest</span>
+            )}
+            {writerRank && (
+              <span style={{ background: 'rgba(255,255,255,0.9)', color: '#1a1a1a', fontSize: '11px', fontWeight: 700, padding: '5px 10px', borderRadius: '14px' }}>#{writerRank} Writer</span>
+            )}
+          </div>
+        )}
+
       </div>
 
       <div style={{ maxWidth: '680px', margin: '0 auto', padding: '0 16px' }}>
