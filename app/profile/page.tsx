@@ -206,7 +206,7 @@ export default function ProfilePage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5' }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}} .stat-card-anim{animation:fadeSlideUp 0.5s ease both} .action-card{transition:transform 0.15s,box-shadow 0.15s} .action-card:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,0.2)}`}</style>
 
       {/* HEADER */}
       <header style={{ backgroundColor: isDarkMode ? '#1e1e1e' : '#c41e3a', color: 'white', padding: '12px 20px', borderBottom: '3px solid #f5c518', position: 'sticky', top: 0, zIndex: 100 }}>
@@ -245,19 +245,20 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
           {[
             { label: 'Articles', value: myArticles.length },
             { label: 'Followers', value: followers.length },
             { label: 'Following', value: following.length },
             { label: 'Bookmarks', value: bookmarkCount },
-          ].map(stat => (
-            <div key={stat.label} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: '#f5c518' }}>{stat.value}</div>
-              <div style={{ fontSize: '12px', opacity: 0.85 }}>{stat.label}</div>
+          ].map((stat, i) => (
+            <div key={stat.label} className="stat-card-anim" style={{ animationDelay: (i * 0.08) + 's', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px 20px', minWidth: '80px', textAlign: 'center' }}>
+              <div style={{ fontSize: '22px', fontWeight: '800', color: '#f5c518' }}>{stat.value}</div>
+              <div style={{ fontSize: '11px', opacity: 0.9, marginTop: '2px' }}>{stat.label}</div>
             </div>
           ))}
         </div>
+
       </div>
 
       <div style={{ maxWidth: '900px', margin: '-20px auto 0', padding: '0 16px 40px' }}>
@@ -271,7 +272,7 @@ export default function ProfilePage() {
             { href: '/admin', icon: '⚙️', label: 'Admin Panel', color: '#1a1a1a' },
           ].map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-              <div style={{ backgroundColor: item.color, color: item.textColor || 'white', borderRadius: '12px', padding: '16px', textAlign: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+              <div className='action-card' style={{ backgroundColor: item.color, color: item.textColor || 'white', borderRadius: '12px', padding: '16px', textAlign: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
                 <div style={{ fontSize: '24px', marginBottom: '6px' }}>{item.icon}</div>
                 <div style={{ fontSize: '13px', fontWeight: '700' }}>{item.label}</div>
               </div>
