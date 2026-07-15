@@ -434,23 +434,30 @@ export default function ProfilePage() {
             {activeTab === 'bookmarks' && (
               bookmarks.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: isDarkMode ? '#666' : '#ccc' }}>
-                  <div style={{ fontSize: '40px', marginBottom: '12px' }}>bookmark</div>
+                  <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔖</div>
                   <p style={{ fontWeight: '600', margin: 0, color: isDarkMode ? '#aaa' : '#666' }}>No bookmarks yet</p>
                   <p style={{ fontSize: '13px', margin: '8px 0 0', color: isDarkMode ? '#666' : '#aaa' }}>Save articles to read later!</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {bookmarks.map((a: any) => (
-                    <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <div style={{ display: 'flex', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px', alignItems: 'center' }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '4px' }}>{a.title}</div>
-                          <div style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#aaa' }}>{a.category} - {(a.views || 0).toLocaleString()} views</div>
+                <div className="profile-grid-3col">
+                  {bookmarks.map((a: any) => {
+                    const img = getImageUrl(a);
+                    return (
+                      <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid ' + (isDarkMode ? '#333' : '#eee'), backgroundColor: isDarkMode ? '#2a2a2a' : '#fff' }}>
+                          <div style={{ height: '100px', position: 'relative', background: img ? '#e5e5e5' : 'linear-gradient(135deg, #c41e3a 0%, #a01830 60%, #f5c518 140%)' }}>
+                            {img ? <img src={img} alt={a.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', textAlign: 'center' }}><span style={{ color: '#fff', fontSize: '11px', fontWeight: 700, opacity: 0.9 }}>{a.title}</span></div>}
+                          </div>
+                          <div style={{ padding: '10px' }}>
+                            <div style={{ fontWeight: '700', fontSize: '13px', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.title}</div>
+                            <div style={{ fontSize: '11px', color: isDarkMode ? '#888' : '#999' }}>{a.category} &middot; {(a.views || 0).toLocaleString()} views</div>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
+
               )
             )}
         </div>
