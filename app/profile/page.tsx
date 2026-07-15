@@ -230,6 +230,21 @@ export default function ProfilePage() {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}><AuthorBadge submitterId={user.$id} size="md" /></div>
             <TierProgress userId={user.$id} />
           <ProfileBio userId={user.$id} />
+        {(writerRank || contestRank) && (
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', margin: '4px 0 16px' }}>
+            {writerRank && (
+              <span style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', fontSize: '12px', fontWeight: 700, padding: '6px 14px', borderRadius: '16px' }}>
+                #{writerRank} Writer {writerRank === 1 ? String.fromCodePoint(0x1F389) : ''}
+              </span>
+            )}
+            {contestRank && (
+              <span style={{ background: 'rgba(255,213,74,0.25)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,213,74,0.5)', color: '#FFD54A', fontSize: '12px', fontWeight: 700, padding: '6px 14px', borderRadius: '16px' }}>
+                #{contestRank} Contest {String.fromCodePoint(0x1F3C6)}
+              </span>
+            )}
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
           {[
             { label: 'Articles', value: myArticles.length },
