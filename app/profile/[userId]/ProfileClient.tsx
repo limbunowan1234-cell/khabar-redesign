@@ -253,27 +253,63 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
           )}
         </div>
 
-        {/* NEWS GALLERY - 2 column bigger cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-          {articles.map((article) => {
+        {/* ARTICLE GALLERY */}
+        {articles.length > 0 && (() => {
+          const showSections = articles.length > 6;
+          const mostViewed = showSections ? [...articles].sort((a: any, b: any) => (b.views || 0) - (a.views || 0)).slice(0, 4) : [];
+          const renderCard = (article: any) => {
             const img = getImageUrl(article);
             return (
               <Link key={article.$id} href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                  <div style={{ height: '140px', background: img ? '#e5e5e5' : 'linear-gradient(135deg, #c41e3a 0%, #a01830 60%, #f5c518 140%)', position: 'relative' }}>
-                    {img ? <img src={img} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', textAlign: 'center' }}><span style={{ color: '#fff', fontSize: '13px', fontWeight: 700, opacity: 0.9 }}>{article.title}</span></div>}
-                    <span style={{ position: 'absolute', top: '8px', left: '8px', background: '#c41e3a', color: '#fff', padding: '3px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' }}>{article.category}</span>
+                <div className="profile-grid-card" style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                  <div style={{ height: '120px', background: img ? '#e5e5e5' : 'linear-gradient(135deg, #c41e3a 0%, #a01830 60%, #f5c518 140%)', position: 'relative' }}>
+                    {img ? <img src={img} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', textAlign: 'center' }}><span style={{ color: '#fff', fontSize: '12px', fontWeight: 700, opacity: 0.9 }}>{article.title}</span></div>}
+                    <span style={{ position: 'absolute', top: '8px', left: '8px', background: '#c41e3a', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>{article.category}</span>
                   </div>
                   <div style={{ padding: '10px 12px' }}>
-                    <h3 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
-                    <p style={{ margin: 0, fontSize: '11px', color: '#999' }}>{(article.views || 0).toLocaleString()} views</p>
+                    <h3 style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
+                    <p style={{ margin: 0, fontSize: '10px', color: '#999' }}>{(article.views || 0).toLocaleString()} views</p>
                   </div>
                 </div>
               </Link>
             );
-          })}
-        </div>
+          };
+          if (!showSections) {
+            return (
+              <>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: '#657786', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>Articles</p>
+                <div className="profile-news-grid">
+                  {articles.map(renderCard)}
+                </div>
+              </>
+            );
+          }
+          return (
+            <>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>Most Viewed</p>
+              <div className="profile-news-grid" style={{ marginBottom: '28px' }}>
+                {mostViewed.map(renderCard)}
+              </div>
+
+              <p style={{ fontSize: '12px', fontWeight: 800, color: '#657786', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>Latest</p>
+              <div className="profile-news-grid">
+                {articles.map(renderCard)}
+              </div>
+            </>
+          );
+        })()}
       </div>
+
+      <style>{`
+        .profile-news-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        .profile-grid-card { transition: transform 0.15s, box-shadow 0.15s; }
+        .profile-grid-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+        @media (min-width: 768px) {
+          .profile-news-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+      `}</style>
     </div>
   );
 }
+
+
