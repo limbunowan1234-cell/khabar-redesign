@@ -158,7 +158,7 @@ export default function ProfilePage() {
     glacier: 'linear-gradient(135deg, #0ea5e9 0%, #0c4a6e 100%)',
     golden: 'linear-gradient(135deg, #f59e0b 0%, #92400e 100%)',
     royal: 'linear-gradient(135deg, #9333ea 0%, #4c1d95 100%)',
-    midnight: 'linear-gradient(135deg, #1e293b 0%, 0f172a 100%)',
+    midnight: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
     sunrise: 'linear-gradient(135deg, #f97316 0%, #db2777 100%)',
     slate: 'linear-gradient(135deg, #64748b 0%, #334155 100%)',
   };
@@ -186,8 +186,8 @@ export default function ProfilePage() {
       {/* PROFILE HERO */}
       <div style={{ background: bannerGradient, padding: '40px 20px 60px', color: 'white', textAlign: 'center' }}>
         <ProfileEditor userId={user.$id} userName={user.name} />
-        <h1 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 4px' }}>{user.name}</h1>
-        <p style={{ fontSize: '14px', opacity: 0.85, margin: '0 0 20px' }}>{user.email}</p>
+        <h1 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 4px', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>{user.name}</h1>
+        <p style={{ fontSize: '14px', opacity: 0.95, margin: '0 0 20px', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>{user.email}</p>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}><AuthorBadge submitterId={user.$id} size="md" /></div>
             <TierProgress userId={user.$id} />
           <ProfileBio userId={user.$id} />
