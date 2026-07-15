@@ -230,12 +230,21 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
         {bio && <p style={{ margin: '12px 0', color: '#1a1a1a', fontSize: '15px', lineHeight: 1.5 }}>{bio}</p>}
 
         {/* STATS ROW */}
-        <div style={{ display: 'flex', gap: '20px', margin: '14px 0', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '14px', color: '#657786' }}><b style={{ color: '#1a1a1a' }}>{articles.length}</b> Articles</span>
-          <span style={{ fontSize: '14px', color: '#657786' }}><b style={{ color: '#1a1a1a' }}>{followerCount}</b> Followers</span>
-          <span style={{ fontSize: '14px', color: '#657786' }}><b style={{ color: '#1a1a1a' }}>{totalViews.toLocaleString()}</b> Views</span>
-          <span style={{ fontSize: '14px', color: '#657786' }}><b style={{ color: '#1a1a1a' }}>{totalLikes}</b> Likes</span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', margin: '16px 0' }}>
+          {[
+            { label: 'Articles', value: articles.length },
+            { label: 'Followers', value: followerCount },
+            { label: 'Views', value: totalViews.toLocaleString() },
+            { label: 'Likes', value: totalLikes },
+          ].map((s, i) => (
+            <div key={s.label} className="public-stat-card" style={{ animationDelay: (i * 0.07) + 's', background: '#f7f7f7', border: '1px solid #eee', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: '#1a1a1a' }}>{s.value}</div>
+              <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{s.label}</div>
+            </div>
+          ))}
         </div>
+
+
 
         {/* TIER PROGRESS */}
         <div style={{ background: '#f7f7f7', borderRadius: '14px', padding: '16px', margin: '16px 0 24px' }}>
@@ -302,6 +311,7 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
 
       <style>{`
         .profile-news-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}} .public-stat-card{animation:fadeSlideUp 0.5s ease both}
         .profile-grid-card { transition: transform 0.15s, box-shadow 0.15s; }
         .profile-grid-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
         @media (min-width: 768px) {
