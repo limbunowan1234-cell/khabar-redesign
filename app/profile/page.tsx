@@ -23,6 +23,14 @@ function fmtDate(s: string): string {
   try { return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
   catch { return ''; }
 }
+function getImageUrl(a: any): string {
+  const id = a?.imageFileId;
+  if (!id || ['Text', 'null', 'undefined', ''].includes(String(id))) return '';
+  if (String(id).startsWith('http')) return id;
+  return ENDPOINT + '/storage/buckets/article-image/files/' + id + '/view?project=' + PROJECT;
+}
+
+
 
 async function fetchArticleByIdOrSlug(aid: string, endpoint: string, db: string, headers: any): Promise<any> {
   const looksLikeSlug = /-/.test(aid) || aid.length > 36;
