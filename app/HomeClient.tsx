@@ -81,8 +81,6 @@ function getTopArticles(articles: any[], period: string): any[] {
 
 // HERO SECTION WITH 3 FEATURED ARTICLES
 function HeroSection({ articles, isDarkMode }: any) {
-  const shuffled = [...articles].sort(() => Math.random() - 0.5).slice(0, 2);
-  if (shuffled.length === 0) return null;
 
   return (
     <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
@@ -90,26 +88,6 @@ function HeroSection({ articles, isDarkMode }: any) {
       <div style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)', padding: '40px 24px', textAlign: 'center', color: 'white' }}>
         <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.2' }}>खबर दार्जिलिङ</h1>
         <p style={{ fontSize: '16px', margin: 0, opacity: 0.95, fontWeight: '500' }}>The Digital Home of Darjeeling</p>
-      </div>
-      {/* 3 FEATURED ARTICLES */}
-      <div className='hero-layout' style={{ padding: '20px' }}>
-        <div className='hero-main' style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          {shuffled.map((article) => {
-          const img = getImageUrl(article);
-          const preview = truncateText(article.content || article.summary || '', 30);
-          return (
-            <Link key={article.$id} href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', display: 'block', borderRadius: '10px', overflow: 'hidden', transition: 'transform 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
-              {img && <img src={img} alt={article.title} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
-              <div style={{ padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9' }}>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#c41e3a', textTransform: 'uppercase', marginBottom: '6px' }}>{article.category || 'News'}</div>
-                <h3 style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', margin: '0 0 6px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
-                <p style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', margin: '0 0 8px', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
-                <div style={{ fontSize: '10px', color: isDarkMode ? '#777' : '#999' }}>👁 {(article.views || 0).toLocaleString()}</div>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
       </div>
     </div>
   );
