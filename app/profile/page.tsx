@@ -109,30 +109,6 @@ export default function ProfilePage() {
         if (followingRes.ok) { const d = await followingRes.json(); setFollowing(d.documents || []); }
         if (bookmarksRes.ok) { const d = await bookmarksRes.json(); setBookmarkCount(d.total || 0); }
 
-        // Rank computation (site-wide comparison, client-side since this page isn't SEO-indexed)
-        try {
-          const allRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-            encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1000] })),
-            { headers: H, credentials: 'include' });
-          if (allRes.ok) {
-            const allData = await allRes.json();
-            const allArticles = allData.documents || [];
-            const writerTotals: Record<string, number> = {};
-            for (const a of allArticles) {
-              if (!a.submitterId) continue;
-              writerTotals[a.submitterId] = (writerTotals[a.submitterId] || 0) + (a.views || 0);
-            }
-            const rankedWriters = Object.entries(writerTotals).sort((a, b) => b[1] - a[1]);
-            const wIdx = rankedWriters.findIndex(([id]) => id === userData.$id);
-            if (wIdx !== -1 && wIdx < 10) setWriterRank(wIdx + 1);
-
-            const contestEntries = allArticles.filter((a: any) => a.isContestEntry);
-            const rankedContest = [...contestEntries].sort((a: any, b: any) => (b.views || 0) - (a.views || 0));
-            const cIdx = rankedContest.findIndex((a: any) => a.submitterId === userData.$id);
-            if (cIdx !== -1 && cIdx < 10) setContestRank(cIdx + 1);
-          }
-        } catch {}
 
         // Recent activity feed
         try {
