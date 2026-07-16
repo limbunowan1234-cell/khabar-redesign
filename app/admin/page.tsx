@@ -24,6 +24,7 @@ export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [articles, setArticles] = useState<any[]>([]);
+  const [totalArticleCount, setTotalArticleCount] = useState(0);
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [publishing, setPublishing] = useState(false);
@@ -81,7 +82,7 @@ export default function AdminPage() {
   async function loadArticles() {
     try {
       const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })), { headers: H, credentials: 'include' });
-      if (res.ok) { const data = await res.json(); setArticles(data.documents || []); }
+      if (res.ok) { const data = await res.json(); setArticles(data.documents || []); setTotalArticleCount(data.total || 0); }
     } catch {}
   }
 
@@ -557,7 +558,7 @@ function generateSlug(text: string): string {
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               {[
-                { label: 'Total Articles', value: articles.length, color: '#0F4C5C' },
+                { label: 'Total Articles', value: totalArticleCount, color: '#0F4C5C' },
                 { label: 'Total Views', value: totalViews.toLocaleString(), color: '#0F4C5C' },
                 { label: 'APK Downloads', value: apkDownloads.toLocaleString(), color: '#27ae60' },
                 { label: 'Breaking News', value: articles.filter(a => a.isBreaking).length, color: '#c41e3a' },
