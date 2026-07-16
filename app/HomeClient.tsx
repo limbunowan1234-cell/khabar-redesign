@@ -545,6 +545,7 @@ function BreakingNewsSidebar({ articles, isDarkMode }: any) {
 export default function HomeClient({ initialArticles = [] }: { initialArticles?: any[] }) {
   const { initAuth, user, logOut } = useAuthStore();
   const [articles, setArticles] = useState<any[]>(initialArticles);
+  const [totalSiteArticles, setTotalSiteArticles] = useState(0);
   const [filtered, setFiltered] = useState<any[]>(initialArticles);
   const [loading, setLoading] = useState(initialArticles.length === 0);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -584,7 +585,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
         );
         if (res.ok) {
           const data = await res.json();
-          setArticles(data.documents || []);
+          setArticles(data.documents || []); setTotalSiteArticles(data.total || 0);
           setFiltered(data.documents || []);
         }
       } catch (e) { console.error(e); }
@@ -776,7 +777,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <span style={{ width: '4px', height: '16px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
             <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Results' : 'Latest News'}</span>
-            <span style={{ marginLeft: 'auto', fontSize: '12px', color: isDarkMode ? '#999' : '#888' }}>{filtered.length} stories</span>
+            <span style={{ marginLeft: 'auto', fontSize: '12px', color: isDarkMode ? '#999' : '#888' }}>{(selectedCategory === 'All' && !searchQuery) ? totalSiteArticles : filtered.length} stories</span>
           </div>
           {filtered.slice(0, shown).map((article, i) => (<div key={article.$id}><MobileCard article={article} isDarkMode={isDarkMode} index={i} />{(i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
           {shown < filtered.length && (
@@ -811,7 +812,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
               <h2 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Search Results' : 'Latest News'}</h2>
-              <span style={{ marginLeft: 'auto', fontSize: '13px', color: isDarkMode ? '#999' : '#888' }}>{filtered.length} articles</span>
+              <span style={{ marginLeft: 'auto', fontSize: '13px', color: isDarkMode ? '#999' : '#888' }}>{(selectedCategory === 'All' && !searchQuery) ? totalSiteArticles : filtered.length} articles</span>
             </div>
             {gridArticles.slice(0, shown).map((article, i) => (<div key={article.$id}><DesktopCard article={article} isDarkMode={isDarkMode} featured={false} />{(i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
             {filtered.length === 0 && (
