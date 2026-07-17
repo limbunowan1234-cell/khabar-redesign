@@ -81,17 +81,35 @@ function getTopArticles(articles: any[], period: string): any[] {
 
 // HERO SECTION WITH 3 FEATURED ARTICLES
 function HeroSection({ articles, isDarkMode }: any) {
+  const hero = articles.find((a: any) => a.isBreaking) || articles.find((a: any) => a.isFeatured) || articles[0];
+  if (!hero) return null;
+  const img = getImageUrl(hero);
+  const author = hero.submitterName || hero.authorName || 'Staff Reporter';
 
   return (
-    <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-      {/* HERO GRADIENT */}
-      <div style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)', padding: '40px 24px', textAlign: 'center', color: 'white' }}>
-        <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '0 0 8px', lineHeight: '1.2' }}>खबर दार्जिलिङ</h1>
-        <p style={{ fontSize: '16px', margin: 0, opacity: 0.95, fontWeight: '500' }}>The Digital Home of Darjeeling</p>
+    <Link href={'/article/' + (hero.slug || hero.$id)} style={{ textDecoration: 'none' }}>
+      <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px', height: '320px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', backgroundColor: '#1a1a1a' }}>
+        {img ? (
+          <img src={img} alt={hero.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)' }} />
+        )}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%)' }} />
+        {hero.isBreaking && (
+          <div style={{ position: 'absolute', top: '18px', left: '20px' }}>
+            <span style={{ background: '#c41e3a', color: '#fff', fontSize: '11px', fontWeight: 800, padding: '4px 12px', borderRadius: '4px', textTransform: 'uppercase' }}>Breaking</span>
+          </div>
+        )}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 24px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: '#f5c518', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '0.5px' }}>{hero.category || 'News'}</div>
+          <h1 style={{ fontSize: '30px', fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: '0 0 10px', textShadow: '0 2px 10px rgba(0,0,0,0.4)', maxWidth: '700px' }}>{hero.title}</h1>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', margin: 0 }}>By {author}</p>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
+
 
 function CategorySections({ articles, isDarkMode, onSelectCategory }: any) {
   const priorityCats = ['Politics', 'Culture', 'Tourism', 'Sports', 'Tea Gardens', 'Education'];
