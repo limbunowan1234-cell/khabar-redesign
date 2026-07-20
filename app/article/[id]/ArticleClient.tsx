@@ -392,7 +392,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
         <div style={{ position: 'relative', width: '100%', height: '500px', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
           <Image src={imgUrl} alt={article.title} fill sizes='100vw' priority style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.7) 100%)' }} />
-          {article.category && <div style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: '#c41e3a', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>{article.category}</div>}
+          {(article.genre || article.category) && <div style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: '#c41e3a', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>{article.genre || article.category}</div>}
           {article.isBreaking && <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: '#f5c518', color: '#1a1a1a', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700' }}>🔴 BREAKING</div>}
         </div>
       )}
@@ -401,7 +401,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
       {!imgUrl && (
         <div style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)', padding: '40px 20px 30px', color: 'white' }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            {article.category && <span style={{ display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '16px' }}>{article.category}</span>}
+            {(article.genre || article.category) && <span style={{ display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '16px' }}>{article.genre || article.category}</span>}
             <h1 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: '800', lineHeight: '1.2', margin: 0, color: 'white' }}>{article.title}</h1>
           </div>
         </div>
@@ -437,7 +437,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
                 </div>
                 <div style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#888', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   {article.publishedAt && <span>{fmtDate(article.publishedAt)}</span>}
-                  {article.location && <span>{article.location}</span>}
+                  {(article.locationDistrict || article.location) && <span>{article.locationArea ? article.locationArea + ', ' + (article.locationDistrict || article.location) : (article.locationDistrict || article.location)}</span>}
                   <span>{readingTime(article.content)}</span>
                   {article.views > 0 && <span>👁 {article.views.toLocaleString()}</span>}
                 </div>
@@ -523,10 +523,10 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
             </div>
           )}
 
-          {article.category && (
+          {(article.genre || article.category) && (
             <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#aaa' : '#888' }}>Tags:</span>
-              {[...[article.category, article.location].filter(Boolean), ...extractTags(article.title, article.category, article.location)].map((tag, i) => (
+              {[...[(article.genre || article.category), (article.locationDistrict || article.location), article.locationArea].filter(Boolean), ...extractTags(article.title, (article.genre || article.category), (article.locationDistrict || article.location))].map((tag, i) => (
                 <span key={i} style={{ backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5', color: '#c41e3a', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', border: '1px solid #c41e3a22' }}>{tag}</span>
               ))}
             </div>
