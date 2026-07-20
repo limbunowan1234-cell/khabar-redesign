@@ -68,6 +68,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       authors: [author],
       images: [{ url: image, width: 1200, height: 630, alt: title }],
     },
+    robots: 'index, follow',
     twitter: {
       card: 'summary_large_image',
       title,
