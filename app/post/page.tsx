@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -64,8 +64,8 @@ export default function PostPage() {
       const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Upload failed'); }
       const data = await res.json();
-      setImageFileId(data.\);
-      setImagePreview(endpoint + '/storage/buckets/' + bucketId + '/files/' + data.\ + '/view?project=' + projectId);
+      setImageFileId(data.$id);
+      setImagePreview(endpoint + '/storage/buckets/' + bucketId + '/files/' + data.$id + '/view?project=' + projectId);
       setSuccess('Image uploaded!');
       setTimeout(() => setSuccess(''), 2000);
     } catch (err: any) { setError('Upload failed: ' + err.message); setImagePreview(''); }
