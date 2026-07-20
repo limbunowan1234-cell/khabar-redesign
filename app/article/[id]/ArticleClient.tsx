@@ -334,18 +334,6 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
   if (!article && !initialArticle) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
 
-        {/* COPYRIGHT FOOTER */}
-        <div style={{ backgroundColor: isDarkMode ? '#2a1518' : '#f9f9f9', borderTop: '2px solid #c41e3a', padding: '24px 28px', marginBottom: '24px', textAlign: 'center' }}>
-          <p style={{ margin: '0 0 6px', fontSize: '13px', color: isDarkMode ? '#aaa' : '#888', fontWeight: '500' }}>
-            © {new Date(article.publishedAt || article.$createdAt || new Date()).getFullYear()} Khabar Darjeeling
-          </p>
-          <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a' }}>
-            By {article.submitterName || article.authorName || 'Staff Reporter'}
-          </p>
-          <p style={{ margin: '8px 0 0', fontSize: '12px', color: isDarkMode ? '#999' : '#aaa', lineHeight: '1.5' }}>
-            All rights reserved. Content may not be reproduced without permission.
-          </p>
-        </div>
       <div style={{ fontSize: '48px' }}>{String.fromCodePoint(0x1F4F0)}</div>
       <p style={{ fontSize: '18px', fontWeight: '600', color: '#333' }}>Article not found</p>
       <Link href="/"><button style={{ backgroundColor: '#c41e3a', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Back to Home</button></Link>
@@ -667,6 +655,19 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
           )}
         </div>
 
+
+        {/* COPYRIGHT FOOTER */}
+        <div style={{ backgroundColor: isDarkMode ? '#2a1518' : '#f9f9f9', borderTop: '2px solid #c41e3a', padding: '24px 28px', marginBottom: '24px', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 6px', fontSize: '13px', color: isDarkMode ? '#aaa' : '#888', fontWeight: '500' }}>
+            © {new Date(article.publishedAt || article.$createdAt || new Date()).getFullYear()} Khabar Darjeeling
+          </p>
+          <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a' }}>
+            By {article.submitterName || article.authorName || 'Staff Reporter'}
+          </p>
+          <p style={{ margin: '8px 0 0', fontSize: '12px', color: isDarkMode ? '#999' : '#aaa', lineHeight: '1.5' }}>
+            All rights reserved. Content may not be reproduced without permission.
+          </p>
+        </div>
         {/* BACK */}
         <div style={{ textAlign: 'center', paddingBottom: '40px' }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
