@@ -10,7 +10,7 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 
-  const [genre, setGenre] = useState('Voice of People');
+const genres = ['Voice of People', 'Citizen Journalism', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Photo Story', 'Video', 'Health', 'Education', 'Technology', 'Sports', 'Opinion'];
   const [locationDistrict, setLocationDistrict] = useState('Darjeeling');
   const [locationArea, setLocationArea] = useState('');
 
@@ -39,9 +39,8 @@ export default function PostPage() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [genre, setGenre] = useState('Voice of People');
-  const [locationDistrict, setLocationDistrict] = useState('Darjeeling');
-  const [locationArea, setLocationArea] = useState('');
+  const [genre, setCategory] = useState('Darjeeling');
+  const [location, setLocation] = useState('Darjeeling');
   const [youtubeId, setYoutubeId] = useState('');
   const [isContestEntry, setIsContestEntry] = useState(false);
   const [imageFileId, setImageFileId] = useState('');
@@ -100,6 +99,7 @@ export default function PostPage() {
     .replace(/-+/g, '-')
     .slice(0, 60)
     .replace(/^-+|-+$/g, '');
+  const suffix = Date.now().toString(36);
   return (base ? base + '-' : 'news-') + suffix;
 }
 const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
