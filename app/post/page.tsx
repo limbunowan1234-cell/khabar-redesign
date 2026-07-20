@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-  const [genre, setGenre] = useState('Voice of People');
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
@@ -11,16 +10,8 @@ const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 
 const genres = ['Voice of People', 'Citizen Journalism', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Photo Story', 'Video', 'Health', 'Education', 'Technology', 'Sports', 'Opinion'];
-  const [locationDistrict, setLocationDistrict] = useState('Darjeeling');
-  const [locationArea, setLocationArea] = useState('');
+const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim'];
 
-function getInitials(name: string) {
-  if (!name) return 'KD';
-  const p = name.trim().split(/\s+/);
-  return p.length === 1 ? p[0][0].toUpperCase() : (p[0][0] + p[p.length-1][0]).toUpperCase();
-}
-
-export default function PostPage() {
 function getInitials(name: string) {
   if (!name) return 'KD';
   const p = name.trim().split(/\s+/);
@@ -29,6 +20,9 @@ function getInitials(name: string) {
 
 export default function PostPage() {
   const router = useRouter();
+  const [genre, setGenre] = useState('Voice of People');
+  const [locationDistrict, setLocationDistrict] = useState('Darjeeling');
+  const [locationArea, setLocationArea] = useState('');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
