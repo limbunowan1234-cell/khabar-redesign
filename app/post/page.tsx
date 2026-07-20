@@ -134,7 +134,7 @@ export default function PostPage() {
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: '40px', height: '40px', border: '4px solid rgba(196,30,58,0.15)', borderLeftColor: '#c41e3a', borderRadius: '50%', margin: '0 auto' }} />
-      <style>{\@keyframes spin{to{transform:rotate(360deg)}} div{animation:spin 1s linear infinite}\}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} div{animation:spin 1s linear infinite}`}</style>
     </div>
   );
 
