@@ -3,14 +3,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-const endpoint = 'https://api.khabardarjeeling.space/v1';
+  const [genre, setGenre] = useState('Voice of People');
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 
-const categories = ['Darjeeling','Kalimpong','Kurseong','Mirik','Siliguri','West Bengal','Politics','Sports','Culture','Education','Health','Entertainment','Technology','Tea Gardens','Tourism','Crime','Opinion','Other'];
+const genres = ['Voice of People', 'Citizen Journalism', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Photo Story', 'Video', 'Health', 'Education', 'Technology', 'Sports', 'Opinion'];
+  const [locationDistrict, setLocationDistrict] = useState('Darjeeling');
+  const [locationArea, setLocationArea] = useState('');
 
 function getInitials(name: string) {
   if (!name) return 'KD';
@@ -30,7 +32,7 @@ export default function PostPage() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('Darjeeling');
+  const [genre, setCategory] = useState('Darjeeling');
   const [location, setLocation] = useState('Darjeeling');
   const [youtubeId, setYoutubeId] = useState('');
   const [isContestEntry, setIsContestEntry] = useState(false);
@@ -102,7 +104,8 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
             content: content.trim(),
             slug: generateSlug(title),
             category,
-            location: location || 'Darjeeling',
+            locationDistrict: locationDistrict,
+            locationArea: locationArea || null,
             imageFileId: imageFileId || null,
             youtube_id: youtubeId || null,
             isBreaking: false,
@@ -189,22 +192,24 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
               <div style={{ textAlign: 'right', fontSize: '12px', color: isDarkMode ? '#666' : '#aaa', marginTop: '4px' }}>{title.length}/200</div>
             </div>
 
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Genre *</label>
+              <select value={genre} onChange={(e) => setGenre(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }}>
+                {genres.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Category *</label>
-                <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }}>
-                  {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Location District *</label>
+                <select value={locationDistrict} onChange={(e) => setLocationDistrict(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }}>
+                  {locationDistricts.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Location</label>
-                <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Darjeeling" style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }} />
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Village/Area (Optional)</label>
+                <input value={locationArea} onChange={(e) => setLocationArea(e.target.value)} placeholder='e.g. Limboo Busty, Darjeeling Town' style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }} />
               </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Content * <span style={{ color: content.length < 100 ? '#c41e3a' : '#2e7d32', fontSize: '12px', fontWeight: '500' }}>({content.length} characters{content.length < 100 ? ', need ' + (100 - content.length) + ' more' : ' ✓'})</span></label>
-              <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write your article here... minimum 100 characters" rows={12} style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '15px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.6', outline: 'none' }} />
             </div>
 
             <div>
