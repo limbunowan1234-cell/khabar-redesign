@@ -1,9 +1,11 @@
+  const [locationDistrict, setLocationDistrict] = useState('Darjeeling');
+  const [locationArea, setLocationArea] = useState('');
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-const endpoint = 'https://api.khabardarjeeling.space/v1';
+  const [genre, setGenre] = useState('Voice of People');
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
@@ -205,6 +207,13 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
               </select>
             </div>
 
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Genre *</label>
+              <select value={genre} onChange={(e) => setGenre(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }}>
+                {genres.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Location District *</label>
@@ -217,15 +226,6 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
                 <input value={locationArea} onChange={(e) => setLocationArea(e.target.value)} placeholder='e.g. Limboo Busty, Darjeeling Town' style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }} />
               </div>
             </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Featured Image</label>
-              <div style={{ border: '2px dashed ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', padding: '20px', textAlign: 'center', cursor: 'pointer', backgroundColor: isDarkMode ? '#2a2a2a' : '#fafafa' }} onClick={() => document.getElementById('imageInput')?.click()}>
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '6px' }} />
-                ) : (
-                  <div>
-                    <div style={{ fontSize: '36px', marginBottom: '8px' }}>📷</div>
                     <p style={{ margin: 0, color: isDarkMode ? '#aaa' : '#666', fontSize: '14px' }}>Click to upload image</p>
                     <p style={{ margin: '4px 0 0', color: isDarkMode ? '#666' : '#aaa', fontSize: '12px' }}>PNG, JPG up to 10MB</p>
                   </div>
@@ -263,4 +263,4 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
       </div>
     </div>
   );
-}
+const genres = ['Voice of People', 'Citizen Journalism', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Photo Story', 'Video', 'Health', 'Education', 'Technology', 'Sports', 'Opinion'];
