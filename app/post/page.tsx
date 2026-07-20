@@ -112,7 +112,7 @@ export default function PostPage() {
             isContestEntry,
             authorName: user?.name || 'Unknown',
             authorEmail: user?.email || '',
-            submitterId: user?.\ || '',
+            submitterId: user?.$id || '',
             submitterName: user?.name || '',
             submitterEmail: user?.email || '',
             submitterAvatar: null,
@@ -126,7 +126,7 @@ export default function PostPage() {
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Submit failed'); }
       const doc = await res.json();
       setSuccess('Article published successfully!');
-      setTimeout(() => router.push('/article/' + doc.\$), 1500);
+      setTimeout(() => router.push('/article/' + doc.$id), 1500);
     } catch (err: any) { setError(err.message || 'Submit failed'); }
     setSubmitting(false);
   }
