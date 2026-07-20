@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+const endpoint = 'https://api.khabardarjeeling.space/v1';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
@@ -30,10 +31,9 @@ export default function PostPage() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
-
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [genre, setCategory] = useState('Darjeeling');
+  const [youtubeId, setYoutubeId] = useState('');
   const [isContestEntry, setIsContestEntry] = useState(false);
   const [imageFileId, setImageFileId] = useState('');
   const [imagePreview, setImagePreview] = useState('');
@@ -64,8 +64,8 @@ export default function PostPage() {
       const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Upload failed'); }
       const data = await res.json();
-      setImageFileId(data.$id);
-      setImagePreview(endpoint + '/storage/buckets/' + bucketId + '/files/' + data.$id + '/view?project=' + projectId);
+      setImageFileId(data.\);
+      setImagePreview(endpoint + '/storage/buckets/' + bucketId + '/files/' + data.\ + '/view?project=' + projectId);
       setSuccess('Image uploaded!');
       setTimeout(() => setSuccess(''), 2000);
     } catch (err: any) { setError('Upload failed: ' + err.message); setImagePreview(''); }
@@ -81,20 +81,20 @@ export default function PostPage() {
     setSuccess('');
     try {
       function generateSlug(text: string): string {
-  const base = (text || '')
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^\x00-\x7F]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, 60)
-    .replace(/^-+|-+$/g, '');
-  const suffix = Date.now().toString(36);
-  return (base ? base + '-' : 'news-') + suffix;
-}
-const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
+        const base = (text || '')
+          .toLowerCase()
+          .normalize('NFKD')
+          .replace(/[^\x00-\x7F]/g, '')
+          .replace(/[^a-z0-9\s-]/g, '')
+          .trim()
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .slice(0, 60)
+          .replace(/^-+|-+\$/g, '');
+        const suffix = Date.now().toString(36);
+        return (base ? base + '-' : 'news-') + suffix;
+      }
+      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
         method: 'POST', headers: HJ, credentials: 'include',
         body: JSON.stringify({
           documentId: 'unique()',
@@ -103,7 +103,7 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
             content: content.trim(),
             slug: generateSlug(title),
             genre,
-            locationDistrict: locationDistrict,
+            locationDistrict,
             locationArea: locationArea || null,
             imageFileId: imageFileId || null,
             youtube_id: youtubeId || null,
@@ -112,7 +112,7 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
             isContestEntry,
             authorName: user?.name || 'Unknown',
             authorEmail: user?.email || '',
-            submitterId: user?.$id || '',
+            submitterId: user?.\ || '',
             submitterName: user?.name || '',
             submitterEmail: user?.email || '',
             submitterAvatar: null,
@@ -126,7 +126,7 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Submit failed'); }
       const doc = await res.json();
       setSuccess('Article published successfully!');
-      setTimeout(() => router.push('/article/' + doc.$id), 1500);
+      setTimeout(() => router.push('/article/' + doc.\), 1500);
     } catch (err: any) { setError(err.message || 'Submit failed'); }
     setSubmitting(false);
   }
@@ -134,48 +134,39 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: '40px', height: '40px', border: '4px solid rgba(196,30,58,0.15)', borderLeftColor: '#c41e3a', borderRadius: '50%', margin: '0 auto' }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} div{animation:spin 1s linear infinite}`}</style>
+      <style>{\@keyframes spin{to{transform:rotate(360deg)}} div{animation:spin 1s linear infinite}\}</style>
     </div>
   );
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5' }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-
-      {/* HEADER */}
+      <style>{\@keyframes spin{to{transform:rotate(360deg)}}\}</style>
       <header style={{ backgroundColor: isDarkMode ? '#1e1e1e' : '#c41e3a', color: 'white', padding: '12px 20px', borderBottom: '3px solid #f5c518', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link href="/" style={{ textDecoration: 'none', color: 'white', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src="/assets/logo.png" alt="KhabarDarjeeling" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            <span style={{ fontWeight: '800', fontSize: '18px' }}>खबर दार्जिलिंग</span>
+            <span style={{ fontWeight: '800', fontSize: '18px' }}>खबर दार्जिलिङ</span>
           </Link>
           <div style={{ display: 'flex', gap: '8px' }}>
             <Link href="/" style={{ textDecoration: 'none' }}>
-              <button style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>← Home</button>
+              <button style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Home</button>
             </Link>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer', fontSize: '15px' }}>
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
+            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer', fontSize: '15px' }}>{isDarkMode ? '☀️' : '🌙'}</button>
           </div>
         </div>
       </header>
 
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '24px 16px' }}>
-
-        {/* AUTHOR BOX */}
         {user && (
           <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700', flexShrink: 0 }}>
-              {getInitials(user?.name || 'KD')}
-            </div>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700', flexShrink: 0 }}>{getInitials(user?.name || 'KD')}</div>
             <div>
               <div style={{ fontWeight: '700', fontSize: '15px', color: isDarkMode ? '#fff' : '#1a1a1a' }}>{user?.name}</div>
-              <div style={{ fontSize: '13px', color: isDarkMode ? '#aaa' : '#666' }}>✍️ Publishing as contributor — posts go live immediately</div>
+              <div style={{ fontSize: '13px', color: isDarkMode ? '#aaa' : '#666' }}>✏️ Publishing as contributor – posts go live immediately</div>
             </div>
           </div>
         )}
 
-        {/* FORM */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <h1 style={{ fontSize: '22px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', marginBottom: '4px' }}>Create Post</h1>
           <p style={{ fontSize: '14px', color: isDarkMode ? '#aaa' : '#666', marginBottom: '24px', paddingBottom: '16px', borderBottom: '2px solid #f5c518' }}>Share your story with the Darjeeling community</p>
@@ -184,7 +175,6 @@ const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles
           {error && <div style={{ padding: '14px', backgroundColor: '#ffebee', color: '#c41e3a', borderRadius: '8px', marginBottom: '20px' }}>⚠️ {error}</div>}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Article Title *</label>
               <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="Enter a compelling headline..." style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '16px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box', outline: 'none' }} />
