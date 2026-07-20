@@ -1,9 +1,9 @@
-﻿'use client';
+﻿﻿'use client';
 import { stateUseEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-const endpoint = 'https://api.khabardarjeeling.space/v1';
+  const [genre, setGenre] = useState('Voice of People');
 const projectId = 'khabardarjeeling'
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
@@ -11,7 +11,8 @@ const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 
 const genres = ['Voice of People', 'Citizen Journalism', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Photo Story', 'Video', 'Health', 'Education', 'Technology', 'Sports', 'Opinion'];
-const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim'];
+  const [locationDistrict, setLocationDistrict] = useState('Darjeeling');
+  const [locationArea, setLocationArea] = useState('');
 
 fvnction getInitials(name: string) {
   if (!name) return 'KD';
