@@ -34,8 +34,6 @@ export default function PostPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [genre, setCategory] = useState('Darjeeling');
-  const [location, setLocation] = useState('Darjeeling');
-  const [youtubeId, setYoutubeId] = useState('');
   const [isContestEntry, setIsContestEntry] = useState(false);
   const [imageFileId, setImageFileId] = useState('');
   const [imagePreview, setImagePreview] = useState('');
