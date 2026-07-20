@@ -24,6 +24,9 @@ export default function PrivacyPage() {
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Cookies</h2>
           <p>We use cookies to keep you logged in and to remember your preferences. Third-party services we use, including advertising and analytics partners, may also set cookies to serve relevant content and measure performance. You can control cookies through your browser settings.</p>
 
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Push Notifications</h2>
+          <p>Users can opt in to receive browser push notifications about new articles and updates. When you subscribe, we collect your browser endpoint, encryption keys (p256dh and auth token), and user ID to deliver notifications. Push subscriptions can be disabled at any time from your browser settings or by clicking the notification bell on our site. We do not share push subscription data with third parties.</p>
+
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Advertising</h2>
           <p>We may display advertisements served by third-party ad networks such as Google AdSense. These partners may use cookies and similar technologies to show ads based on your visits to this and other websites. Google's use of advertising cookies enables it and its partners to serve ads based on your visit to our site. You can opt out of personalized advertising by visiting Google's Ads Settings.</p>
 
@@ -38,6 +41,9 @@ export default function PrivacyPage() {
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Changes to This Policy</h2>
           <p>We may update this Privacy Policy from time to time. Changes will be posted on this page with an updated date.</p>
+
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Data Retention</h2>
+          <p>We retain your account data for as long as your account is active. If you delete your account, we remove your personal data within 30 days, except where required by law.</p>
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Contact</h2>
           <p>For any questions about this Privacy Policy, email us at <a href="mailto:nowanad@gmail.com" style={{ color: '#c41e3a' }}>nowanad@gmail.com</a>.</p>
