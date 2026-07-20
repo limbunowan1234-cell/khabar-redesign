@@ -21,14 +21,6 @@ function getInitials(name: string) {
   return p.length === 1 ? p[0][0].toUpperCase() : (p[0][0] + p[p.length-1][0]).toUpperCase();
 }
 
-export default function PostPage() {
-function getInitials(name: string) {
-  if (!name) return 'KD';
-  const p = name.trim().split(/\s+/);
-  return p.length === 1 ? p[0][0].toUpperCase() : (p[0][0] + p[p.length-1][0]).toUpperCase();
-}
-
-export default function PostPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
