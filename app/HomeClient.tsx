@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
@@ -9,6 +9,7 @@ import NotificationBell from '@/components/NotificationBell';
 import { useAuthStore } from '@/lib/authStore';
 import TopCreators from '@/components/TopCreators';
 import AdBanner from '@/components/AdBanner';
+import GenreNav from '@/components/GenreNav';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const projectId = 'khabardarjeeling';
@@ -569,6 +570,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedDistrict, setSelectedDistrict] = useState('All Regions');
   const [shown, setShown] = useState(12);
   const [isMobile, setIsMobile] = useState(false);
   const [activeNav, setActiveNav] = useState('home');
@@ -614,11 +616,12 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
 
   useEffect(() => {
     let f = articles;
-    if (selectedCategory !== 'All') f = f.filter(a => a.category?.toLowerCase() === selectedCategory.toLowerCase());
+    if (selectedCategory !== 'All') { const aliases: any = { 'voice of people': ['voice of people', 'citizen journalism'], 'editorial': ['editorial', 'opinion'] }; const match = aliases[selectedCategory.toLowerCase()] || [selectedCategory.toLowerCase()]; f = f.filter(a => match.includes((a.genre || a.category || '').toLowerCase())); }
+    if (selectedDistrict !== 'All Regions') f = f.filter(a => (a.locationDistrict || a.location)?.toLowerCase() === selectedDistrict.toLowerCase());
     if (searchQuery) f = f.filter(a => a.title?.toLowerCase().includes(searchQuery.toLowerCase()) || (a.content || '').toLowerCase().includes(searchQuery.toLowerCase()));
     setFiltered(f);
     setShown(12);
-  }, [searchQuery, selectedCategory, articles]);
+  }, [searchQuery, selectedCategory, selectedDistrict, articles]);
 
   const breakingArticles = articles.filter(a => a.isBreaking).slice(0, 6);
   const featuredArticle = articles.find(a => a.isFeatured) || articles[0];
@@ -733,12 +736,8 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             </div>
           )}
         </div>
-        <div style={{ maxWidth: '1280px', margin: '8px auto 0', display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
-          {categories.map((cat) => (
-            <button key={cat} className="cat-pill" onClick={() => setSelectedCategory(cat)} style={{ backgroundColor: selectedCategory === cat ? '#f5c518' : 'rgba(255,255,255,0.15)', color: selectedCategory === cat ? '#1a1a1a' : 'white', padding: '5px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap' }}>{cat}</button>
-          ))}
-        </div>
       </header>
+      <GenreNav selectedGenre={selectedCategory} onSelectGenre={setSelectedCategory} selectedDistrict={selectedDistrict} onSelectDistrict={setSelectedDistrict} isDarkMode={isDarkMode} />
 
       {breakingArticles.length > 0 && (
         <div style={{ backgroundColor: '#a01830', color: 'white', padding: '8px 0', overflow: 'hidden' }}>
@@ -803,22 +802,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           )}
         </div>
       ) : (
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: '220px 1fr 280px', gap: '24px' }}>
-          <aside>
-            <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px', position: 'sticky', top: '100px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>Categories</h3>
-              {categories.map((cat) => (
-                <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', backgroundColor: selectedCategory === cat ? '#c41e3a' : 'transparent', color: selectedCategory === cat ? 'white' : isDarkMode ? '#ddd' : '#333', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: selectedCategory === cat ? '700' : '500', marginBottom: '2px' }} onMouseEnter={(e) => { if (selectedCategory !== cat) e.currentTarget.style.backgroundColor = isDarkMode ? '#333' : '#f5f5f5'; }} onMouseLeave={(e) => { if (selectedCategory !== cat) e.currentTarget.style.backgroundColor = 'transparent'; }}>{cat}</button>
-              ))}
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '2px solid #f5c518' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Follow Us</h3>
-                <a href="https://www.facebook.com/profile.php?id=61590708777947" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', backgroundColor: '#1877f2', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '12px', marginBottom: '6px' }}>Facebook</a>
-                <a href="https://www.instagram.com/khabardarjeeling_2026" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '12px', marginBottom: '6px' }}>Instagram</a>
-                <a href="https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', backgroundColor: '#25D366', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '12px', marginBottom: '6px' }}>WhatsApp</a>
-                <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600', fontSize: '12px' }}>Download App</a>
-              </div>
-            </div>
-          </aside>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
           <main>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <HeroSection articles={articles} isDarkMode={isDarkMode} />}
