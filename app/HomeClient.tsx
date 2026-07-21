@@ -827,7 +827,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
               </div>
             )}
           </main>
-          <aside>
+          <aside style={{ position: 'sticky', top: '90px', alignSelf: 'start', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
             <WeatherStrip isDarkMode={isDarkMode} />
               <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>

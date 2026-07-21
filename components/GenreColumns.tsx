@@ -81,7 +81,7 @@ export default function GenreColumns({ articles, isDarkMode, onSelectGenre }: {
               <Link href={'/article/' + (lead.slug || lead.$id)} style={{ textDecoration: 'none' }}>
                 <div className="gcol-lead" style={{ position: 'relative', height: '190px', overflow: 'hidden', backgroundColor: '#1a1a1a', cursor: 'pointer' }}>
                   {leadImg ? (
-                    <img loading="lazy" src={leadImg} alt={lead.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img loading="lazy" src={leadImg} alt={lead.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   ) : (
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,' + color + ', #1a1a1a)' }} />
                   )}

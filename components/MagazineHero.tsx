@@ -47,7 +47,7 @@ export default function MagazineHero({ articles, isDarkMode }: { articles: any[]
         <Link href={'/article/' + (main.slug || main.$id)} style={{ textDecoration: 'none' }}>
           <div className="mag-card mag-hero-main" style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#1a1a1a', boxShadow: '0 6px 24px rgba(0,0,0,0.15)' }}>
             {mainImg ? (
-              <img loading="lazy" src={mainImg} alt={main.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img loading="lazy" src={mainImg} alt={main.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             ) : (
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #c41e3a 0%, #7a1020 100%)' }} />
             )}
@@ -73,7 +73,7 @@ export default function MagazineHero({ articles, isDarkMode }: { articles: any[]
                   <div className="mag-card" style={{ borderRadius: '12px', overflow: 'hidden', backgroundColor: cardBg, boxShadow: '0 3px 14px rgba(0,0,0,0.1)' }}>
                     <div className="mag-side-img" style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
                       {img ? (
-                        <img loading="lazy" src={img} alt={a.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img loading="lazy" src={img} alt={a.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                       ) : (
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #c41e3a, #1a1a1a)' }} />
                       )}
@@ -92,7 +92,7 @@ export default function MagazineHero({ articles, isDarkMode }: { articles: any[]
                 <div className="mag-card" style={{ display: 'flex', gap: '12px', borderRadius: '12px', overflow: 'hidden', backgroundColor: cardBg, boxShadow: '0 3px 14px rgba(0,0,0,0.1)', padding: '10px' }}>
                   <div style={{ width: '86px', height: '68px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, backgroundColor: '#1a1a1a', position: 'relative' }}>
                     {img ? (
-                      <img loading="lazy" src={img} alt={a.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img loading="lazy" src={img} alt={a.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #c41e3a, #1a1a1a)' }} />
                     )}
