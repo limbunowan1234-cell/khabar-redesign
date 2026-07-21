@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import Link from 'next/link';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
@@ -27,7 +27,7 @@ const GENRE_COLORS: { [key: string]: string } = {
 function imgOf(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';
   if (!a?.imageFileId) return '';
-  return ENDPOINT + '/storage/buckets/article-image/files/' + a.imageFileId + '/view?project=' + PROJECT;
+  return ENDPOINT + '/storage/buckets/article-image/files/' + a.imageFileId + '/preview?width=600&quality=70&project=' + PROJECT;
 }
 
 function genreOf(a: any): string {
@@ -81,7 +81,7 @@ export default function GenreColumns({ articles, isDarkMode, onSelectGenre }: {
               <Link href={'/article/' + (lead.slug || lead.$id)} style={{ textDecoration: 'none' }}>
                 <div className="gcol-lead" style={{ position: 'relative', height: '190px', overflow: 'hidden', backgroundColor: '#1a1a1a', cursor: 'pointer' }}>
                   {leadImg ? (
-                    <img src={leadImg} alt={lead.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img loading="lazy" src={leadImg} alt={lead.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,' + color + ', #1a1a1a)' }} />
                   )}

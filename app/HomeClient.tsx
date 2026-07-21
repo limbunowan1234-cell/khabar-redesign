@@ -88,7 +88,7 @@ function getTopArticles(articles: any[], period: string): any[] {
 function HeroSection({ articles, isDarkMode }: any) {
   const hero = articles.find((a: any) => a.isBreaking) || articles.find((a: any) => a.isFeatured) || articles[0];
   if (!hero) return null;
-  const img = getImageUrl(hero);
+  const img = getThumbUrl(hero, 1200);
   const author = hero.submitterName || hero.authorName || 'Staff Reporter';
 
   return (
@@ -172,7 +172,7 @@ function CategorySections({ articles, isDarkMode, onSelectCategory }: any) {
 }
 
 function DesktopCard({ article, isDarkMode, featured }: any) {
-  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
+  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getThumbUrl(article, 600);
   const author = article.submitterName || article.authorName || 'Staff Reporter';
   const catColor = getCategoryColor(article.category);
   const hasImage = !!imgUrl;
@@ -184,7 +184,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
         <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', marginBottom: '20px', display: 'grid', gridTemplateColumns: '1.4fr 1fr', height: '220px' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.15)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)'; }}>
             <div style={{ position: 'relative', overflow: 'hidden' }}>
-              <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.background = 'linear-gradient(135deg,' + catColor + ',#1a1a1a)'; (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <img loading="lazy" src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.background = 'linear-gradient(135deg,' + catColor + ',#1a1a1a)'; (e.target as HTMLImageElement).style.display = 'none'; }} />
               <div style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: catColor, color: 'white', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' }}>{article.category}</div>
               {article.isFeatured && <div style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: '#f5c518', color: '#1a1a1a', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '700' }}>FEATURED</div>}
               {article.isBreaking && <div style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: '#c41e3a', color: 'white', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '700' }}>BREAKING</div>}
@@ -250,7 +250,7 @@ function DesktopCard({ article, isDarkMode, featured }: any) {
       <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', marginBottom: '12px', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateX(4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateX(0)'; }}>
           <div style={{ width: '4px', backgroundColor: catColor, flexShrink: 0 }} />
-          <img src={imgUrl} alt={article.title} style={{ width: '110px', height: '90px', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <img loading="lazy" src={imgUrl} alt={article.title} style={{ width: '110px', height: '90px', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           <div style={{ padding: '12px 14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
             <div>
               <span style={{ display: 'inline-block', backgroundColor: catColor + '22', color: catColor, padding: '2px 8px', borderRadius: '3px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>{article.category}</span>
@@ -303,7 +303,7 @@ function FeaturedCarousel({ articles, isDarkMode }: any) {
   if (featured.length === 0) return null;
 
   const article = featured[idx];
-  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
+  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getThumbUrl(article, 600);
   const catColor = getCategoryColor(article.category);
   const author = article.submitterName || article.authorName || 'Staff Reporter';
   const preview = truncateText(article.content || '', 30);
@@ -330,7 +330,7 @@ function FeaturedCarousel({ articles, isDarkMode }: any) {
       <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none' }}>
         <div onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }} onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStartX.current; if (dx > 50) prev(); else if (dx < -50) next(); }} className='featured-carousel' style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', height: '420px', boxShadow: '0 8px 30px rgba(0,0,0,0.18)', backgroundColor: '#1a1a1a' }}>
           {imgUrl ? (
-            <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.4s' }} key={article.$id} />
+            <img loading="lazy" src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.4s' }} key={article.$id} />
           ) : (
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,' + catColor + ' 0%,#1a1a1a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'serif', fontSize: '20px', fontWeight: 800, color: 'rgba(255,255,255,0.28)', letterSpacing: '1px', userSelect: 'none' }}>खबर दार्जिलिङ</span></div>
           )}
@@ -383,7 +383,7 @@ function FeaturedCarousel({ articles, isDarkMode }: any) {
 
 
 function MobileCard({ article, isDarkMode, index }: any) {
-  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getImageUrl(article);
+  const imgUrl = article.youtube_id ? 'https://img.youtube.com/vi/' + article.youtube_id + '/maxresdefault.jpg' : getThumbUrl(article, 600);
   const author = article.submitterName || article.authorName || 'Staff Reporter';
   const catColor = getCategoryColor(article.category);
   const hasImage = !!imgUrl;
@@ -396,7 +396,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
         <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '12px' }}>
             <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
-              <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.background = 'linear-gradient(135deg,' + catColor + ',#1a1a1a)'; (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <img loading="lazy" src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.background = 'linear-gradient(135deg,' + catColor + ',#1a1a1a)'; (e.target as HTMLImageElement).style.display = 'none'; }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(0,0,0,0.75) 100%)' }} />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 14px 14px' }}>
                 <span style={{ backgroundColor: catColor, color: 'white', padding: '3px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' }}>{article.category}</span>
@@ -446,7 +446,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
       <Link href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '12px', display: 'flex' }}>
           <div style={{ width: '4px', backgroundColor: getCategoryColor(article.category), flexShrink: 0 }} />
-          <img src={imgUrl} alt={article.title} style={{ width: '100px', height: '90px', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <img loading="lazy" src={imgUrl} alt={article.title} style={{ width: '100px', height: '90px', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           <div style={{ padding: '10px 12px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
             <h3 style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: '0 0 6px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
             <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: isDarkMode ? '#999' : '#888' }}>
@@ -518,14 +518,14 @@ function ContestPreview({ articles, isDarkMode }: any) {
         <Link href="/contest" style={{ textDecoration: 'none', fontSize: '12px', color: '#c41e3a', fontWeight: '700' }}>See All</Link>
       </div>
       {contestArticles.map((a: any, i: number) => {
-        const imgUrl = getImageUrl(a);
+        const imgUrl = getThumbUrl(a, 600);
         const medal = i === 0 ? '1st' : i === 1 ? '2nd' : i === 2 ? '3rd' : '#' + (i + 1);
         return (
           <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
             <div style={{ display: 'flex', gap: '10px', padding: '8px 0', borderBottom: i < contestArticles.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f5f5f5') : 'none', alignItems: 'center', cursor: 'pointer' }}>
               <span style={{ fontSize: '12px', fontWeight: '800', flexShrink: 0, width: '24px', textAlign: 'center', color: '#c41e3a' }}>{medal}</span>
               {imgUrl ? (
-                <img src={imgUrl} alt={a.title} style={{ width: '52px', height: '40px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                <img loading="lazy" src={imgUrl} alt={a.title} style={{ width: '52px', height: '40px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               ) : (
                 <div style={{ width: '52px', height: '40px', backgroundColor: '#c41e3a22', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: '#c41e3a' }}>{medal}</span>
