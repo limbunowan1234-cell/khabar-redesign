@@ -13,6 +13,7 @@ import AdBanner from '@/components/AdBanner';
 import GenreNav from '@/components/GenreNav';
 import MagazineHero from '@/components/MagazineHero';
 import GenreColumns from '@/components/GenreColumns';
+import SidebarTabs from '@/components/SidebarTabs';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const projectId = 'khabardarjeeling';
@@ -331,7 +332,7 @@ function FeaturedCarousel({ articles, isDarkMode }: any) {
           {imgUrl ? (
             <img src={imgUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.4s' }} key={article.$id} />
           ) : (
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,' + catColor + ' 0%,#1a1a1a 100%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,' + catColor + ' 0%,#1a1a1a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'serif', fontSize: '20px', fontWeight: 800, color: 'rgba(255,255,255,0.28)', letterSpacing: '1px', userSelect: 'none' }}>खबर दार्जिलिङ</span></div>
           )}
 
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)' }} />
@@ -829,25 +830,10 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           <aside>
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
             <WeatherStrip isDarkMode={isDarkMode} />
-            <BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />
               <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
-            <TopTen articles={articles} isDarkMode={isDarkMode} />
+            <SidebarTabs articles={articles} isDarkMode={isDarkMode} topTen={<TopTen articles={articles} isDarkMode={isDarkMode} />} breaking={<BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />} />
             <ContestPreview articles={articles} isDarkMode={isDarkMode} />
-            <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>Trending</h3>
-              {trendingArticles.map((a, i) => (
-                <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div style={{ display: 'flex', gap: '10px', paddingBottom: '12px', marginBottom: '12px', borderBottom: i < trendingArticles.length - 1 ? '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') : 'none', cursor: 'pointer' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', flexShrink: 0 }}>{i + 1}</div>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: isDarkMode ? '#ddd' : '#1a1a1a', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.title}</p>
-                      <div style={{ fontSize: '11px', color: isDarkMode ? '#888' : '#aaa', marginTop: '4px' }}>{(a.views || 0).toLocaleString()} views</div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
             <Link href="/contest" style={{ textDecoration: 'none' }}>
               <div style={{ background: 'linear-gradient(135deg, #c41e3a, #a01830)', borderRadius: '10px', padding: '20px', marginBottom: '20px', textAlign: 'center', cursor: 'pointer' }}>
                 <div style={{ color: 'white', fontWeight: '800', fontSize: '15px', marginBottom: '4px' }}>Story Contest 2026</div>
@@ -869,7 +855,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
               {[{ label: 'Post a Story', href: '/post', color: '#c41e3a' }, { label: 'Story Contest', href: '/contest', color: '#e65100' }, { label: 'My Bookmarks', href: '/bookmarks', color: '#0F4C5C' }, { label: 'My Profile', href: '/profile', color: '#7b1fa2' }].map(item => (
                 <a key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', marginBottom: '6px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '8px', textDecoration: 'none', borderLeft: '3px solid ' + item.color }}>
                   <span style={{ fontSize: '13px', fontWeight: '600', color: isDarkMode ? '#ddd' : '#1a1a1a' }}>{item.label}</span>
-                  <span style={{ color: item.color, fontWeight: '700', fontSize: '16px' }}>?</span>
+                  <span style={{ color: item.color, fontWeight: '700', fontSize: '14px' }}>&rarr;</span>
                 </a>
               ))}
             </div>
