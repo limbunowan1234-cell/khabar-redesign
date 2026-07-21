@@ -182,7 +182,9 @@ export default function PostPage() {
               <div style={{ textAlign: 'right', fontSize: '12px', color: isDarkMode ? '#666' : '#aaa', marginTop: '4px' }}>{title.length}/200</div>
             </div>
 
-            <div>
+            <div style={{ backgroundColor: isDarkMode ? '#242424' : '#fafafa', borderRadius: '10px', padding: '16px', border: '1px solid ' + (isDarkMode ? '#333' : '#eee') }}>
+              <p style={{ margin: '0 0 14px', fontSize: '12px', fontWeight: '700', color: isDarkMode ? '#999' : '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Categorize your story</p>
+              <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Genre *</label>
               <select value={genre} onChange={(e) => setGenre(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }}>
                 {genres.map(g => <option key={g} value={g}>{g}</option>)}
@@ -199,6 +201,7 @@ export default function PostPage() {
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Village/Area (Optional)</label>
                 <input value={locationArea} onChange={(e) => setLocationArea(e.target.value)} placeholder="e.g. Limboo Busty, Darjeeling Town" style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }} />
+              </div>
               </div>
             </div>
 
