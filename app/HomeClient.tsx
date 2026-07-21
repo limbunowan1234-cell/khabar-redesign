@@ -3,6 +3,7 @@ import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
 import WeatherWarning from '@/components/WeatherWarning';
+import WeatherStrip from '@/components/WeatherStrip';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import NotificationBell from '@/components/NotificationBell';
@@ -10,6 +11,7 @@ import { useAuthStore } from '@/lib/authStore';
 import TopCreators from '@/components/TopCreators';
 import AdBanner from '@/components/AdBanner';
 import GenreNav from '@/components/GenreNav';
+import MagazineHero from '@/components/MagazineHero';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const projectId = 'khabardarjeeling';
@@ -765,8 +767,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
 
       {isMobile && !searchQuery && selectedCategory === 'All' && (
         <div style={{ padding: '10px 16px 0' }}>
-          <WeatherWidget variant="banner" isDarkMode={isDarkMode} />
-          <WeatherWarning isDarkMode={isDarkMode} />
+          <WeatherStrip isDarkMode={isDarkMode} />
           <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '12px', padding: '12px 16px', textDecoration: 'none', marginBottom: '8px' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: '700', fontSize: '13px' }}>Download our Android App</div>
@@ -787,10 +788,9 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
       {isMobile ? (
         <div style={{ padding: '4px 16px 16px' }}>
           {/* HERO SECTION ON MOBILE */}
-          {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><HeroSection articles={articles} isDarkMode={isDarkMode} /></div>}
+            {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
           {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><TopTen articles={articles} isDarkMode={isDarkMode} /></div>}
           {!searchQuery && selectedCategory === 'All' && <ContestPreview articles={articles} isDarkMode={isDarkMode} />}
-          {!searchQuery && selectedCategory === 'All' && (<FeaturedCarousel articles={articles} isDarkMode={isDarkMode} />)}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <span style={{ width: '4px', height: '16px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
             <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Results' : 'Latest News'}</span>
@@ -805,12 +805,8 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
           <main>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
-            {!searchQuery && selectedCategory === 'All' && <HeroSection articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
             
-            {!searchQuery && selectedCategory === 'All' && (<FeaturedCarousel articles={articles} isDarkMode={isDarkMode} />)}
-            {!searchQuery && selectedCategory === 'All' && (
-              <CategorySections articles={articles} isDarkMode={isDarkMode} onSelectCategory={setSelectedCategory} />
-            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
               <h2 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Search Results' : 'Latest News'}</h2>
@@ -830,8 +826,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           </main>
           <aside>
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
-            <WeatherWidget variant="card" isDarkMode={isDarkMode} />
-            <WeatherWarning isDarkMode={isDarkMode} />
+            <WeatherStrip isDarkMode={isDarkMode} />
             <BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />
               <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
