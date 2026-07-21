@@ -12,6 +12,7 @@ import TopCreators from '@/components/TopCreators';
 import AdBanner from '@/components/AdBanner';
 import GenreNav from '@/components/GenreNav';
 import MagazineHero from '@/components/MagazineHero';
+import GenreColumns from '@/components/GenreColumns';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const projectId = 'khabardarjeeling';
@@ -806,6 +807,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           <main>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
