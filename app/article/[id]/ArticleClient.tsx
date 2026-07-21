@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import AuthorBadge from '@/components/AuthorBadge';
 
 import { useEffect, useState } from 'react';
@@ -481,7 +481,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
 
         {/* CONTENT */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '28px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
-          <div style={{ fontSize: '17px', lineHeight: '1.9', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif' }}>
+          <div style={{ fontSize: '19px', lineHeight: '1.7', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', maxWidth: '700px', marginLeft: 'auto', marginRight: 'auto', fontFamily: 'Georgia, serif' }}>
             {article.category === 'Photo Story' ? '' : renderContent(article.content || article.summary, isDarkMode)}
           </div>
 
