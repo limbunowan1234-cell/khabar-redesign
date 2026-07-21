@@ -453,7 +453,7 @@ function generateSlug(text: string): string {
     setEditingArticle(article);
     setTitle(article.title);
     setContent(article.content);
-    setGenre(article.genre || article.category || 'Voice of People');
+    setGenre(genres.includes(article.genre) ? article.genre : (genres.includes(article.category) ? article.category : 'Voice of People'));
     setLocationDistrict(article.locationDistrict || 'Darjeeling'); setLocationArea(article.locationArea || article.location || '');
     setYoutubeId(article.youtube_id || '');
     setIsBreaking(article.isBreaking);
