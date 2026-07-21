@@ -63,7 +63,7 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
           .region-item { padding: 9px 14px; font-size: 12px; }
         }
       `}</style>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', padding: '0 12px' }}>
+      <div className="genre-nav-outer" style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', padding: '0 12px' }}>
         <div className="genre-nav-scroll" style={{ flex: '0 1 auto', minWidth: 0 }}>
           {NAV_GENRES.map((g) => (
             <button
@@ -106,7 +106,7 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
             )}
           </div>
 
-        <div ref={regionsRef} style={{ position: 'relative', flexShrink: 0, marginLeft: 'auto' }}>
+        <div ref={regionsRef} className="genre-regions" style={{ position: 'relative', flexShrink: 0, marginLeft: 'auto' }}>
           <button
             onClick={() => setShowRegions(!showRegions)}
             className="genre-link"
