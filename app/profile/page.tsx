@@ -112,6 +112,7 @@ export default function ProfilePage() {
 
         // Recent activity feed
         try {
+      setLoading(false); // page renders now; activity/likes/bookmarks stream in below
           const actRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents?queries[]=' +
             encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] })) +
             '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: 'createdAt' })) +
