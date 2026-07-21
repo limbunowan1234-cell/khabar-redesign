@@ -281,9 +281,9 @@ export default function ProfilePage() {
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
             {[
-              { id: 'articles', label: '📰 My Articles (' + myArticles.length + ')' },
-              { id: 'followers', label: '👥 Followers (' + followers.length + ')' },
-              { id: 'following', label: '➕ Following (' + following.length + ')' },
+              { id: 'articles', label: 'My Articles (' + myArticles.length + ')' },
+              { id: 'followers', label: 'Followers (' + followers.length + ')' },
+              { id: 'following', label: 'Following (' + following.length + ')' },
               { id: 'favorites', label: 'Favorites (' + favorites.length + ')' },
               { id: 'bookmarks', label: 'Bookmarks (' + bookmarks.length + ')' },
             ].map(tab => (
