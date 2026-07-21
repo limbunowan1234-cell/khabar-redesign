@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -10,7 +10,8 @@ const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 
-const categories = ['Darjeeling','Kalimpong','Kurseong','Mirik','Siliguri','West Bengal','Politics','Sports','Culture','Education','Health','Entertainment','Technology','Tea Gardens','Tourism','Crime','Opinion','Other'];
+const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports'];
+const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim'];
 
 function getImageUrl(fileId: string) {
   return endpoint + '/storage/buckets/' + bucketId + '/files/' + fileId + '/view?project=' + projectId;
@@ -46,8 +47,9 @@ export default function AdminPage() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('Darjeeling');
-  const [location, setLocation] = useState('Darjeeling');
+  const [genre, setGenre] = useState('Voice of People');
+  const [locationDistrict, setLocationDistrict] = useState('Darjeeling');
+  const [locationArea, setLocationArea] = useState('');
   const [youtubeId, setYoutubeId] = useState('');
   const [trackerTitle, setTrackerTitle] = useState('');
   const [trackerLines, setTrackerLines] = useState('');
@@ -324,7 +326,7 @@ function generateSlug(text: string): string {
         body: JSON.stringify({
           documentId: 'unique()',
           data: {
-            title, content, category, location: location || 'Darjeeling',
+            title, content, genre, locationDistrict, locationArea: locationArea || null,
               slug: generateSlug(title),
               trackerData: parseTracker(trackerTitle, trackerLines),
             imageFileId: imageFileId || null,
@@ -451,8 +453,8 @@ function generateSlug(text: string): string {
     setEditingArticle(article);
     setTitle(article.title);
     setContent(article.content);
-    setCategory(article.category);
-    setLocation(article.location);
+    setGenre(article.genre || article.category || 'Voice of People');
+    setLocationDistrict(article.locationDistrict || 'Darjeeling'); setLocationArea(article.locationArea || article.location || '');
     setYoutubeId(article.youtube_id || '');
     setIsBreaking(article.isBreaking);
     setIsFeatured(article.isFeatured);
@@ -477,7 +479,7 @@ function generateSlug(text: string): string {
         method: 'PATCH', headers: HJ, credentials: 'include',
         body: JSON.stringify({
           data: {
-            title, content, category, location: location || 'Darjeeling',
+            title, content, genre, locationDistrict, locationArea: locationArea || null,
             imageFileId: imageFileId || null,
             youtube_id: youtubeId || null,
             trackerData: parseTracker(trackerTitle, trackerLines),
@@ -524,6 +526,7 @@ function generateSlug(text: string): string {
     </div>
   );
 
+  const totalViews = articles.reduce((s: number, a: any) => s + (a.views || 0), 0);
   const filteredArticles = articles.filter((a) => {
     if (activeTab === 'breaking') return a.isBreaking;
     if (activeTab === 'featured') return a.isFeatured;
@@ -531,7 +534,6 @@ function generateSlug(text: string): string {
     return true;
   }).filter((a) => !search || a.title?.toLowerCase().includes(search.toLowerCase()));
 
-  const totalViews = articles.reduce((s, a) => s + (a.views || 0), 0);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
@@ -629,14 +631,15 @@ function generateSlug(text: string): string {
                 <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article headline..." style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Category *</label>
-                <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }}>
-                  {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Genre *</label>
+                <select value={genre} onChange={(e) => setGenre(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }}>
+                  {genres.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Location</label>
-                <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Darjeeling" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
+                <select value={locationDistrict} onChange={(e) => setLocationDistrict(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '8px', boxSizing: 'border-box' }}>{locationDistricts.map(d => <option key={d} value={d}>{d}</option>)}</select>
+                <input value={locationArea} onChange={(e) => setLocationArea(e.target.value)} placeholder='Village/Area (optional)' style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Content * (min 100 chars)</label>
@@ -777,14 +780,15 @@ function generateSlug(text: string): string {
                 <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article headline..." style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Category *</label>
-                <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }}>
-                  {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Genre *</label>
+                <select value={genre} onChange={(e) => setGenre(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }}>
+                  {genres.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Location</label>
-                <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Darjeeling" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' }} />
+                <select value={locationDistrict} onChange={(e) => setLocationDistrict(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '8px', boxSizing: 'border-box' }}>{locationDistricts.map(d => <option key={d} value={d}>{d}</option>)}</select>
+                <input value={locationArea} onChange={(e) => setLocationArea(e.target.value)} placeholder='Village/Area (optional)' style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Content * (min 100 chars)</label>
