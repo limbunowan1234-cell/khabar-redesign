@@ -81,7 +81,7 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
             <button
               onClick={() => setShowMore(!showMore)}
               className={'genre-link' + (moreActive ? ' active' : '')}
-              style={{ color: moreActive ? '#c41e3a' : textColor, display: 'flex', alignItems: 'center', gap: '5px' }}
+              style={{ color: moreActive ? '#fff' : textColor, backgroundColor: moreActive ? '#c41e3a' : 'transparent', borderRadius: '6px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '5px', border: moreActive ? 'none' : '1px solid ' + border }}
             >
               {moreActive ? selectedGenre : 'More'}
               <span style={{ fontSize: '9px', transform: showMore ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>&#9660;</span>
