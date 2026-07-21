@@ -1,8 +1,8 @@
 ﻿'use client';
 import { useState, useRef, useEffect } from 'react';
 
-const NAV_GENRES = ['All', 'Voice of People', 'Politics', 'Culture', 'Tourism', 'Poetry', 'Editorial'];
-const MORE_GENRES = ['Health', 'Education', 'Technology', 'Sports'];
+const NAV_GENRES = ['All', 'Voice of People', 'Politics', 'Tourism', 'Poetry', 'Editorial'];
+const MORE_GENRES = ['Culture', 'Health', 'Education', 'Technology', 'Sports'];
 const DISTRICTS = ['All Regions', 'Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim'];
 
 export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistrict, onSelectDistrict, isDarkMode }: {
@@ -54,8 +54,14 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
         .genre-link { position: relative; padding: 14px 14px; font-size: 13px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; cursor: pointer; background: none; border: none; transition: color 0.15s; font-family: inherit; }
         .genre-link:hover { color: #c41e3a !important; }
         .genre-link.active { color: #c41e3a !important; }
-        .genre-link.active::after { content: ''; position: absolute; bottom: 0; left: 14px; right: 14px; height: 3px; background: #c41e3a; border-radius: 2px 2px 0 0; }
+        .genre-link::after { content: ''; position: absolute; bottom: 0; left: 14px; right: 14px; height: 3px; background: #c41e3a; border-radius: 2px 2px 0 0; transform: scaleX(0); transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: center; }
+        .genre-link.active::after { transform: scaleX(1); }
         .region-item { display: block; width: 100%; text-align: left; padding: 10px 16px; font-size: 13px; font-weight: 600; background: none; border: none; cursor: pointer; font-family: inherit; transition: background 0.12s; }
+        @media (max-width: 640px) {
+          .genre-link { padding: 10px 9px; font-size: 11px; letter-spacing: 0.3px; }
+          .genre-link.active::after { left: 9px; right: 9px; height: 2px; }
+          .region-item { padding: 9px 14px; font-size: 12px; }
+        }
       `}</style>
       <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', padding: '0 12px' }}>
         <div className="genre-nav-scroll" style={{ flex: '0 1 auto', minWidth: 0 }}>
