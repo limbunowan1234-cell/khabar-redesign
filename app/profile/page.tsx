@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import ProfileEditor from '@/components/ProfileEditor';
 import ProfileBio from '@/components/ProfileBio';
 import AuthorBadge from '@/components/AuthorBadge';
@@ -88,7 +88,7 @@ export default function ProfilePage() {
           fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
             encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userData.$id] })) +
             '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [20] })),
+            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [20] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','title','genre','category','locationDistrict','imageFileId','youtube_id','views','isContestEntry','isFeatured','isBreaking','publishedAt','slug','status','submitterName','authorName'] })),
             { headers: H, credentials: 'include' }),
           fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
             encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userData.$id] })) +

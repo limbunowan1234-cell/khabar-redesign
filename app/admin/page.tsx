@@ -48,6 +48,7 @@ export default function AdminPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [genre, setGenre] = useState('Voice of People');
+  const [listPage, setListPage] = useState(0);
   const [locationDistrict, setLocationDistrict] = useState('Darjeeling');
   const [locationArea, setLocationArea] = useState('');
   const [youtubeId, setYoutubeId] = useState('');
@@ -83,7 +84,7 @@ export default function AdminPage() {
 
   async function loadArticles() {
     try {
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })), { headers: H, credentials: 'include' });
+      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','$updatedAt','title','category','genre','locationDistrict','locationArea','location','imageFileId','youtube_id','isBreaking','isFeatured','isContestEntry','status','views','submitterName','authorName','submitterId','publishedAt','slug','weeklyIssue','isWeeklyLead','isWeeklyPick','weeklySection','trackerData'] })), { headers: H, credentials: 'include' });
       if (res.ok) { const data = await res.json(); setArticles(data.documents || []); setTotalArticleCount(data.total || 0); }
     } catch {}
   }
@@ -452,7 +453,8 @@ function generateSlug(text: string): string {
   async function handleEdit(article: any) {
     setEditingArticle(article);
     setTitle(article.title);
-    setContent(article.content);
+    setContent(article.content || '');
+    if (!article.content) { fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + article.$id, { headers: H, credentials: 'include' }).then(r => r.ok ? r.json() : null).then(d => { if (d) setContent(d.content || ''); }); }
     setGenre(genres.includes(article.genre) ? article.genre : (genres.includes(article.category) ? article.category : 'Voice of People'));
     setLocationDistrict(article.locationDistrict || 'Darjeeling'); setLocationArea(article.locationArea || article.location || '');
     setYoutubeId(article.youtube_id || '');
@@ -533,6 +535,8 @@ function generateSlug(text: string): string {
     if (activeTab === 'contest') return a.isContestEntry;
     return true;
   }).filter((a) => !search || a.title?.toLowerCase().includes(search.toLowerCase()));
+  const pagedArticles = filteredArticles.slice(listPage * 10, listPage * 10 + 10);
+  const totalPages = Math.max(1, Math.ceil(filteredArticles.length / 10));
 
 
   return (
@@ -579,22 +583,22 @@ function generateSlug(text: string): string {
 
             <div style={{ display: 'flex', gap: '0', marginBottom: '16px', borderBottom: '2px solid #ddd' }}>
               {['all', 'breaking', 'featured', 'contest'].map((tab) => (
-                <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px', color: activeTab === tab ? '#c41e3a' : '#666', borderBottom: activeTab === tab ? '3px solid #c41e3a' : '3px solid transparent', marginBottom: '-2px' }}>
+                <button key={tab} onClick={() => { setListPage(0); setActiveTab(tab); }} style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px', color: activeTab === tab ? '#c41e3a' : '#666', borderBottom: activeTab === tab ? '3px solid #c41e3a' : '3px solid transparent', marginBottom: '-2px' }}>
                   {tab === 'all' ? 'All Articles' : tab === 'breaking' ? 'Breaking' : tab === 'featured' ? 'Featured' : 'Contest'}
                 </button>
               ))}
             </div>
 
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search articles by title..." style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box' }} />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setListPage(0); }} placeholder="Search articles by title..." style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box' }} />
 
             <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
               {filteredArticles.length === 0 ? (
                 <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>No articles found.</div>
               ) : (
-                filteredArticles.map((article) => (
+                pagedArticles.map((article) => (
                   <div key={article.$id} style={{ display: 'grid', gridTemplateColumns: '70px 1fr auto', gap: '16px', padding: '16px', borderBottom: '1px solid #f0f0f0', alignItems: 'center' }}>
                     {article.imageFileId ? (
-                      <img src={getImageUrl(article.imageFileId)} alt="" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
+                      <img loading="lazy" src={getImageUrl(article.imageFileId).replace('/view?', '/preview?width=120&quality=60&')} alt="" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
                     ) : (
                       <div style={{ width: '60px', height: '60px', backgroundColor: '#e0e0e0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>IMG</div>
                     )}
@@ -730,6 +734,7 @@ function generateSlug(text: string): string {
                   <button onClick={() => handleDeletePhoto(p.$id)} style={{ position: 'absolute', top: '6px', right: '6px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', fontSize: '14px' }}>x</button>
                 </div>
               ))}
+            {totalPages > 1 && (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '16px 0' }}><button onClick={() => setListPage(Math.max(0, listPage - 1))} disabled={listPage === 0} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: listPage === 0 ? '#ddd' : '#0F4C5C', color: '#fff', cursor: listPage === 0 ? 'default' : 'pointer', fontWeight: 700 }}>&larr; Prev</button><span style={{ fontSize: '13px', fontWeight: 700, color: '#555' }}>Page {listPage + 1} of {totalPages}</span><button onClick={() => setListPage(Math.min(totalPages - 1, listPage + 1))} disabled={listPage >= totalPages - 1} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: listPage >= totalPages - 1 ? '#ddd' : '#0F4C5C', color: '#fff', cursor: listPage >= totalPages - 1 ? 'default' : 'pointer', fontWeight: 700 }}>Next &rarr;</button></div>)}
             </div>
           </div>
         )}

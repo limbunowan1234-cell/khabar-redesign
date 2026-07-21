@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import ProfileClient from './ProfileClient';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
@@ -19,7 +19,7 @@ async function fetchProfileData(userId: string): Promise<{ profile: any; article
       ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
       encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userId] })) +
       '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
-      '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] })),
+      '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','title','genre','category','locationDistrict','imageFileId','youtube_id','views','isContestEntry','isFeatured','isBreaking','publishedAt','slug','submitterName','authorName'] })),
       { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 300 } }
     );
     const articlesData = articlesRes.ok ? await articlesRes.json() : { documents: [] };
@@ -31,7 +31,7 @@ async function fetchProfileData(userId: string): Promise<{ profile: any; article
       const allRes = await fetch(
         ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
         encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
-        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1000] })),
+        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1000] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','submitterId','views','isContestEntry'] })),
         { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 600 } }
       );
       if (allRes.ok) {
