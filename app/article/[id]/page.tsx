@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import ArticleClient from './ArticleClient';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
@@ -97,7 +97,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': SITE + '/article/' + id },
     description: clean(a.content || a.summary || ''),
-    articleSection: a.category || 'News',
+    articleSection: a.genre || a.category || 'News',
   } : null;
 
   return (
