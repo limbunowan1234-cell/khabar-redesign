@@ -108,11 +108,11 @@ export default function ProfilePage() {
         if (followersRes.ok) { const d = await followersRes.json(); setFollowers(d.documents || []); }
         if (followingRes.ok) { const d = await followingRes.json(); setFollowing(d.documents || []); }
         if (bookmarksRes.ok) { const d = await bookmarksRes.json(); setBookmarkCount(d.total || 0); }
+      setLoading(false); // essentials ready - render immediately
 
 
         // Recent activity feed
         try {
-      setLoading(false); // page renders now; activity/likes/bookmarks stream in below
           const actRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents?queries[]=' +
             encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] })) +
             '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: 'createdAt' })) +
