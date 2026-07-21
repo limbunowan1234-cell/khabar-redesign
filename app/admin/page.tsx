@@ -622,6 +622,7 @@ function generateSlug(text: string): string {
                   </div>
                 ))
               )}
+            {totalPages > 1 && (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '16px 0' }}><button onClick={() => setListPage(Math.max(0, listPage - 1))} disabled={listPage === 0} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: listPage === 0 ? '#ddd' : '#0F4C5C', color: '#fff', cursor: listPage === 0 ? 'default' : 'pointer', fontWeight: 700 }}>&larr; Prev</button><span style={{ fontSize: '13px', fontWeight: 700, color: '#555' }}>Page {listPage + 1} of {totalPages}</span><button onClick={() => setListPage(Math.min(totalPages - 1, listPage + 1))} disabled={listPage >= totalPages - 1} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: listPage >= totalPages - 1 ? '#ddd' : '#0F4C5C', color: '#fff', cursor: listPage >= totalPages - 1 ? 'default' : 'pointer', fontWeight: 700 }}>Next &rarr;</button></div>)}
             </div>
           </>
         )}
@@ -734,7 +735,6 @@ function generateSlug(text: string): string {
                   <button onClick={() => handleDeletePhoto(p.$id)} style={{ position: 'absolute', top: '6px', right: '6px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', fontSize: '14px' }}>x</button>
                 </div>
               ))}
-            {totalPages > 1 && (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '16px 0' }}><button onClick={() => setListPage(Math.max(0, listPage - 1))} disabled={listPage === 0} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: listPage === 0 ? '#ddd' : '#0F4C5C', color: '#fff', cursor: listPage === 0 ? 'default' : 'pointer', fontWeight: 700 }}>&larr; Prev</button><span style={{ fontSize: '13px', fontWeight: 700, color: '#555' }}>Page {listPage + 1} of {totalPages}</span><button onClick={() => setListPage(Math.min(totalPages - 1, listPage + 1))} disabled={listPage >= totalPages - 1} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: listPage >= totalPages - 1 ? '#ddd' : '#0F4C5C', color: '#fff', cursor: listPage >= totalPages - 1 ? 'default' : 'pointer', fontWeight: 700 }}>Next &rarr;</button></div>)}
             </div>
           </div>
         )}

@@ -130,9 +130,7 @@ export default function ProfilePage() {
             if (likesRes.ok) {
               const ld = await likesRes.json();
               const ids = (ld.documents || []).map((x: any) => x.articleId).filter(Boolean);
-              const arts = await Promise.all(ids.map(async (aid: string) => {
-                return await fetchArticleByIdOrSlug(aid, ENDPOINT, DB, H);
-              }));
+        const arts = ids.length ? await (async () => { const bq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: '$id', values: ids.slice(0, 100) })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })); const br = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + bq, { headers: H, credentials: 'include' }); if (!br.ok) return []; const bd2 = await br.json(); return bd2.documents || []; })() : [];
               setFavorites(arts.filter(Boolean));
             }
           } catch {}
@@ -146,9 +144,7 @@ export default function ProfilePage() {
             if (bmRes.ok) {
               const bd = await bmRes.json();
               const ids = (bd.documents || []).map((x: any) => x.articleId).filter(Boolean);
-              const arts = await Promise.all(ids.map(async (aid: string) => {
-                return await fetchArticleByIdOrSlug(aid, ENDPOINT, DB, H);
-              }));
+        const arts = ids.length ? await (async () => { const bq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: '$id', values: ids.slice(0, 100) })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })); const br = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + bq, { headers: H, credentials: 'include' }); if (!br.ok) return []; const bd2 = await br.json(); return bd2.documents || []; })() : [];
               setBookmarks(arts.filter(Boolean));
             }
           } catch {}
