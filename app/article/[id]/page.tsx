@@ -4,7 +4,7 @@ import ArticleClient from './ArticleClient';
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
-const SITE = 'https://khabardarjeeling.space';
+const SITE = 'https://khabardarjeeling.in';
 
 function imgUrl(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';

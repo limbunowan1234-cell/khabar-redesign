@@ -1,10 +1,10 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import WeeklyClient from './WeeklyClient';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
-const SITE = 'https://khabardarjeeling.space';
+const SITE = 'https://khabardarjeeling.in';
 
 async function fetchWeeklyData(): Promise<{ articles: any[]; allIssues: number[]; currentIssue: number | null }> {
   try {

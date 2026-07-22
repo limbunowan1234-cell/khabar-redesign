@@ -1,10 +1,10 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
-const SITE = 'https://khabardarjeeling.space';
+const SITE = 'https://khabardarjeeling.in';
 
 export const metadata: Metadata = {
   title: 'Khabar Darjeeling - The Digital Home of Darjeeling',

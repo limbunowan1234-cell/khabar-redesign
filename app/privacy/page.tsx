@@ -1,7 +1,7 @@
-export const metadata = {
+﻿export const metadata = {
   title: 'Privacy Policy',
   description: 'Privacy Policy for Khabar Darjeeling — how we collect, use, and protect your information.',
-  alternates: { canonical: 'https://khabardarjeeling.space/privacy' }
+  alternates: { canonical: 'https://khabardarjeeling.in/privacy' }
 };
 
 export default function PrivacyPage() {
@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <p style={{ color: '#888', fontSize: '14px', marginBottom: '32px' }}>Last updated: {new Date().getFullYear()}</p>
 
         <div style={{ color: '#333', fontSize: '16px', lineHeight: 1.7 }}>
-          <p>Khabar Darjeeling ("we", "our", "us") operates the website khabardarjeeling.space. This page explains how we handle your information when you use our news platform.</p>
+          <p>Khabar Darjeeling ("we", "our", "us") operates the website khabardarjeeling.in. This page explains how we handle your information when you use our news platform.</p>
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Information We Collect</h2>
           <p>When you create an account, we collect your name, email address, and any profile details you choose to add (photo, bio). When you read articles, comment, like, or bookmark, we store this activity to power your profile, followers, and personalized experience. We may also collect basic technical data such as device type and browser for security and analytics.</p>

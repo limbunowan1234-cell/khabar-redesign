@@ -1,6 +1,6 @@
-import type { MetadataRoute } from 'next';
+﻿import type { MetadataRoute } from 'next';
 
-const SITE = 'https://khabardarjeeling.space';
+const SITE = 'https://khabardarjeeling.in';
 
 export default function robots(): MetadataRoute.Robots {
   return {

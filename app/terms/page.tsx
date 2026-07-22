@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import Link from 'next/link';
 
 export default function Terms() {
@@ -14,7 +14,7 @@ export default function Terms() {
         </p>
 
         <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#c41e3a', marginTop: '30px', marginBottom: '12px' }}>1. Acceptance of Terms</h2>
-        <p>By accessing and using Khabar Darjeeling (khabardarjeeling.space), you agree to be bound by these Terms of Service. If you do not agree, do not use this site.</p>
+        <p>By accessing and using Khabar Darjeeling (khabardarjeeling.in), you agree to be bound by these Terms of Service. If you do not agree, do not use this site.</p>
 
         <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#c41e3a', marginTop: '30px', marginBottom: '12px' }}>2. Intellectual Property & Copyright</h2>
         <p>All content published on Khabar Darjeeling is the intellectual property of <strong>Khabar Darjeeling</strong> or its contributing writers, and is protected by copyright law.</p>

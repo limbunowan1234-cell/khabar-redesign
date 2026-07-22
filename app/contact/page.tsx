@@ -1,7 +1,7 @@
-export const metadata = {
+﻿export const metadata = {
   title: 'Contact Us',
   description: 'Contact Khabar Darjeeling — send us news tips, feedback, or business inquiries.',
-  alternates: { canonical: 'https://khabardarjeeling.space/contact' }
+  alternates: { canonical: 'https://khabardarjeeling.in/contact' }
 };
 
 export default function ContactPage() {

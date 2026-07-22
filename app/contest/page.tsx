@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import ContestClient from './ContestClient';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
@@ -25,11 +25,11 @@ async function fetchContestEntries(): Promise<any[]> {
 export const metadata: Metadata = {
   title: 'Story Contest 2026',
   description: 'Enter the Khabar Darjeeling Story Contest 2026. Share your stories from Darjeeling and the Gorkha community for a chance to win prizes.',
-  alternates: { canonical: 'https://khabardarjeeling.space/contest' },
+  alternates: { canonical: 'https://khabardarjeeling.in/contest' },
   openGraph: {
     title: 'Story Contest 2026 | Khabar Darjeeling',
     description: 'Enter the Khabar Darjeeling Story Contest 2026. Share your stories from Darjeeling and the Gorkha community.',
-    url: 'https://khabardarjeeling.space/contest',
+    url: 'https://khabardarjeeling.in/contest',
     siteName: 'Khabar Darjeeling',
     type: 'website',
   },

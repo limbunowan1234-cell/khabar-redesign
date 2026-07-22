@@ -1,9 +1,9 @@
-import type { MetadataRoute } from 'next';
+﻿import type { MetadataRoute } from 'next';
 
 const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
-const SITE = 'https://khabardarjeeling.space';
+const SITE = 'https://khabardarjeeling.in';
 
 async function getArticles(): Promise<any[]> {
   try {

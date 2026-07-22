@@ -69,11 +69,11 @@ export async function generateMetadata({ params }: { params: Promise<{ userId: s
   return {
     title,
     description,
-    alternates: { canonical: 'https://khabardarjeeling.space/profile/' + userId },
+    alternates: { canonical: 'https://khabardarjeeling.in/profile/' + userId },
     openGraph: {
       title,
       description,
-      url: 'https://khabardarjeeling.space/profile/' + userId,
+      url: 'https://khabardarjeeling.in/profile/' + userId,
       siteName: 'Khabar Darjeeling',
       type: 'profile',
     },

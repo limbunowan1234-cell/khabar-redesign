@@ -1,7 +1,7 @@
-export const metadata = {
+﻿export const metadata = {
   title: 'About Us',
   description: 'About Khabar Darjeeling — the digital home of Darjeeling and the Gorkha community.',
-  alternates: { canonical: 'https://khabardarjeeling.space/about' }
+  alternates: { canonical: 'https://khabardarjeeling.in/about' }
 };
 
 export default function AboutPage() {

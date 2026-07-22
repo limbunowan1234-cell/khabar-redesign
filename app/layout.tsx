@@ -1,8 +1,8 @@
-import type { Metadata, Viewport } from 'next';
+﻿import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import AuthProvider from '@/components/AuthProvider';
 
-const SITE = 'https://khabardarjeeling.space';
+const SITE = 'https://khabardarjeeling.in';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
