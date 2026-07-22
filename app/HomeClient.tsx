@@ -630,7 +630,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
   const breakingArticles = articles.filter(a => a.isBreaking).slice(0, 6);
   const featuredArticle = articles.find(a => a.isFeatured) || articles[0];
   const trendingArticles = [...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
-  const gridArticles = filtered.filter(a => !a.isFeatured);
+  const gridArticles = filtered;
   const isAdmin = (user as any)?.labels?.includes('admin') || user?.email === 'nowanad@gmail.com';
 
   if (loading) return (
