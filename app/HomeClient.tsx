@@ -653,7 +653,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
 
       {showBanner && (
         <div style={{ backgroundColor: '#f5c518', color: '#c41e3a', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', borderBottom: '2px solid #c41e3a' }}>
-          <div style={{ flex: 1, fontSize: isMobile ? '14px' : '16px', fontWeight: '700', textAlign: 'center' }}>We are now updated with new features! Check it out!</div>
+          <div style={{ flex: 1, fontSize: isMobile ? '14px' : '16px', fontWeight: '700', textAlign: 'center' }}>We've upgraded to khabardarjeeling.in! Bookmark our new home.</div>
           <button onClick={() => setShowBanner(false)} style={{ backgroundColor: 'transparent', border: 'none', color: '#c41e3a', cursor: 'pointer', fontSize: '20px', flexShrink: 0, padding: '0', width: '30px', height: '30px' }}>X</button>
         </div>
       )}
