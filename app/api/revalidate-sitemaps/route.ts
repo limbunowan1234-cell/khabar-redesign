@@ -1,7 +1,7 @@
-import { revalidatePath } from 'next/cache';
+﻿import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 
-const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };

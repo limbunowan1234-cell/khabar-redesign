@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike, incrementViews } from '@/lib/appwrite';
 import { useAuthStore } from '@/lib/authStore';
 
-const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };

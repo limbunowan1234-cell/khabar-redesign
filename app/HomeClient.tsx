@@ -15,7 +15,7 @@ import MagazineHero from '@/components/MagazineHero';
 import GenreColumns from '@/components/GenreColumns';
 import SidebarTabs from '@/components/SidebarTabs';
 
-const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const DB = 'Khabar_db';

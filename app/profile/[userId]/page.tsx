@@ -1,7 +1,7 @@
 ﻿import type { Metadata } from 'next';
 import ProfileClient from './ProfileClient';
 
-const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 
