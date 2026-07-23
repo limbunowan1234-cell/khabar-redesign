@@ -3,6 +3,8 @@ import ProfileEditor from '@/components/ProfileEditor';
 import ProfileBio from '@/components/ProfileBio';
 import AuthorBadge from '@/components/AuthorBadge';
 import TierProgress from '@/components/TierProgress';
+import { computeContestRankings, rankToCertRank } from '@/lib/certRanking';
+import { generateCertificateBlob, downloadBlob } from '@/lib/certGenerator';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -56,6 +58,57 @@ async function fetchArticleByIdOrSlug(aid: string, endpoint: string, db: string,
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [certState, setCertState] = useState<{ live: boolean; myEntry: any; rank: number; downloadCount: number; docId: string | null } | null>(null);
+  const [certDownloading, setCertDownloading] = useState(false);
+
+  async function loadCertificateStatus(uid: string) {
+    try {
+      const sRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/contest_settings/documents/main', { headers: H });
+      if (!sRes.ok) return;
+      const sData = await sRes.json();
+      if (!sData.certificatesLive) { setCertState({ live: false, myEntry: null, rank: 0, downloadCount: 0, docId: null }); return; }
+
+      const rankings = await computeContestRankings();
+      const myEntry = rankings.find(r => r.submitterId === uid);
+      if (!myEntry) { setCertState({ live: true, myEntry: null, rank: 0, downloadCount: 0, docId: null }); return; }
+
+      let downloadCount = 0;
+      let docId: string | null = null;
+      const dq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [uid] }));
+      const dRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/certificate_state/documents?queries[]=' + dq, { headers: H, credentials: 'include' });
+      if (dRes.ok) {
+        const dData = await dRes.json();
+        if (dData.documents && dData.documents[0]) { downloadCount = dData.documents[0].downloadCount || 0; docId = dData.documents[0].$id; }
+      }
+      setCertState({ live: true, myEntry, rank: myEntry.rank, downloadCount, docId });
+    } catch (e) { console.error(e); }
+  }
+
+  async function handleDownloadCertificate() {
+    if (!certState || !certState.myEntry || certState.downloadCount >= 3 || !user) return;
+    setCertDownloading(true);
+    try {
+      const rank = rankToCertRank(certState.rank);
+      const blob = await generateCertificateBlob(certState.myEntry.submitterName, rank);
+      downloadBlob(blob, 'Khabar_Darjeeling_Certificate.png');
+
+      const newCount = certState.downloadCount + 1;
+      if (certState.docId) {
+        await fetch(ENDPOINT + '/databases/' + DB + '/collections/certificate_state/documents/' + certState.docId, {
+          method: 'PATCH', headers: HJ, credentials: 'include',
+          body: JSON.stringify({ data: { downloadCount: newCount } })
+        });
+      } else {
+        await fetch(ENDPOINT + '/databases/' + DB + '/collections/certificate_state/documents', {
+          method: 'POST', headers: HJ, credentials: 'include',
+          body: JSON.stringify({ documentId: 'unique()', data: { userId: user.$id, downloadCount: newCount, rank: rank } })
+        });
+      }
+      setCertState({ ...certState, downloadCount: newCount });
+    } catch (e) { console.error(e); }
+    setCertDownloading(false);
+  }
+
   const [profileDoc, setProfileDoc] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -76,7 +129,7 @@ export default function ProfilePage() {
         const userRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
         if (!userRes.ok) { router.push('/auth'); return; }
         const userData = await userRes.json();
-        setUser(userData);
+        setUser(userData); loadCertificateStatus(userData.$id);
 
         try {
           const pq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] }));
@@ -238,6 +291,21 @@ export default function ProfilePage() {
               <div style={{ fontSize: '11px', opacity: 0.9, marginTop: '2px' }}>{stat.label}</div>
             </div>
           ))}
+
+              {certState && certState.live && certState.myEntry && (
+                <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '12px', padding: '16px 20px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', marginBottom: '4px' }}>
+                    {certState.rank <= 3 ? `Congratulations! You placed #${certState.rank} in the contest` : 'Thank you for participating in the contest!'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginBottom: '12px' }}>
+                    {certState.downloadCount >= 3 ? 'You have used all 3 downloads for this certificate.' : `Downloads remaining: ${3 - certState.downloadCount} of 3`}
+                  </div>
+                  <button onClick={handleDownloadCertificate} disabled={certDownloading || certState.downloadCount >= 3} style={{ padding: '10px 24px', backgroundColor: certState.downloadCount >= 3 ? 'rgba(255,255,255,0.2)' : '#f5c518', color: certState.downloadCount >= 3 ? 'rgba(255,255,255,0.6)' : '#1a1a1a', border: 'none', borderRadius: '20px', cursor: certState.downloadCount >= 3 ? 'default' : 'pointer', fontWeight: '800', fontSize: '13px' }}>
+                    {certDownloading ? 'Generating...' : certState.downloadCount >= 3 ? 'Limit Reached' : 'Download Your Certificate'}
+                  </button>
+                </div>
+              )}
+
         </div>
 
       </div>

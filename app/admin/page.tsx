@@ -1,6 +1,8 @@
 ﻿'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { computeContestRankings, rankToCertRank, RankedEntry } from '@/lib/certRanking';
+import { generateCertificateBlob, downloadBlob } from '@/lib/certGenerator';
 
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
@@ -42,6 +44,44 @@ export default function AdminPage() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [view, setView] = useState('manage');
+  const [certRankings, setCertRankings] = useState<RankedEntry[]>([]);
+  const [certLoading, setCertLoading] = useState(false);
+  const [certificatesLive, setCertificatesLive] = useState(false);
+  const [publishing2, setPublishing2] = useState(false);
+
+  async function loadCertRankings() {
+    setCertLoading(true);
+    try {
+      const rankings = await computeContestRankings();
+      setCertRankings(rankings);
+      const sRes = await fetch(endpoint + '/databases/Khabar_db/collections/contest_settings/documents/main', { headers: H });
+      if (sRes.ok) { const sData = await sRes.json(); setCertificatesLive(!!sData.certificatesLive); }
+    } catch (e) { console.error(e); }
+    setCertLoading(false);
+  }
+
+  async function togglePublishCertificates() {
+    setPublishing2(true);
+    try {
+      const newVal = !certificatesLive;
+      await fetch(endpoint + '/databases/Khabar_db/collections/contest_settings/documents/main', {
+        method: 'PATCH', headers: HJ, credentials: 'include',
+        body: JSON.stringify({ data: { certificatesLive: newVal } })
+      });
+      setCertificatesLive(newVal);
+      setSuccess(newVal ? 'Certificates are now live for all participants!' : 'Certificates unpublished.');
+    } catch (e) { setError('Failed to update publish status'); }
+    setPublishing2(false);
+  }
+
+  async function previewCertificate(entry: RankedEntry) {
+    try {
+      const rank = rankToCertRank(entry.rank);
+      const blob = await generateCertificateBlob(entry.submitterName, rank);
+      downloadBlob(blob, entry.submitterName.replace(/\s+/g, '_') + '_certificate.png');
+    } catch (e) { setError('Failed to generate certificate preview'); }
+  }
+
   const [apkDownloads, setApkDownloads] = useState(0);
   const [editingArticle, setEditingArticle] = useState<any>(null);
 
@@ -547,11 +587,12 @@ function generateSlug(text: string): string {
             <Link href="/"><button style={{ backgroundColor: 'transparent', color: 'white', border: 'none', cursor: 'pointer', fontSize: '13px', marginBottom: '4px', display: 'block' }}>Back to Site</button></Link>
             <h1 style={{ margin: 0, fontSize: '20px' }}>KhabarDarjeeling Admin</h1>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={() => setView('manage')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'manage' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'manage' ? '#0F4C5C' : 'white' }}>Manage</button>
-            <button onClick={() => setView('publish')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'publish' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'publish' ? '#0F4C5C' : 'white' }}>+ Publish</button>
-              <button onClick={() => setView('photos')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'photos' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'photos' ? '#0F4C5C' : 'white' }}>+ Photos</button>
-              <button onClick={() => { setView('weekly'); loadWeeklyPicks(); }} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'weekly' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'weekly' ? '#0F4C5C' : 'white' }}>Weekly</button>
+          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', maxWidth: '100%', paddingBottom: '2px' }}>
+            <button onClick={() => setView('manage')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'manage' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'manage' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>Manage</button>
+            <button onClick={() => setView('publish')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'publish' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'publish' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>+ Publish</button>
+              <button onClick={() => setView('photos')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'photos' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'photos' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>+ Photos</button>
+              <button onClick={() => { setView('weekly'); loadWeeklyPicks(); }} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'weekly' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'weekly' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>Weekly</button>
+                <button onClick={() => { setView('certificates'); loadCertRankings(); }} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'certificates' ? '#D4AF37' : 'rgba(255,255,255,0.15)', color: view === 'certificates' ? '#0F4C5C' : 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Certificates</button>
           </div>
         </div>
       </div>
@@ -775,6 +816,64 @@ function generateSlug(text: string): string {
           </div>
         )}
 
+
+
+
+      {view === 'certificates' && (
+        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          <h2 style={{ color: '#0F4C5C', marginBottom: '8px', borderBottom: '2px solid #D4AF37', paddingBottom: '10px' }}>Contest Certificates</h2>
+          <p style={{ fontSize: '13px', color: '#888', marginBottom: '16px' }}>Ranking is computed live from views, likes, and comments &mdash; same formula as the public leaderboard.</p>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <button onClick={loadCertRankings} disabled={certLoading} style={{ padding: '10px 18px', backgroundColor: '#0F4C5C', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
+              {certLoading ? 'Loading...' : 'Refresh Rankings'}
+            </button>
+            <button onClick={togglePublishCertificates} disabled={publishing2 || certRankings.length === 0} style={{ padding: '10px 18px', backgroundColor: certificatesLive ? '#c41e3a' : '#27ae60', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' }}>
+              {publishing2 ? 'Updating...' : certificatesLive ? 'Unpublish Certificates' : 'Publish Certificates'}
+            </button>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: certificatesLive ? '#27ae60' : '#999', padding: '6px 12px', backgroundColor: certificatesLive ? '#e8f5e9' : '#f5f5f5', borderRadius: '20px' }}>
+              {certificatesLive ? 'LIVE - contestants can download' : 'Not published yet'}
+            </span>
+          </div>
+
+          {certRankings.length === 0 ? (
+            <p style={{ color: '#999', padding: '20px 0' }}>Click "Refresh Rankings" to compute standings from contest entries.</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #eee', textAlign: 'left' }}>
+                    <th style={{ padding: '10px' }}>Rank</th>
+                    <th style={{ padding: '10px' }}>Name</th>
+                    <th style={{ padding: '10px' }}>Article</th>
+                    <th style={{ padding: '10px' }}>Score</th>
+                    <th style={{ padding: '10px' }}>Certificate</th>
+                    <th style={{ padding: '10px' }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {certRankings.map((entry) => (
+                    <tr key={entry.articleId} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '10px', fontWeight: '800', color: entry.rank <= 3 ? '#c41e3a' : '#666' }}>{entry.rank}</td>
+                      <td style={{ padding: '10px', fontWeight: '600' }}>{entry.submitterName}</td>
+                      <td style={{ padding: '10px', color: '#888', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.title}</td>
+                      <td style={{ padding: '10px' }}>{entry.score.toFixed(1)}</td>
+                      <td style={{ padding: '10px' }}>
+                        <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '700', backgroundColor: entry.rank === 1 ? '#fff3d6' : entry.rank === 2 ? '#eef1f5' : entry.rank === 3 ? '#fbe6d6' : '#f0f0f0', color: entry.rank <= 3 ? '#7a5c00' : '#666' }}>
+                          {rankToCertRank(entry.rank) === 'participation' ? 'Participation' : rankToCertRank(entry.rank).toUpperCase() + ' Place'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px' }}>
+                        <button onClick={() => previewCertificate(entry)} style={{ padding: '6px 12px', backgroundColor: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Preview</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
         {view === 'edit' && editingArticle && (
           <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
