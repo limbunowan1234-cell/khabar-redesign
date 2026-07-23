@@ -1,4 +1,4 @@
-const endpoint = 'https://api.khabardarjeeling.space/v1';
+﻿const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
 const dbId = 'Khabar_db';
 

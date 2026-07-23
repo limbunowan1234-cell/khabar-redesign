@@ -1,7 +1,7 @@
 ﻿'use client';
 import Link from 'next/link';
 
-const ENDPOINT = 'https://api.khabardarjeeling.space/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const BUCKET = 'article-image';
 
