@@ -149,8 +149,6 @@ export default function AuthPage() {
       <footer style={{ backgroundColor: isDarkMode ? '#1e1e1e' : '#1a1a1a', color: '#aaa', padding: '16px', textAlign: 'center', fontSize: '13px' }}>
         <p style={{ margin: 0 }}>© 2026 Khabar Darjeeling. All rights reserved.</p>
       </footer>
-    </div>
-
       {showForgot && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '20px', animation: 'fadeIn 0.2s ease' }} onClick={() => setShowForgot(false)}>
           <style>{'@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}'}</style>
@@ -186,6 +184,8 @@ export default function AuthPage() {
           </div>
         </div>
       )}
+    </div>
+
 
   );
 }
