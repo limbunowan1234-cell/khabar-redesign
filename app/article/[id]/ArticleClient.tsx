@@ -32,6 +32,21 @@ function fmtDate(s: string): string {
   catch { return ''; }
 }
 
+function timeAgo(s: string): string {
+  try {
+    const diff = Date.now() - new Date(s).getTime();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'Just now';
+    if (min < 60) return min + 'm ago';
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return hr + 'h ago';
+    const day = Math.floor(hr / 24);
+    if (day < 7) return day + 'd ago';
+    return fmtDate(s);
+  } catch { return ''; }
+}
+
+
 function extractTags(title: string, category: string, location: string): string[] {
   if (!title) return [];
   const words = title.split(/\s+/);
@@ -546,7 +561,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
         {/* COMMENTS */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '24px 28px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '24px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '20px', paddingBottom: '12px', borderBottom: '2px solid #f5c518', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            💬 Comments <span style={{ fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#aaa' : '#888' }}>({comments.length})</span>
+            Comments <span style={{ fontSize: '14px', fontWeight: '600', color: isDarkMode ? '#aaa' : '#888' }}>({comments.length})</span>
           </h3>
 
           {/* NEW COMMENT */}
@@ -579,7 +594,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
                 return (
                   <div key={c.$id}>
                     {/* COMMENT */}
-                    <div style={{ display: 'flex', gap: '10px', padding: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', padding: '14px', backgroundColor: isDarkMode ? '#242424' : '#ffffff', borderRadius: '12px', border: '1px solid ' + (isDarkMode ? '#333' : '#eee'), boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
                       <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
                         {getInitials(c.authorName || 'U')}
                       </div>
@@ -595,11 +610,11 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
   {likedComments.has(c.$id) ? "❤️" : "🤍"} {commentLikes[c.$id] || 0}
 </button> {user && (
                             <button className="reply-btn" onClick={() => { setReplyingTo(isReplying ? null : c.$id); setReplyText(''); }} style={{ color: '#c41e3a' }}>
-                              {isReplying ? 'Cancel' : '↩️ Reply'}
+                              {isReplying ? 'Cancel' : 'Reply'}
                             </button>
                           )}
                           {canDelete && (
-                            <button className="del-btn" onClick={() => handleDelete(c.$id)}>🗑️ Delete</button>
+                            <button className="del-btn" onClick={() => handleDelete(c.$id)}>Delete</button>
                           )}
                         </div>
                       </div>
@@ -629,18 +644,18 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
                         {replies.map((r: any) => {
                           const canDeleteReply = user && (user.$id === r.userId || isAdmin);
                           return (
-                            <div key={r.$id} style={{ display: 'flex', gap: '8px', padding: '10px 12px', backgroundColor: isDarkMode ? '#333' : '#f0f0f0', borderRadius: '8px', borderLeft: '3px solid #c41e3a' }}>
+                            <div key={r.$id} style={{ display: 'flex', gap: '8px', padding: '10px 12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fafafa', borderRadius: 8px, border: '1px solid ' + (isDarkMode ? '#3a3a3a' : '#f0f0f0'), borderLeft: '3px solid #c41e3a' }}>
                               <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#a01830', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
                                 {getInitials(r.authorName || 'U')}
                               </div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
                                   <Link href={"/profile/" + r.userId} style={{ textDecoration: "none", color: "inherit" }}><div style={{ fontWeight: '700', fontSize: '13px', color: isDarkMode ? '#fff' : '#1a1a1a', cursor: "pointer" }}>{r.authorName || 'Anonymous'}</div></Link>
-                                  {r.createdAt && <div style={{ fontSize: '10px', color: isDarkMode ? '#666' : '#bbb' }}>{fmtDate(r.createdAt)}</div>}
+                                  {r.createdAt && <div style={{ fontSize: '10px', color: isDarkMode ? '#666' : '#bbb' }}>{timeAgo(r.createdAt)}</div>}
                                 </div>
                                 <p style={{ margin: '0 0 4px', fontSize: '13px', color: isDarkMode ? '#ccc' : '#444', lineHeight: '1.4' }}>{r.commentText}</p>
                                 {canDeleteReply && (
-                                  <button className="del-btn" onClick={() => handleDelete(r.$id)} style={{ fontSize: '11px' }}>🗑️ Delete</button>
+                                  <button className="del-btn" onClick={() => handleDelete(r.$id)} style={{ fontSize: '11px' }}>Delete</button>
                                 )}
                               </div>
                             </div>
