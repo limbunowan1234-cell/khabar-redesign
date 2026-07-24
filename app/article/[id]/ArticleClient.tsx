@@ -601,7 +601,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
                           <Link href={"/profile/" + c.userId} style={{ textDecoration: "none", color: "inherit" }}><div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', cursor: "pointer" }}>{c.authorName || 'Anonymous'}</div></Link>
-                          {c.createdAt && <div style={{ fontSize: '11px', color: isDarkMode ? '#666' : '#bbb' }}>{fmtDate(c.createdAt)}</div>}
+                          {c.createdAt && <div style={{ fontSize: '11px', color: isDarkMode ? '#666' : '#bbb' }}>{timeAgo(c.createdAt)}</div>}
                         </div>
                         <p style={{ margin: '0 0 8px', fontSize: '14px', color: isDarkMode ? '#ccc' : '#444', lineHeight: '1.5' }}>{c.commentText}</p>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
