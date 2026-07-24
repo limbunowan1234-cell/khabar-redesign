@@ -17,6 +17,10 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoverySent, setRecoverySent] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -42,6 +46,28 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  const handleForgotPassword = async (e: any) => {
+    e.preventDefault();
+    if (!recoveryEmail) { setError('Enter your email address'); return; }
+    setRecoveryLoading(true);
+    setError('');
+    try {
+      const res = await fetch(endpoint + '/account/recovery', {
+        method: 'POST', headers: HJ,
+        body: JSON.stringify({
+          email: recoveryEmail,
+          url: 'https://khabardarjeeling.in/auth/reset',
+        })
+      });
+      if (!res.ok) { const data = await res.json(); throw new Error(data.message || 'Failed to send reset email'); }
+      setRecoverySent(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email');
+    }
+    setRecoveryLoading(false);
+  };
+
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5', display: 'flex', flexDirection: 'column' }}>
@@ -86,6 +112,11 @@ export default function AuthPage() {
             <div>
               <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '13px', color: isDarkMode ? '#ddd' : '#333' }}>Password</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" style={{ width: '100%', padding: '12px 14px', border: '2px solid ' + (isDarkMode ? '#333' : '#eee'), borderRadius: '8px', fontSize: '15px', boxSizing: 'border-box', backgroundColor: isDarkMode ? '#2a2a2a' : '#fafafa', color: isDarkMode ? '#fff' : '#1a1a1a', outline: 'none' }} onFocus={(e) => { e.target.style.borderColor = '#c41e3a'; }} onBlur={(e) => { e.target.style.borderColor = isDarkMode ? '#333' : '#eee'; }} />
+                {isLogin && (
+                  <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                    <button type="button" onClick={() => { setShowForgot(true); setError(''); setRecoverySent(false); setRecoveryEmail(email); }} style={{ background: 'none', border: 'none', color: '#c41e3a', fontSize: '13px', fontWeight: '600', cursor: 'pointer', padding: 0 }}>Forgot password?</button>
+                  </div>
+                )}
             </div>
             {error && (
               <div style={{ padding: '12px 14px', backgroundColor: '#ffebee', color: '#c41e3a', borderRadius: '8px', fontSize: '14px', fontWeight: '500', borderLeft: '4px solid #c41e3a' }}>{error}</div>
@@ -119,5 +150,42 @@ export default function AuthPage() {
         <p style={{ margin: 0 }}>© 2026 Khabar Darjeeling. All rights reserved.</p>
       </footer>
     </div>
+
+      {showForgot && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '20px', animation: 'fadeIn 0.2s ease' }} onClick={() => setShowForgot(false)}>
+          <style>{'@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}'}</style>
+          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '16px', padding: '32px 28px', maxWidth: '400px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', animation: 'slideUp 0.25s ease' }}>
+
+            {!recoverySent ? (
+              <>
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: '#fdf0f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '22px' }}>&#128273;</div>
+                <h2 style={{ margin: '0 0 6px', fontSize: '19px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textAlign: 'center' }}>Reset your password</h2>
+                <p style={{ margin: '0 0 22px', fontSize: '13px', color: isDarkMode ? '#999' : '#888', textAlign: 'center', lineHeight: '1.5' }}>Enter your email and we&apos;ll send you a link to reset your password.</p>
+
+                <form onSubmit={handleForgotPassword}>
+                  <input type="email" value={recoveryEmail} onChange={(e) => setRecoveryEmail(e.target.value)} placeholder="your@email.com" style={{ width: '100%', padding: '13px 14px', border: '2px solid ' + (isDarkMode ? '#333' : '#eee'), borderRadius: '9px', fontSize: '15px', boxSizing: 'border-box', backgroundColor: isDarkMode ? '#2a2a2a' : '#fafafa', color: isDarkMode ? '#fff' : '#1a1a1a', outline: 'none', marginBottom: '14px' }} onFocus={(e) => { e.target.style.borderColor = '#c41e3a'; }} onBlur={(e) => { e.target.style.borderColor = isDarkMode ? '#333' : '#eee'; }} autoFocus />
+
+                  {error && (
+                    <div style={{ padding: '10px 12px', backgroundColor: '#ffebee', color: '#c41e3a', borderRadius: '7px', fontSize: '13px', fontWeight: '500', marginBottom: '14px' }}>{error}</div>
+                  )}
+
+                  <button type="submit" disabled={recoveryLoading} style={{ width: '100%', padding: '13px', backgroundColor: recoveryLoading ? '#999' : '#c41e3a', color: 'white', border: 'none', borderRadius: '9px', fontSize: '15px', fontWeight: '700', cursor: recoveryLoading ? 'default' : 'pointer', marginBottom: '10px' }}>
+                    {recoveryLoading ? 'Sending...' : 'Send Reset Link'}
+                  </button>
+                  <button type="button" onClick={() => setShowForgot(false)} style={{ width: '100%', padding: '12px', backgroundColor: 'transparent', color: isDarkMode ? '#aaa' : '#666', border: 'none', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Cancel</button>
+                </form>
+              </>
+            ) : (
+              <>
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: '#e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '24px' }}>&#10003;</div>
+                <h2 style={{ margin: '0 0 6px', fontSize: '19px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textAlign: 'center' }}>Check your email</h2>
+                <p style={{ margin: '0 0 22px', fontSize: '13px', color: isDarkMode ? '#999' : '#888', textAlign: 'center', lineHeight: '1.5' }}>We&apos;ve sent a password reset link to <strong>{recoveryEmail}</strong>. Click the link in the email to set a new password.</p>
+                <button onClick={() => setShowForgot(false)} style={{ width: '100%', padding: '13px', backgroundColor: '#c41e3a', color: 'white', border: 'none', borderRadius: '9px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>Done</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
   );
 }
