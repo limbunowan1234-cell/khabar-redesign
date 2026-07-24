@@ -644,7 +644,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
                         {replies.map((r: any) => {
                           const canDeleteReply = user && (user.$id === r.userId || isAdmin);
                           return (
-                            <div key={r.$id} style={{ display: 'flex', gap: '8px', padding: '10px 12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fafafa', borderRadius: 8px, border: '1px solid ' + (isDarkMode ? '#3a3a3a' : '#f0f0f0'), borderLeft: '3px solid #c41e3a' }}>
+                            <div key={r.$id} style={{ display: 'flex', gap: '8px', padding: '10px 12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fafafa', borderRadius: '8px', border: '1px solid ' + (isDarkMode ? '#3a3a3a' : '#f0f0f0'), borderLeft: '3px solid #c41e3a' }}>
                               <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#a01830', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
                                 {getInitials(r.authorName || 'U')}
                               </div>
