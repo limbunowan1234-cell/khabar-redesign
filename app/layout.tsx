@@ -38,6 +38,32 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  if (/KhabarDarjeelingApp/.test(navigator.userAgent)) {
+                    var meta = document.querySelector('meta[name="viewport"]');
+                    if (!meta) {
+                      meta = document.createElement('meta');
+                      meta.name = 'viewport';
+                      document.head.appendChild(meta);
+                    }
+                    meta.setAttribute('content', 'width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no');
+                    var style = document.createElement('style');
+                    style.innerHTML = 'html,body{width:100vw!important;max-width:100vw!important;overflow-x:hidden!important}';
+                    document.head.appendChild(style);
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+
       <body style={{ margin: 0, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5223539471824662" crossOrigin="anonymous" strategy="afterInteractive" />
         <AuthProvider>{children}</AuthProvider>
