@@ -84,7 +84,7 @@ export default function PostPage() {
         const base = (text || '')
           .toLowerCase()
       .normalize('NFC')
-      .replace(/[^\p{L}\p{N}\s-]/gu, '')
+      .replace(/[^\p{L}\p{M}\p{N}\s-]/gu, '')
           .trim()
           .replace(/\s+/g, '-')
           .replace(/-+/g, '-')
