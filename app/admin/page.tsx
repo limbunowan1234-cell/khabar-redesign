@@ -289,9 +289,8 @@ export default function AdminPage() {
           if (a.slug) continue;
           const base = (a.title || '')
             .toLowerCase()
-            .normalize('NFKD')
-            .replace(/[^\x00-\x7F]/g, '')
-            .replace(/[^a-z0-9\s-]/g, '')
+        .normalize('NFC')
+        .replace(/[^\p{L}\p{N}\s-]/gu, '')
             .trim()
             .replace(/\s+/g, '-')
             .replace(/-+/g, '-')
@@ -344,9 +343,8 @@ function parseTracker(title: string, lines: string): string {
 function generateSlug(text: string): string {
     const base = (text || '')
       .toLowerCase()
-      .normalize('NFKD')
-      .replace(/[^\x00-\x7F]/g, '')
-      .replace(/[^a-z0-9\s-]/g, '')
+    .normalize('NFC')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
       .trim()
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
