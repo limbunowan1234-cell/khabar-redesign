@@ -46,7 +46,8 @@ async function fetchArticle(idOrSlug: string): Promise<any> {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const a = await fetchArticle(id);
+  const decodedId = decodeURIComponent(id);
+  const a = await fetchArticle(decodedId);
   if (!a) return { title: 'Article | Khabar Darjeeling' };
   const title = a.title || 'Khabar Darjeeling';
   const description = clean(a.content || a.summary || '');
@@ -80,7 +81,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const a = await fetchArticle(id);
+  const decodedId = decodeURIComponent(id);
+  const a = await fetchArticle(decodedId);
 
   const jsonLd = a ? {
     '@context': 'https://schema.org',

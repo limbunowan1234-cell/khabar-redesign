@@ -151,7 +151,7 @@ async function notifyUser(targetUserId: string, fromUserId: string, type: string
 
 export default function ArticleClient({ initialArticle }: { initialArticle?: any }) {
   const params = useParams();
-  const id = params?.id as string;
+  const id = decodeURIComponent((params?.id as string) || '');
   const { user } = useAuthStore();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [article, setArticle] = useState<any>(initialArticle || null);
