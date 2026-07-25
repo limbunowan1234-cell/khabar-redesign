@@ -1,4 +1,5 @@
 ﻿import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import WeeklyClient from './WeeklyClient';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
@@ -43,5 +44,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Page() {
   const { articles, allIssues, currentIssue } = await fetchWeeklyData();
-  return <WeeklyClient initialArticles={articles} initialAllIssues={allIssues} initialCurrentIssue={currentIssue} />;
+  return (
+    <Suspense fallback={<div />}>
+      <WeeklyClient initialArticles={articles} initialAllIssues={allIssues} initialCurrentIssue={currentIssue} />
+    </Suspense>
+  );
 }

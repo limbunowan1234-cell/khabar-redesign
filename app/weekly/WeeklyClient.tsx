@@ -1,6 +1,7 @@
 ﻿'use client';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -34,6 +35,7 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
   const [downloading, setDownloading] = useState(false);
   const [pdfMode, setPdfMode] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -91,7 +93,7 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
   useEffect(() => {
     (async () => {
       try {
-        const params = new URLSearchParams(window.location.search);
+        const params = searchParams;
         const wantsPreview = params.get('preview') === 'true';
         const issueParam = params.get('issue');
 
@@ -122,7 +124,7 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
       }
       setLoading(false);
     })();
-  }, []);
+  }, [searchParams]);
 
   if (loading) {
     return (

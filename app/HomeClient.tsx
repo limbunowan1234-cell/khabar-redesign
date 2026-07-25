@@ -19,7 +19,7 @@ const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const DB = 'Khabar_db';
-const APK_URL = 'https://github.com/limbunowan1234-cell/Khabar-darjeeling/releases/download/v1.0.0/KhabarDarjeeling-v1.0.0.2.apk';
+const APK_URL = 'https://api.khabardarjeeling.in/v1/storage/buckets/app-downloads/files/khabar-app-v1/download?project=khabardarjeeling';
 
 const categories = ['All', 'Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Politics', 'Sports', 'Culture', 'Education', 'Health', 'Entertainment', 'Technology', 'Tea Gardens', 'Tourism', 'Crime', 'Opinion'];
 
