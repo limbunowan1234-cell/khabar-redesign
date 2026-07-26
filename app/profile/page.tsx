@@ -60,6 +60,45 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [certState, setCertState] = useState<{ live: boolean; myEntry: any; rank: number; downloadCount: number; docId: string | null } | null>(null);
   const [certDownloading, setCertDownloading] = useState(false);
+  const [myContestEntries, setMyContestEntries] = useState<Array<{ articleId: string; title: string; score: number; isCounting: boolean }>>([]);
+  const [contestEntriesLoaded, setContestEntriesLoaded] = useState(false);
+  const [overallRank, setOverallRank] = useState<number | null>(null);
+
+  async function loadMyContestEntries(uid: string) {
+    try {
+      const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'isContestEntry', values: [true] }));
+      const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [uid] }));
+      const q3 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] }));
+      const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q1 + '&queries[]=' + q2 + '&queries[]=' + q3, { headers: H, credentials: 'include' });
+      if (!res.ok) { setContestEntriesLoaded(true); return; }
+      const data = await res.json();
+      const myArticles = data.documents || [];
+      if (myArticles.length === 0) { setContestEntriesLoaded(true); return; }
+
+      const scored = await Promise.all(myArticles.map(async (a: any) => {
+        let votes = 0; let comments = 0;
+        try {
+          const lq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] }));
+          const lRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' + lq, { headers: H });
+          if (lRes.ok) { const lData = await lRes.json(); votes = (lData.documents || []).filter((l: any) => !l.commentId).length; }
+        } catch {}
+        try {
+          const cq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] }));
+          const cRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents?queries[]=' + cq, { headers: H });
+          if (cRes.ok) { const cData = await cRes.json(); comments = cData.total || 0; }
+        } catch {}
+        const score = (a.views || 0) * 0.5 + votes * 1 + comments * 3;
+        return { articleId: a.$id, title: a.title || '', score };
+      }));
+
+      scored.sort((a, b) => b.score - a.score);
+      const withCounting = scored.map((e, i) => ({ ...e, isCounting: i === 0 }));
+      setMyContestEntries(withCounting);
+      try { const fullRankings = await computeContestRankings(); const mine = fullRankings.find(r => r.submitterId === uid); if (mine) setOverallRank(mine.rank); } catch {}
+    } catch (e) { console.error(e); }
+    setContestEntriesLoaded(true);
+  }
+
 
   async function loadCertificateStatus(uid: string) {
     try {
@@ -129,7 +168,7 @@ export default function ProfilePage() {
         const userRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
         if (!userRes.ok) { router.push('/auth'); return; }
         const userData = await userRes.json();
-        setUser(userData); loadCertificateStatus(userData.$id);
+        setUser(userData); loadCertificateStatus(userData.$id); loadMyContestEntries(userData.$id);
 
         try {
           const pq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] }));
@@ -347,15 +386,16 @@ export default function ProfilePage() {
 
         {/* TABS */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             {[
               { id: 'articles', label: 'My Articles (' + myArticles.length + ')' },
               { id: 'followers', label: 'Followers (' + followers.length + ')' },
               { id: 'following', label: 'Following (' + following.length + ')' },
               { id: 'favorites', label: 'Favorites (' + favorites.length + ')' },
               { id: 'bookmarks', label: 'Bookmarks (' + bookmarks.length + ')' },
+  ...(myContestEntries.length > 0 ? [{ id: 'contest-entries', label: 'Contest Entries (' + myContestEntries.length + ')' }] : []),
             ].map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, padding: '14px 8px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', color: activeTab === tab.id ? '#c41e3a' : isDarkMode ? '#888' : '#666', borderBottom: activeTab === tab.id ? '3px solid #c41e3a' : '3px solid transparent', transition: 'all 0.2s' }}>
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: '0 0 auto', minWidth: '110px', padding: '14px 12px', whiteSpace: 'nowrap', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', color: activeTab === tab.id ? '#c41e3a' : isDarkMode ? '#888' : '#666', borderBottom: activeTab === tab.id ? '3px solid #c41e3a' : '3px solid transparent', transition: 'all 0.2s' }}>
                 {tab.label}
               </button>
             ))}
@@ -501,6 +541,37 @@ export default function ProfilePage() {
 
               )
             )}
+
+      {/* CONTEST ENTRIES */}
+      {activeTab === 'contest-entries' && (
+        myContestEntries.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: isDarkMode ? '#666' : '#ccc' }}>
+            <p style={{ fontWeight: '600', margin: 0, color: isDarkMode ? '#aaa' : '#666' }}>No contest entries yet</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {overallRank !== null && (
+              <div style={{ padding: '12px 16px', backgroundColor: isDarkMode ? '#1e2a1e' : '#e8f5e9', borderRadius: '10px', marginBottom: '4px', textAlign: 'center' }}>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: '#2e7d32' }}>You're currently ranked #{overallRank} overall in the contest</span>
+              </div>
+            )}
+            <p style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#999', margin: '0 0 4px' }}>Only your top-scoring entry counts toward the prize and certificate. Keep posting to improve your standing!</p>
+            {myContestEntries.map((e, i) => (
+              <div key={e.articleId} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', backgroundColor: e.isCounting ? (isDarkMode ? '#2a1518' : '#fdf0f2') : (isDarkMode ? '#2a2a2a' : '#f9f9f9'), borderRadius: '10px', border: e.isCounting ? '2px solid #c41e3a' : '1px solid ' + (isDarkMode ? '#333' : '#eee') }}>
+                <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: i === 0 ? '#c41e3a' : (isDarkMode ? '#333' : '#eee'), color: i === 0 ? 'white' : (isDarkMode ? '#aaa' : '#666'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', flexShrink: 0 }}>{i + 1}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '2px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.title}</div>
+                  <div style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#999' }}>Score: {e.score.toFixed(1)}</div>
+                </div>
+                {e.isCounting && (
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#c41e3a', backgroundColor: isDarkMode ? '#3a1a20' : '#fff', padding: '4px 10px', borderRadius: '20px', border: '1px solid #c41e3a', flexShrink: 0 }}>Your Entry</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
         </div>
 
         {/* LOGOUT */}
