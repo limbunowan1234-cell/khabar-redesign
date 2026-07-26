@@ -186,6 +186,18 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
     slate: 'linear-gradient(135deg, #64748b 0%, #334155 100%)',
   };
   const bannerGradient = BANNER_THEMES[profile?.bannerTheme] || BANNER_THEMES.crimson;
+const ACCENT_COLORS: Record<string, string> = {
+    crimson: '#c41e3a',
+    evergreen: '#2e7d32',
+    glacier: '#0ea5e9',
+    golden: '#f59e0b',
+    royal: '#9333ea',
+    midnight: '#64748b',
+    sunrise: '#f97316',
+    slate: '#64748b',
+  };
+  const accentColor = ACCENT_COLORS[profile?.bannerTheme] || ACCENT_COLORS.crimson;
+
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', paddingBottom: '100px' }}>
@@ -237,8 +249,8 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
             { label: 'Views', value: totalViews.toLocaleString() },
             { label: 'Likes', value: totalLikes },
           ].map((s, i) => (
-            <div key={s.label} className="public-stat-card" style={{ animationDelay: (i * 0.07) + 's', background: '#f7f7f7', border: '1px solid #eee', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: '#1a1a1a' }}>{s.value}</div>
+            <div key={s.label} className="public-stat-card" style={{ animationDelay: (i * 0.07) + 's', background: '#f7f7f7', border: '1.5px solid ' + accentColor + '50', borderRadius: '12px', padding: '12px 8px', textAlign: 'center', boxShadow: '0 2px 6px ' + accentColor + '15' }}>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: accentColor }}>{s.value}</div>
               <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{s.label}</div>
             </div>
           ))}

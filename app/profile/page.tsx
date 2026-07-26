@@ -275,6 +275,18 @@ export default function ProfilePage() {
     slate: 'linear-gradient(135deg, #64748b 0%, #334155 100%)',
   };
   const bannerGradient = BANNER_THEMES[profileDoc?.bannerTheme] || BANNER_THEMES.crimson;
+const ACCENT_COLORS: Record<string, string> = {
+  crimson: '#c41e3a',
+  evergreen: '#2e7d32',
+  glacier: '#0ea5e9',
+  golden: '#f59e0b',
+  royal: '#9333ea',
+  midnight: '#64748b',
+  sunrise: '#f97316',
+  slate: '#64748b',
+};
+const accentColor = ACCENT_COLORS[profileDoc?.bannerTheme] || ACCENT_COLORS.crimson;
+
 
 
   return (
@@ -325,7 +337,7 @@ export default function ProfilePage() {
             { label: 'Following', value: following.length },
             { label: 'Bookmarks', value: bookmarkCount },
           ].map((stat, i) => (
-            <div key={stat.label} className="stat-card-anim" style={{ animationDelay: (i * 0.08) + 's', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px 20px', minWidth: '80px', textAlign: 'center' }}>
+            <div key={stat.label} className="stat-card-anim" style={{ animationDelay: (i * 0.08) + 's', background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(4px)', border: '1.5px solid ' + accentColor + '80', boxShadow: '0 0 12px ' + accentColor + '40', borderRadius: '12px', padding: '12px 20px', minWidth: '80px', textAlign: 'center' }}>
               <div style={{ fontSize: '22px', fontWeight: '800', color: '#f5c518' }}>{stat.value}</div>
               <div style={{ fontSize: '11px', opacity: 0.9, marginTop: '2px' }}>{stat.label}</div>
             </div>
