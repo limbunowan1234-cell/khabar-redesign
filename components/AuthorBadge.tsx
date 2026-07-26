@@ -97,7 +97,6 @@ export default function AuthorBadge({ submitterId, size = 'sm', precomputedScore
         background: tier.bg,
         border: '1px solid ' + tier.border,
         boxShadow: '0 2px 6px ' + tier.border + '55, inset 0 1px 0 rgba(255,255,255,0.5)',
-        boxShadow: '0 2px 6px ' + tier.border + '55, inset 0 1px 0 rgba(255,255,255,0.5)',
         fontSize: isSm ? '10px' : '13px',
         fontWeight: 700,
         color: tier.color,
