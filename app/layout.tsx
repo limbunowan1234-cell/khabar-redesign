@@ -1,4 +1,4 @@
-﻿import type { Metadata, Viewport } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import AuthProvider from '@/components/AuthProvider';
 
