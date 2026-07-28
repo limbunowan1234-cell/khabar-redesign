@@ -61,20 +61,42 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const submission = await databases.createDocument(
-      'Khabar_db',
-      'bhasa_diwas_submissions',
-      ID.unique(),
-      {
-        title: title.substring(0, 200),
-        category,
-        description: description.substring(0, 2000),
-        submitterName: submitterName.substring(0, 100),
-        submitterId,
-        imageFileId: imageFileId || null,
-        votes: 0
+    let submission = null;
+    let lastError: any = null;
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const newId = ID.unique();
+      console.log(`Attempt ${attempt + 1}: trying to create document with ID ${newId}`);
+      try {
+        submission = await databases.createDocument(
+          'Khabar_db',
+          'bhasa_diwas_submissions',
+          newId,
+          {
+            title: title.substring(0, 200),
+            category,
+            description: description.substring(0, 2000),
+            submitterName: submitterName.substring(0, 100),
+            submitterId,
+            imageFileId: imageFileId || null,
+            votes: 0
+          }
+        );
+        console.log(`Success on attempt ${attempt + 1} with ID ${newId}`);
+        break;
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Attempt ${attempt + 1} failed for ID ${newId}: code=${err?.code}, message=${err?.message}`);
+        if (err?.code === 409) {
+          continue;
+        }
+        throw err;
       }
-    );
+    }
+
+    if (!submission) {
+      throw lastError;
+    }
 
     return NextResponse.json({
       success: true,
