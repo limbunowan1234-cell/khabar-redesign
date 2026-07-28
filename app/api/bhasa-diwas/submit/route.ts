@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, Databases, Storage } from 'node-appwrite';
+import { Client, Databases, Storage, ID } from 'node-appwrite';
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         const buffer = await photoFile.arrayBuffer();
         const file = await storage.createFile(
           'bhasadiwas-photos',
-          'unique()',
+          ID.unique(),
           new File([buffer], photoFile.name, { type: photoFile.type })
         );
         imageFileId = file.$id;
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     const submission = await databases.createDocument(
       'Khabar_db',
       'bhasa_diwas_submissions',
-      'unique()',
+      ID.unique(),
       {
         title: title.substring(0, 200),
         category,

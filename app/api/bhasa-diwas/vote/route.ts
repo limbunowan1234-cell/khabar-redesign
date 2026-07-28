@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, Databases, Query } from 'node-appwrite';
+import { Client, Databases, Query, ID } from 'node-appwrite';
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     await databases.createDocument(
       'Khabar_db',
       'bhasa_diwas_votes',
-      'unique()',
+      ID.unique(),
       {
         submissionId,
         voterId: userId
