@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client, Databases, Storage, ID } from 'node-appwrite';
+import { randomBytes } from 'crypto';
+
+function generateManualId(): string {
+  // Appwrite IDs must be <= 36 chars, alphanumeric + underscore/hyphen,
+  // and cannot start with a special character. Generate a safe 20-char
+  // hex string prefixed with a letter to guarantee validity.
+  return 'm' + randomBytes(10).toString('hex');
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -65,8 +73,8 @@ export async function POST(req: NextRequest) {
     let lastError: any = null;
 
     for (let attempt = 0; attempt < 5; attempt++) {
-      const newId = ID.unique();
-      console.log(`Attempt ${attempt + 1}: trying to create document with ID ${newId}`);
+      const newId = generateManualId();
+      console.log(`Attempt ${attempt + 1}: trying manual ID ${newId}`);
       try {
         submission = await databases.createDocument(
           'Khabar_db',
