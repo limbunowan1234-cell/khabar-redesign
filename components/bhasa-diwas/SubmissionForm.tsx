@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuthStore } from '@/lib/authStore';
 import imageCompression from 'browser-image-compression';
 
@@ -37,6 +37,7 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [compressionProgress, setCompressionProgress] = useState('');
+  const isSubmittingRef = useRef(false);
 
   if (authLoading) return <div style={{ textAlign: 'center', padding: '48px' }}>लोड हो रहेको छ...</div>;
   if (!isAuthenticated || !user) return <div style={{ textAlign: 'center', padding: '48px' }}><p style={{ color: '#4b5563', fontSize: '18px' }}>कृपया लगिन गर्नुहोस्</p></div>;
@@ -56,12 +57,19 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Hard guard against double-submit (double-click, double-tap, or fast re-trigger)
+    if (isSubmittingRef.current) {
+      return;
+    }
+    isSubmittingRef.current = true;
+
     setLoading(true);
     setError('');
 
-    if (!formData.title.trim()) { setError('शीर्षक आवश्यक छ।'); setLoading(false); return; }
-    if (!formData.description.trim()) { setError('विवरण आवश्यक छ।'); setLoading(false); return; }
-    if (formData.category === 'photo' && !formData.photo) { setError('फोटो आवश्यक छ।'); setLoading(false); return; }
+    if (!formData.title.trim()) { setError('शीर्षक आवश्यक छ।'); setLoading(false); isSubmittingRef.current = false; return; }
+    if (!formData.description.trim()) { setError('विवरण आवश्यक छ।'); setLoading(false); isSubmittingRef.current = false; return; }
+    if (formData.category === 'photo' && !formData.photo) { setError('फोटो आवश्यक छ।'); setLoading(false); isSubmittingRef.current = false; return; }
 
     try {
       const submitFormData = new FormData();
@@ -74,13 +82,17 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
 
       const response = await fetch('/api/bhasa-diwas/submit', { method: 'POST', body: submitFormData });
       const result = await response.json();
-      if (!response.ok) { setError(result.error || 'सबमिट गर्न असफल'); setLoading(false); return; }
+      if (!response.ok) { setError(result.error || 'सबमिट गर्न असफल'); setLoading(false); isSubmittingRef.current = false; return; }
 
       setFormData({ title: '', category: 'poetry', description: '', photo: null });
       setCompressionProgress('');
       onSuccess();
-    } catch (err) { setError('त्रुटि: ' + (err instanceof Error ? err.message : 'Unknown')); }
-    finally { setLoading(false); }
+    } catch (err) {
+      setError('त्रुटि: ' + (err instanceof Error ? err.message : 'Unknown'));
+    } finally {
+      setLoading(false);
+      isSubmittingRef.current = false;
+    }
   };
 
   return (
