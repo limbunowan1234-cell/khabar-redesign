@@ -5,13 +5,22 @@ import { useAuthStore } from '@/lib/authStore';
 import imageCompression from 'browser-image-compression';
 
 const CATEGORIES = [
-  { value: 'poetry', label: '🎭 काव्य' },
-  { value: 'essay', label: '📚 निबन्ध' },
-  { value: 'photo', label: '📷 फोटो' }
+  { value: 'poetry', label: '🎭 काव्य', maxWords: 100, minWords: 0 },
+  { value: 'essay', label: '📚 निबन्ध', maxWords: 250, minWords: 0 },
+  { value: 'photo', label: '📷 फोटो', maxWords: 999, minWords: 5 }
 ];
 
+function countWords(text: string): number {
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+}
+
 const S = {
-  title: { fontSize: '26px', fontWeight: 700, color: '#b91c1c', marginBottom: '24px' },
+  title: { fontSize: '26px', fontWeight: 700, color: '#b91c1c', marginBottom: '16px' },
+  rulesBox: { background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '20px', marginBottom: '24px' },
+  rulesTitle: { fontSize: '15px', fontWeight: 700, color: '#92400e', marginBottom: '10px' },
+  rulesList: { margin: 0, paddingLeft: '20px', color: '#78350f', fontSize: '13px', lineHeight: 1.8 },
   errorBox: { background: '#fee2e2', color: '#b91c1c', padding: '12px 16px', borderRadius: '6px', marginBottom: '20px' },
   field: { marginBottom: '24px' },
   label: { display: 'block', fontWeight: 600, marginBottom: '8px', color: '#374151' },
@@ -20,7 +29,9 @@ const S = {
   radioGroup: { display: 'flex', gap: '16px', flexWrap: 'wrap' as const },
   uploadBox: { border: '2px dashed #f87171', borderRadius: '8px', padding: '24px', textAlign: 'center' as const, background: '#fef2f2' },
   submitBtn: { width: '100%', background: '#b91c1c', color: 'white', fontWeight: 700, padding: '14px', border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer' },
-  charCount: { fontSize: '13px', color: '#9ca3af', marginTop: '4px' }
+  charCount: { fontSize: '13px', color: '#9ca3af', marginTop: '4px' },
+  wordCountOk: { fontSize: '13px', color: '#15803d', marginTop: '4px', fontWeight: 600 },
+  wordCountBad: { fontSize: '13px', color: '#b91c1c', marginTop: '4px', fontWeight: 600 }
 };
 
 function radioLabel(active: boolean) {
@@ -42,6 +53,10 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
   if (authLoading) return <div style={{ textAlign: 'center', padding: '48px' }}>लोड हो रहेको छ...</div>;
   if (!isAuthenticated || !user) return <div style={{ textAlign: 'center', padding: '48px' }}><p style={{ color: '#4b5563', fontSize: '18px' }}>कृपया लगिन गर्नुहोस्</p></div>;
 
+  const currentCategory = CATEGORIES.find(c => c.value === formData.category)!;
+  const wordCount = countWords(formData.description);
+  const wordCountValid = wordCount >= currentCategory.minWords && wordCount <= currentCategory.maxWords;
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -58,10 +73,7 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Hard guard against double-submit (double-click, double-tap, or fast re-trigger)
-    if (isSubmittingRef.current) {
-      return;
-    }
+    if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
     setLoading(true);
@@ -70,6 +82,16 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
     if (!formData.title.trim()) { setError('शीर्षक आवश्यक छ।'); setLoading(false); isSubmittingRef.current = false; return; }
     if (!formData.description.trim()) { setError('विवरण आवश्यक छ।'); setLoading(false); isSubmittingRef.current = false; return; }
     if (formData.category === 'photo' && !formData.photo) { setError('फोटो आवश्यक छ।'); setLoading(false); isSubmittingRef.current = false; return; }
+
+    const wc = countWords(formData.description);
+    if (wc < currentCategory.minWords) {
+      setError(`कम्तिमा ${currentCategory.minWords} शब्द आवश्यक छ। हाल ${wc} शब्द छ।`);
+      setLoading(false); isSubmittingRef.current = false; return;
+    }
+    if (wc > currentCategory.maxWords) {
+      setError(`अधिकतम ${currentCategory.maxWords} शब्द मात्र स्वीकार्य छ। हाल ${wc} शब्द छ।`);
+      setLoading(false); isSubmittingRef.current = false; return;
+    }
 
     try {
       const submitFormData = new FormData();
@@ -98,6 +120,20 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
   return (
     <form onSubmit={handleSubmit}>
       <h2 style={S.title}>अपनो रचना साझा गर्नुहोस्</h2>
+
+      <div style={S.rulesBox}>
+        <div style={S.rulesTitle}>⚠️ सबमिशन नियमहरू (Submission Rules)</div>
+        <ul style={S.rulesList}>
+          <li>काव्य (Poetry): अधिकतम १०० शब्द</li>
+          <li>निबन्ध (Essay): अधिकतम २५० शब्द</li>
+          <li>फोटो (Photo): कम्तिमा ५ शब्दको क्याप्शन</li>
+          <li>फोटो साइज: अधिकतम ३० MB (स्वचालित संकुचित हुनेछ)</li>
+          <li>केवल नेपाली भाषामा मात्र सबमिट गर्नुहोस् (Nepali language only)</li>
+          <li>केवल आफ्नै मौलिक रचना - कुनै पनि किसिमको नक्कल/चोरी स्वीकार्य छैन</li>
+          <li>अन्तिम मिति: अगस्ट १९, २०२६ (Deadline: August 19, 2026)</li>
+        </ul>
+      </div>
+
       {error && <div style={S.errorBox}>{error}</div>}
 
       <div style={S.field}>
@@ -121,7 +157,12 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
       <div style={S.field}>
         <label style={S.label}>विवरण *</label>
         <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} style={S.textarea} maxLength={2000} />
-        <p style={S.charCount}>{formData.description.length}/2000</p>
+        <p style={S.charCount}>{formData.description.length}/2000 अक्षर</p>
+        <p style={wordCountValid ? S.wordCountOk : S.wordCountBad}>
+          {wordCount} शब्द
+          {currentCategory.minWords > 0 ? ` (कम्तिमा ${currentCategory.minWords}` : ' ('}
+          {currentCategory.maxWords < 999 ? `, अधिकतम ${currentCategory.maxWords} शब्द)` : ')'}
+        </p>
       </div>
 
       {formData.category === 'photo' && (
