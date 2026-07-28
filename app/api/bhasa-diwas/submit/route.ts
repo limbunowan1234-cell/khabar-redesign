@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     const client = new Client()
-      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://api.khabardarjeeling.in/v1')
+      .setEndpoint('https://nyc.cloud.appwrite.io/v1')
       .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
       .setKey(process.env.APPWRITE_API_KEY || '');
 
@@ -61,42 +61,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Retry loop: if document ID collision happens for any reason
-    // (duplicate request, replay, network retry), generate a fresh
-    // unique ID and try again, up to 3 attempts.
-    let submission = null;
-    let lastError: any = null;
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        submission = await databases.createDocument(
-          'Khabar_db',
-          'bhasa_diwas_submissions',
-          ID.unique(),
-          {
-            title: title.substring(0, 200),
-            category,
-            description: description.substring(0, 2000),
-            submitterName: submitterName.substring(0, 100),
-            submitterId,
-            imageFileId: imageFileId || null,
-            votes: 0
-          }
-        );
-        break;
-      } catch (err: any) {
-        lastError = err;
-        if (err?.code === 409) {
-          console.warn(`ID collision on attempt ${attempt + 1}, retrying with new ID...`);
-          continue;
-        }
-        throw err;
+    const submission = await databases.createDocument(
+      'Khabar_db',
+      'bhasa_diwas_submissions',
+      ID.unique(),
+      {
+        title: title.substring(0, 200),
+        category,
+        description: description.substring(0, 2000),
+        submitterName: submitterName.substring(0, 100),
+        submitterId,
+        imageFileId: imageFileId || null,
+        votes: 0
       }
-    }
-
-    if (!submission) {
-      throw lastError;
-    }
+    );
 
     return NextResponse.json({
       success: true,

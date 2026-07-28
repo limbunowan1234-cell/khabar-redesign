@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     const client = new Client()
-      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://api.khabardarjeeling.in/v1')
+      .setEndpoint('https://nyc.cloud.appwrite.io/v1')
       .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
       .setKey(process.env.APPWRITE_API_KEY || '');
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const client = new Client()
-      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://api.khabardarjeeling.in/v1')
+      .setEndpoint('https://nyc.cloud.appwrite.io/v1')
       .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
       .setKey(process.env.APPWRITE_API_KEY || '');
 

@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const userId = searchParams.get('userId');
 
     const client = new Client()
-      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://api.khabardarjeeling.in/v1')
+      .setEndpoint('https://nyc.cloud.appwrite.io/v1')
       .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
       .setKey(process.env.APPWRITE_API_KEY || '');
 
