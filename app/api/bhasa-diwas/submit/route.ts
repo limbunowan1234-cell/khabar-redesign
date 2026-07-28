@@ -61,20 +61,42 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const submission = await databases.createDocument(
-      'Khabar_db',
-      'bhasa_diwas_submissions',
-      ID.unique(),
-      {
-        title: title.substring(0, 200),
-        category,
-        description: description.substring(0, 2000),
-        submitterName: submitterName.substring(0, 100),
-        submitterId,
-        imageFileId: imageFileId || null,
-        votes: 0
+    // Retry loop: if document ID collision happens for any reason
+    // (duplicate request, replay, network retry), generate a fresh
+    // unique ID and try again, up to 3 attempts.
+    let submission = null;
+    let lastError: any = null;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        submission = await databases.createDocument(
+          'Khabar_db',
+          'bhasa_diwas_submissions',
+          ID.unique(),
+          {
+            title: title.substring(0, 200),
+            category,
+            description: description.substring(0, 2000),
+            submitterName: submitterName.substring(0, 100),
+            submitterId,
+            imageFileId: imageFileId || null,
+            votes: 0
+          }
+        );
+        break;
+      } catch (err: any) {
+        lastError = err;
+        if (err?.code === 409) {
+          console.warn(`ID collision on attempt ${attempt + 1}, retrying with new ID...`);
+          continue;
+        }
+        throw err;
       }
-    );
+    }
+
+    if (!submission) {
+      throw lastError;
+    }
 
     return NextResponse.json({
       success: true,
