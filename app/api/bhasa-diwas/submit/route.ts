@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { Client, Databases, Storage, ID } from 'node-appwrite';
 import { randomBytes } from 'crypto';
 
@@ -22,21 +22,21 @@ export async function POST(req: NextRequest) {
 
     if (!title || !category || !description || !submitterName || !submitterId) {
       return NextResponse.json(
-        { error: 'सबै क्षेत्र आवश्यक छन्' },
+        { error: 'à¤¸à¤¬à¥ˆ à¤•à¥à¤·à¥‡à¤¤à¥à¤° à¤†à¤µà¤¶à¥à¤¯à¤• à¤›à¤¨à¥' },
         { status: 400 }
       );
     }
 
     if (!['poetry', 'essay', 'photo'].includes(category)) {
       return NextResponse.json(
-        { error: 'अमान्य वर्ग' },
+        { error: 'à¤…à¤®à¤¾à¤¨à¥à¤¯ à¤µà¤°à¥à¤—' },
         { status: 400 }
       );
     }
 
     if (category === 'photo' && !photoFile) {
       return NextResponse.json(
-        { error: 'फोटो वर्गको लागि चित्र आवश्यक छ' },
+        { error: 'à¤«à¥‹à¤Ÿà¥‹ à¤µà¤°à¥à¤—à¤•à¥‹ à¤²à¤¾à¤—à¤¿ à¤šà¤¿à¤¤à¥à¤° à¤†à¤µà¤¶à¥à¤¯à¤• à¤›' },
         { status: 400 }
       );
     }
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
 
     const databases = new Databases(client);
     const storage = new Storage(client);
+    console.log('Using API key starting with:', (process.env.APPWRITE_API_KEY || '').substring(0, 15));
 
     let imageFileId: string | null = null;
 
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         console.error('Photo upload failed:', error);
         return NextResponse.json(
-          { error: 'चित्र अपलोड असफल' },
+          { error: 'à¤šà¤¿à¤¤à¥à¤° à¤…à¤ªà¤²à¥‹à¤¡ à¤…à¤¸à¤«à¤²' },
           { status: 500 }
         );
       }
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Submission error:', error);
     return NextResponse.json(
-      { error: 'सबमिशन असफल भयो' },
+      { error: 'à¤¸à¤¬à¤®à¤¿à¤¶à¤¨ à¤…à¤¸à¤«à¤² à¤­à¤¯à¥‹' },
       { status: 500 }
     );
   }
