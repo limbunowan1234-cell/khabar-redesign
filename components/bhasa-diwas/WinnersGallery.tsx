@@ -82,7 +82,7 @@ export default function WinnersGallery() {
                   </div>
                   {category === 'photo' && winner.imageFileId && (
                     <div style={{ height: '180px', background: '#e5e7eb' }}>
-                      <Image src={`/api/image-proxy?fileId=${winner.imageFileId}&bucket=bhasadiwas-photos`} alt={winner.title} width={400} height={300} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <Image src={`/api/image-proxy?fileId=${winner.imageFileId}&bucket=6a67a307002f71e8dcf5`} alt={winner.title} width={400} height={300} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                   )}
                   <div style={S.cardBody}>

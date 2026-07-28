@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { Client, Databases, Storage, ID } from 'node-appwrite';
 import { randomBytes } from 'crypto';
 
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       try {
         const buffer = await photoFile.arrayBuffer();
         const file = await storage.createFile(
-          'bhasadiwas-photos',
+          '6a67a307002f71e8dcf5',
           ID.unique(),
           new File([buffer], photoFile.name, { type: photoFile.type })
         );
