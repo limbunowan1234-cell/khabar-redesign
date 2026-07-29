@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/authStore';
-import Image from 'next/image';
+
 
 const CATS: Record<string, { label: string; bg: string }> = {
   poetry: { label: '🎭 काव्य', bg: '#f3e8ff' },
@@ -104,7 +104,7 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
                   <h3 style={S.cardTitle}>{submission.title}</h3>
                   {submission.category === 'photo' && submission.imageFileId && (
                     <div style={{ marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', height: '260px', background: '#e5e7eb' }}>
-                      <Image src={`/api/image-proxy?fileId=${submission.imageFileId}&bucket=6a67a307002f71e8dcf5`} alt={submission.title} width={600} height={400} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={"/api/image-proxy?fileId=" + submission.imageFileId + "&bucket=6a67a307002f71e8dcf5"} alt={submission.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
                   )}
                   <p style={S.cardText}>{submission.description}</p>
