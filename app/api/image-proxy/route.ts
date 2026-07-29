@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
+const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
 const PROJECT = 'khabardarjeeling';
 
 export async function GET(req: Request) {
