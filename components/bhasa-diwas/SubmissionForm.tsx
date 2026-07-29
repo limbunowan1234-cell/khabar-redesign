@@ -5,7 +5,7 @@ import { useAuthStore } from '@/lib/authStore';
 import imageCompression from 'browser-image-compression';
 
 const CATEGORIES = [
-  { value: 'poetry', label: '🎭 काव्य', maxWords: 100, minWords: 0 },
+  { value: 'poetry', label: '✍️ काव्य', maxWords: 100, minWords: 0 },
   { value: 'essay', label: '📚 निबन्ध', maxWords: 250, minWords: 0 },
   { value: 'photo', label: '📷 फोटो', maxWords: 999, minWords: 5 }
 ];

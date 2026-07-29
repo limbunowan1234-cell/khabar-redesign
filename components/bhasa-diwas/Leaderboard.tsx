@@ -1,7 +1,7 @@
 'use client';
 
 const CAT_LABELS: Record<string, { emoji: string; nepali: string }> = {
-  poetry: { emoji: '🎭', nepali: 'काव्य' },
+  poetry: { emoji: '✍️', nepali: 'काव्य' },
   essay: { emoji: '📚', nepali: 'निबन्ध' },
   photo: { emoji: '📷', nepali: 'फोटो' }
 };

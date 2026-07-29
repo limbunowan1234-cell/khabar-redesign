@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/authStore';
-
+import Link from 'next/link';
 
 const CATS: Record<string, { label: string; bg: string }> = {
-  poetry: { label: '🎭 काव्य', bg: '#f3e8ff' },
+  poetry: { label: '✍️ काव्य', bg: '#f3e8ff' },
   essay: { label: '📚 निबन्ध', bg: '#dbeafe' },
   photo: { label: '📷 फोटो', bg: '#dcfce7' }
 };
@@ -57,7 +57,9 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
     fetchSubmissions();
   }, [refreshTrigger, selectedCategory]);
 
-  const handleVote = async (submissionId: string) => {
+  const handleVote = async (submissionId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!isAuthenticated || !user) { alert('कृपया मत दिन लगिन गर्नुहोस्।'); return; }
     try {
       const res = await fetch('/api/bhasa-diwas/vote', {
@@ -91,30 +93,32 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
           {submissions.map(submission => {
             const cat = CATS[submission.category];
             return (
-              <div key={submission.$id} style={S.card}>
-                <div style={S.cardHeader}>
-                  <div style={S.avatar}>{submission.submitterName.charAt(0).toUpperCase()}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, color: '#111827' }}>{submission.submitterName}</div>
-                    <div style={{ fontSize: '13px', color: '#9ca3af' }}>{new Date(submission.$createdAt).toLocaleDateString('ne-NP')}</div>
-                  </div>
-                  {cat && <div style={{ padding: '6px 14px', borderRadius: '20px', background: cat.bg, fontSize: '13px', fontWeight: 600 }}>{cat.label}</div>}
-                </div>
-                <div style={S.cardBody}>
-                  <h3 style={S.cardTitle}>{submission.title}</h3>
-                  {submission.category === 'photo' && submission.imageFileId && (
-                    <div style={{ marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', height: '260px', background: '#e5e7eb' }}>
-                      <img src={"/api/image-proxy?fileId=" + submission.imageFileId + "&bucket=6a67a307002f71e8dcf5"} alt={submission.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <Link key={submission.$id} href={'/nepali-bhasa-diwas/' + submission.$id} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <div style={S.card}>
+                  <div style={S.cardHeader}>
+                    <div style={S.avatar}>{submission.submitterName.charAt(0).toUpperCase()}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, color: '#111827' }}>{submission.submitterName}</div>
+                      <div style={{ fontSize: '13px', color: '#9ca3af' }}>{new Date(submission.$createdAt).toLocaleDateString('ne-NP')}</div>
                     </div>
-                  )}
-                  <p style={S.cardText}>{submission.description}</p>
+                    {cat && <div style={{ padding: '6px 14px', borderRadius: '20px', background: cat.bg, fontSize: '13px', fontWeight: 600 }}>{cat.label}</div>}
+                  </div>
+                  <div style={S.cardBody}>
+                    <h3 style={S.cardTitle}>{submission.title}</h3>
+                    {submission.category === 'photo' && submission.imageFileId && (
+                      <div style={{ marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', height: '260px', background: '#e5e7eb' }}>
+                        <img src={"/api/image-proxy?fileId=" + submission.imageFileId + "&bucket=6a67a307002f71e8dcf5"} alt={submission.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                    )}
+                    <p style={S.cardText}>{submission.description}</p>
+                  </div>
+                  <div style={S.cardFooter}>
+                    <button onClick={(e) => handleVote(submission.$id, e)} disabled={userVotes.has(submission.$id)} style={voteBtn(userVotes.has(submission.$id))}>
+                      👍 {submission.votes || 0} मत
+                    </button>
+                  </div>
                 </div>
-                <div style={S.cardFooter}>
-                  <button onClick={() => handleVote(submission.$id)} disabled={userVotes.has(submission.$id)} style={voteBtn(userVotes.has(submission.$id))}>
-                    👍 {submission.votes || 0} मत
-                  </button>
-                </div>
-              </div>
+              </Link>
             );
           })}
         </div>
