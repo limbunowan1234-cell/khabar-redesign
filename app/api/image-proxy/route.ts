@@ -12,11 +12,7 @@ export async function GET(req: Request) {
 
   try {
     const url = ENDPOINT + '/storage/buckets/' + bucket + '/files/' + id + '/view?project=' + PROJECT;
-    const res = await fetch(url, {
-      headers: {
-        'X-Appwrite-Key': process.env.APPWRITE_API_KEY || ''
-      }
-    });
+    const res = await fetch(url);
     if (!res.ok) return new NextResponse('Not found', { status: 404 });
     const buffer = await res.arrayBuffer();
     const contentType = res.headers.get('content-type') || 'image/jpeg';
