@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
 const PROJECT = 'khabardarjeeling';
@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   try {
     const url = ENDPOINT + '/storage/buckets/' + bucket + '/files/' + id + '/view?project=' + PROJECT;
     const res = await fetch(url);
-    if (!res.ok) return new NextResponse('Not found', { status: 404 });
+    if (!res.ok) { const body = await res.text(); console.error('image-proxy failed:', res.status, url, body.substring(0, 300)); return new NextResponse('Not found', { status: 404 }); }
     const buffer = await res.arrayBuffer();
     const contentType = res.headers.get('content-type') || 'image/jpeg';
     return new NextResponse(buffer, {
