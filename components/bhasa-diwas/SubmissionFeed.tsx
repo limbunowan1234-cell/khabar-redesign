@@ -19,7 +19,12 @@ const S = {
   cardBody: { padding: '20px' },
   cardTitle: { fontSize: '20px', fontWeight: 700, color: '#111827', margin: '0 0 12px' },
   cardText: { color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap' as const },
-  cardFooter: { padding: '16px 20px', background: '#f9fafb', borderTop: '1px solid #e5e7eb' }
+  cardFooter: { padding: '16px 20px', background: '#f9fafb', borderTop: '1px solid #e5e7eb' },
+  photoGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' },
+  photoTile: { position: 'relative' as const, borderRadius: '10px', overflow: 'hidden', aspectRatio: '1', background: '#e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
+  photoOverlay: { position: 'absolute' as const, bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)', padding: '20px 12px 10px', color: 'white' },
+  photoTitle: { fontSize: '13px', fontWeight: 700, margin: '0 0 2px', whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' as const },
+  photoMeta: { fontSize: '11px', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '6px' }
 };
 
 function filterBtn(active: boolean) {
@@ -75,6 +80,8 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
     } catch (error) { console.error('Failed to vote:', error); }
   };
 
+  const isPhotoView = selectedCategory === 'photo';
+
   if (loading) return <div style={{ textAlign: 'center', padding: '48px', fontSize: '20px' }}>लोड हो रहेको छ...</div>;
 
   return (
@@ -88,6 +95,29 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
 
       {submissions.length === 0 ? (
         <div style={S.emptyBox}><p style={{ color: '#6b7280', fontSize: '18px' }}>अहिले कुनै सबमिशन छैन।</p></div>
+      ) : isPhotoView ? (
+        <div style={S.photoGrid}>
+          {submissions.map(submission => (
+            <Link key={submission.$id} href={'/nepali-bhasa-diwas/' + submission.$id} style={{ textDecoration: 'none' }}>
+              <div style={S.photoTile}>
+                {submission.imageFileId && (
+                  <img
+                    src={'/api/image-proxy?fileId=' + submission.imageFileId + '&bucket=6a67a307002f71e8dcf5'}
+                    alt={submission.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                )}
+                <div style={S.photoOverlay}>
+                  <p style={S.photoTitle}>{submission.title}</p>
+                  <div style={S.photoMeta}>
+                    <span>{submission.submitterName}</span>
+                    <span>👍 {submission.votes || 0}</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       ) : (
         <div>
           {submissions.map(submission => {
@@ -105,11 +135,6 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
                   </div>
                   <div style={S.cardBody}>
                     <h3 style={S.cardTitle}>{submission.title}</h3>
-                    {submission.category === 'photo' && submission.imageFileId && (
-                      <div style={{ marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', height: '260px', background: '#e5e7eb' }}>
-                        <img src={"/api/image-proxy?fileId=" + submission.imageFileId + "&bucket=6a67a307002f71e8dcf5"} alt={submission.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      </div>
-                    )}
                     <p style={S.cardText}>{submission.description}</p>
                   </div>
                   <div style={S.cardFooter}>
