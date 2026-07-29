@@ -658,7 +658,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
         </div>
       )}
       <div style={{ background: "linear-gradient(135deg, #b91c1c, #7f1d1d)", color: "white", padding: "14px 20px", textAlign: "center", borderBottom: "3px solid #facc15" }}>
-        <span style={{ fontSize: isMobile ? "14px" : "16px", fontWeight: 700 }}>Nepali Bhasa Diwas (Aug 1-19) - Poetry, Essays & Photography contest now open</span>
+        <span style={{ fontSize: isMobile ? "14px" : "16px", fontWeight: 700 }}>नेपाली भाषा दिवस (अगस्ट १–१९) — काव्य, निबन्ध र फोटो प्रतियोगिता छिट्टै सुरु हुँदैछ</span>
       </div>
 
       {isMobile && showMenu && (
