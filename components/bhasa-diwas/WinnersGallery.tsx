@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 
@@ -75,7 +76,8 @@ export default function WinnersGallery() {
           <div style={S.cardsGrid}>
             {winners[category] && winners[category].length > 0 ? (
               winners[category].map((winner: any, index: number) => (
-                <div key={winner.$id} style={winnerCardStyle(BORDER[index])}>
+                <Link key={winner.$id} href={'/nepali-bhasa-diwas/' + winner.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={winnerCardStyle(BORDER[index])}>
                   <div style={medalHeaderStyle(cat.color)}>
                     <div style={S.medalEmoji}>{MEDALS[index]}</div>
                     <div style={S.medalLabel}>{MEDAL_LABELS[index]}</div>
@@ -94,6 +96,7 @@ export default function WinnersGallery() {
                     </div>
                   </div>
                 </div>
+                </Link>
               ))
             ) : (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px', color: '#9ca3af' }}>अहिले कुनै विजेता छैन</div>

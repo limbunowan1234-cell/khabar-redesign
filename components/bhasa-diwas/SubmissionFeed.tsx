@@ -81,6 +81,7 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
   };
 
   const isPhotoView = selectedCategory === 'photo';
+  const displaySubmissions = selectedCategory === 'all' ? submissions.filter(s => s.category !== 'photo') : submissions;
 
   if (loading) return <div style={{ textAlign: 'center', padding: '48px', fontSize: '20px' }}>लोड हो रहेको छ...</div>;
 
@@ -93,7 +94,7 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
         ))}
       </div>
 
-      {submissions.length === 0 ? (
+      {displaySubmissions.length === 0 ? (
         <div style={S.emptyBox}><p style={{ color: '#6b7280', fontSize: '18px' }}>अहिले कुनै सबमिशन छैन।</p></div>
       ) : isPhotoView ? (
         <div style={S.photoGrid}>
@@ -120,7 +121,7 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
         </div>
       ) : (
         <div>
-          {submissions.map(submission => {
+          {displaySubmissions.map(submission => {
             const cat = CATS[submission.category];
             return (
               <Link key={submission.$id} href={'/nepali-bhasa-diwas/' + submission.$id} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
