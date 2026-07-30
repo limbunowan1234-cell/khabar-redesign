@@ -260,19 +260,52 @@ const ACCENT_COLORS: Record<string, string> = {
         {bio && <p style={{ margin: '12px 0', color: '#1a1a1a', fontSize: '15px', lineHeight: 1.5 }}>{bio}</p>}
 
         {/* STATS ROW */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', margin: '16px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', margin: '16px 0' }}>
           {[
-            { label: 'Articles', value: articles.length },
-            { label: 'Followers', value: followerCount },
-            { label: 'Views', value: totalViews.toLocaleString() },
-            { label: 'Likes', value: totalLikes },
+            { label: 'Articles', value: articles.length, clickable: false },
+            { label: 'Followers', value: followerCount, clickable: true, onClick: () => { setShowFollowersPanel(!showFollowersPanel); setShowFollowingPanel(false); } },
+            { label: 'Following', value: followingCount, clickable: true, onClick: () => { setShowFollowingPanel(!showFollowingPanel); setShowFollowersPanel(false); } },
+            { label: 'Views', value: totalViews.toLocaleString(), clickable: false },
+            { label: 'Likes', value: totalLikes, clickable: false },
           ].map((s, i) => (
-            <div key={s.label} className="public-stat-card" style={{ animationDelay: (i * 0.07) + 's', background: '#f7f7f7', border: '1.5px solid ' + accentColor + '50', borderRadius: '12px', padding: '12px 8px', textAlign: 'center', boxShadow: '0 2px 6px ' + accentColor + '15' }}>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: accentColor }}>{s.value}</div>
-              <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{s.label}</div>
+            <div key={s.label} onClick={s.onClick} className='public-stat-card' style={{ animationDelay: (i * 0.07) + 's', background: '#f7f7f7', border: '1.5px solid ' + accentColor + '50', borderRadius: '12px', padding: '12px 6px', textAlign: 'center', boxShadow: '0 2px 6px ' + accentColor + '15', cursor: s.clickable ? 'pointer' : 'default' }}>
+              <div style={{ fontSize: '17px', fontWeight: 800, color: accentColor }}>{s.value}</div>
+              <div style={{ fontSize: '10px', color: '#888', marginTop: '2px' }}>{s.label}</div>
             </div>
           ))}
         </div>
+        {showFollowersPanel && (
+          <div style={{ background: '#f9f9f9', borderRadius: '12px', padding: '12px', margin: '0 0 16px' }}>
+            {followersList.length === 0 ? (
+              <p style={{ fontSize: '13px', color: '#999', textAlign: 'center', margin: 0 }}>No followers yet</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {followersList.map((f: any) => (
+                  <Link key={f.$id} href={'/profile/' + f.followerId} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', background: 'white', borderRadius: '8px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: accentColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>{(f.followerName || 'U').charAt(0).toUpperCase()}</div>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>{f.followerName || 'User'}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {showFollowingPanel && (
+          <div style={{ background: '#f9f9f9', borderRadius: '12px', padding: '12px', margin: '0 0 16px' }}>
+            {followingList.length === 0 ? (
+              <p style={{ fontSize: '13px', color: '#999', textAlign: 'center', margin: 0 }}>Not following anyone yet</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {followingList.map((f: any) => (
+                  <Link key={f.$id} href={'/profile/' + f.followingId} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', background: 'white', borderRadius: '8px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: accentColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>{(f.followingName || 'U').charAt(0).toUpperCase()}</div>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>{f.followingName || 'User'}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
 
 
