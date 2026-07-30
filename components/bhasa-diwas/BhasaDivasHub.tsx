@@ -28,12 +28,12 @@ const S = {
     background: 'white', color: '#b91c1c', padding: '8px 20px', borderRadius: '20px',
     fontWeight: 600, textDecoration: 'none', fontSize: '14px'
   },
-  hero: { background: 'linear-gradient(135deg, #b91c1c, #7f1d1d)', color: 'white', padding: '60px 20px', textAlign: 'center' as const },
-  heroTitle: { fontSize: '42px', fontWeight: 700, margin: '0 0 10px' },
-  heroSub: { fontSize: '20px', margin: '0 0 8px', opacity: 0.95 },
-  heroTag: { fontSize: '16px', opacity: 0.9, margin: '0 0 16px' },
-  dateBadge: { background: 'rgba(255,255,255,0.25)', display: 'inline-block', padding: '8px 20px', borderRadius: '20px', border: '2px solid #facc15', fontWeight: 600 },
-  introBox: { background: 'white', borderLeft: '4px solid #b91c1c', padding: '30px', margin: '30px auto', maxWidth: '900px', borderRadius: '4px' },
+  hero: { position: 'relative' as const, backgroundImage: 'linear-gradient(105deg, rgba(30,10,10,0.88) 0%, rgba(60,15,15,0.6) 45%, rgba(60,15,15,0.25) 75%), url(/assets/bhasa-diwas-hero.png)', backgroundSize: 'cover', backgroundPosition: 'center', color: 'white', padding: '90px 20px', textAlign: 'left' as const, minHeight: '360px', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' },
+  heroInner: { maxWidth: '650px', margin: '0 auto', width: '100%', padding: '0 24px' },
+  heroTitle: { fontSize: '48px', fontWeight: 700, margin: '0 0 12px', fontFamily: 'Georgia, serif', textShadow: '0 2px 12px rgba(0,0,0,0.5)', letterSpacing: '0.5px' },
+  heroSub: { fontSize: '18px', margin: '0 0 6px', opacity: 0.92, fontWeight: 300, letterSpacing: '2px', textTransform: 'uppercase' as const },
+  heroTag: { fontSize: '17px', opacity: 0.95, margin: '0 0 24px', fontStyle: 'italic', textShadow: '0 1px 6px rgba(0,0,0,0.4)' },
+  dateBadge: { background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(6px)', display: 'inline-block', padding: '10px 24px', borderRadius: '30px', border: '1.5px solid #facc15', fontWeight: 600, fontSize: '14px', letterSpacing: '1px' },
   introTitle: { fontSize: '24px', fontWeight: 700, color: '#b91c1c', marginBottom: '16px' },
   introText: { color: '#374151', lineHeight: 1.7 },
   tabBar: { background: 'white', borderBottom: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap' as const, maxWidth: '900px', margin: '0 auto' },
@@ -102,10 +102,12 @@ export default function BhasaDivasHub() {
       </div>
 
       <div style={S.hero}>
-        <h1 style={S.heroTitle}>नेपाली भाषा दिवस</h1>
-        <p style={S.heroSub}>Nepali Bhasa Diwas</p>
-        <p style={S.heroTag}>हाम्रो भाषा, हाम्रो पहिचान</p>
-        <div style={S.dateBadge}>अगस्ट १–१९</div>
+        <div style={S.heroInner}>
+          <h1 style={S.heroTitle}>नेपाली भाषा दिवस</h1>
+          <p style={S.heroSub}>Nepali Bhasa Diwas</p>
+          <p style={S.heroTag}>हाम्रो भाषा, हाम्रो पहिचान</p>
+          <div style={S.dateBadge}>अगस्ट १–३०</div>
+        </div>
       </div>
 
       <div style={S.introBox}>
