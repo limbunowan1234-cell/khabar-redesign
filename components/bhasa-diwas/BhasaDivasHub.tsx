@@ -34,6 +34,7 @@ const S = {
   heroSub: { fontSize: '18px', margin: '0 0 6px', opacity: 0.92, fontWeight: 300, letterSpacing: '2px', textTransform: 'uppercase' as const },
   heroTag: { fontSize: '17px', opacity: 0.95, margin: '0 0 24px', fontStyle: 'italic', textShadow: '0 1px 6px rgba(0,0,0,0.4)' },
   dateBadge: { background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(6px)', display: 'inline-block', padding: '10px 24px', borderRadius: '30px', border: '1.5px solid #facc15', fontWeight: 600, fontSize: '14px', letterSpacing: '1px' },
+  introBox: { background: 'white', borderLeft: '4px solid #b91c1c', padding: '30px', margin: '30px auto', maxWidth: '900px', borderRadius: '4px' },
   introTitle: { fontSize: '24px', fontWeight: 700, color: '#b91c1c', marginBottom: '16px' },
   introText: { color: '#374151', lineHeight: 1.7 },
   tabBar: { background: 'white', borderBottom: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap' as const, maxWidth: '900px', margin: '0 auto' },
