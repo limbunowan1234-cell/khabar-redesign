@@ -458,7 +458,7 @@ const accentColor = ACCENT_COLORS[profileDoc?.bannerTheme] || ACCENT_COLORS.crim
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {followers.map((f: any) => (
+                  {followers.filter((f: any, idx: number, arr: any[]) => arr.findIndex((x: any) => x.followerId === f.followerId) === idx).map((f: any) => (
                     <Link key={f.$id} href={'/profile/' + f.followerId} style={{ textDecoration: 'none' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px' }}>
                       <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', flexShrink: 0 }}>
                         {getInitials(f.followerName || 'U')}
@@ -484,7 +484,7 @@ const accentColor = ACCENT_COLORS[profileDoc?.bannerTheme] || ACCENT_COLORS.crim
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {following.map((f: any) => (
+                  {following.filter((f: any, idx: number, arr: any[]) => arr.findIndex((x: any) => x.followingId === f.followingId) === idx).map((f: any) => (
                     <Link key={f.$id} href={'/profile/' + f.followingId} style={{ textDecoration: 'none' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px' }}>
                       <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#a01830', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', flexShrink: 0 }}>
                         {getInitials(f.followingName || 'U')}

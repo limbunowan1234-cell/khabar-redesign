@@ -280,7 +280,7 @@ const ACCENT_COLORS: Record<string, string> = {
               <p style={{ fontSize: '13px', color: '#999', textAlign: 'center', margin: 0 }}>No followers yet</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {followersList.map((f: any) => (
+                {followersList.filter((f: any, idx: number, arr: any[]) => arr.findIndex((x: any) => x.followerId === f.followerId) === idx).map((f: any) => (
                   <Link key={f.$id} href={'/profile/' + f.followerId} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', background: 'white', borderRadius: '8px' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: accentColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>{(f.followerName || 'U').charAt(0).toUpperCase()}</div>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>{f.followerName || 'User'}</span>
@@ -296,7 +296,7 @@ const ACCENT_COLORS: Record<string, string> = {
               <p style={{ fontSize: '13px', color: '#999', textAlign: 'center', margin: 0 }}>Not following anyone yet</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {followingList.map((f: any) => (
+                {followingList.filter((f: any, idx: number, arr: any[]) => arr.findIndex((x: any) => x.followingId === f.followingId) === idx).map((f: any) => (
                   <Link key={f.$id} href={'/profile/' + f.followingId} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', background: 'white', borderRadius: '8px' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: accentColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>{(f.followingName || 'U').charAt(0).toUpperCase()}</div>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>{f.followingName || 'User'}</span>
