@@ -1,7 +1,7 @@
 ﻿'use client';
 import { useState, useRef, useEffect } from 'react';
 
-const NAV_GENRES = ['All', 'Voice of People', 'Politics', 'Tourism', 'Poetry', 'Editorial'];
+const NAV_GENRES = ['All', 'Voice of People', 'Politics', 'Tourism', 'Poetry', 'Editorial', 'Business'];
 const MORE_GENRES = ['Culture', 'Health', 'Education', 'Technology', 'Sports'];
 const DISTRICTS = ['All Regions', 'Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim'];
 
