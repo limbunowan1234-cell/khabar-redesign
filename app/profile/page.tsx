@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import ProfileEditor from '@/components/ProfileEditor';
 import ProfileBio from '@/components/ProfileBio';
 import AuthorBadge from '@/components/AuthorBadge';
@@ -459,7 +459,7 @@ const accentColor = ACCENT_COLORS[profileDoc?.bannerTheme] || ACCENT_COLORS.crim
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {followers.map((f: any) => (
-                    <div key={f.$id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px' }}>
+                    <Link key={f.$id} href={'/profile/' + f.followerId} style={{ textDecoration: 'none' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px' }}>
                       <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', flexShrink: 0 }}>
                         {getInitials(f.followerName || 'U')}
                       </div>
@@ -468,6 +468,7 @@ const accentColor = ACCENT_COLORS[profileDoc?.bannerTheme] || ACCENT_COLORS.crim
                         <div style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#aaa' }}>Followed {fmtDate(f.createdAt)}</div>
                       </div>
                     </div>
+                  </Link>
                   ))}
                 </div>
               )
@@ -484,7 +485,7 @@ const accentColor = ACCENT_COLORS[profileDoc?.bannerTheme] || ACCENT_COLORS.crim
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {following.map((f: any) => (
-                    <div key={f.$id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px' }}>
+                    <Link key={f.$id} href={'/profile/' + f.followingId} style={{ textDecoration: 'none' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '10px' }}>
                       <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#a01830', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', flexShrink: 0 }}>
                         {getInitials(f.followingName || 'U')}
                       </div>
@@ -493,6 +494,7 @@ const accentColor = ACCENT_COLORS[profileDoc?.bannerTheme] || ACCENT_COLORS.crim
                         <div style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#aaa' }}>Following since {fmtDate(f.createdAt)}</div>
                       </div>
                     </div>
+                  </Link>
                   ))}
                 </div>
               )
