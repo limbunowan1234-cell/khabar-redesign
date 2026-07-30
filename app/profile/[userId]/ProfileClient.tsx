@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -32,6 +32,11 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
+  const [followersList, setFollowersList] = useState<any[]>([]);
+  const [showFollowersPanel, setShowFollowersPanel] = useState(false);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [followingList, setFollowingList] = useState<any[]>([]);
+  const [showFollowingPanel, setShowFollowingPanel] = useState(false);
   const [totalLikes, setTotalLikes] = useState(0);
   const [loading, setLoading] = useState(!initialProfile && initialArticles.length === 0);
 
@@ -86,12 +91,25 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
         const followersRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
           encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })),
+          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
           { headers: H, credentials: 'include' }
         );
         if (followersRes.ok) {
           const fd = await followersRes.json();
           setFollowerCount(fd.total || 0);
+          setFollowersList(fd.documents || []);
+        // Following count and list (who this user follows)
+        const followingRes = await fetch(
+          ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
+          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [userId] })) +
+          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
+          { headers: H, credentials: 'include' }
+        );
+        if (followingRes.ok) {
+          const fgd = await followingRes.json();
+          setFollowingCount(fgd.total || 0);
+          setFollowingList(fgd.documents || []);
+        }
         }
 
         if (authData?.$id) {
