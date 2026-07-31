@@ -6,7 +6,7 @@ const ADMIN_EMAIL = 'nowanad@gmail.com';
 async function checkAdmin(req: NextRequest): Promise<boolean> {
   const cookieHeader = req.headers.get('cookie') || '';
   try {
-    const res = await fetch('https://api.khabardarjeeling.in/v1/account', {
+    const res = await fetch('https://nyc.cloud.appwrite.io/v1/account', {
       headers: {
         'X-Appwrite-Project': 'khabardarjeeling',
         'cookie': cookieHeader
