@@ -37,6 +37,7 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
   const [followingCount, setFollowingCount] = useState(0);
   const [followingList, setFollowingList] = useState<any[]>([]);
   const [showFollowingPanel, setShowFollowingPanel] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
   const [totalLikes, setTotalLikes] = useState(0);
   const [loading, setLoading] = useState(!initialProfile && initialArticles.length === 0);
 
@@ -128,29 +129,31 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
       setLoading(false);
     })();
   }, [userId]);
-
   const toggleFollow = async () => {
     if (!currentUser) {
       window.location.href = '/auth';
       return;
     }
+    if (followBusy) return;
+    setFollowBusy(true);
     try {
-      if (isFollowing) {
-        const followRes = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [currentUser.$id] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })),
-          { headers: H, credentials: 'include' }
-        );
-        const followData = await followRes.json();
-        const followId = followData.documents?.[0]?.$id;
-        if (followId) {
-          await fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents/' + followId, {
+      const existingRes = await fetch(
+        ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
+        encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [currentUser.$id] })) +
+        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })),
+        { headers: H, credentials: 'include' }
+      );
+      const existingData = await existingRes.json();
+      const existingDocs = existingData.documents || [];
+      if (existingDocs.length > 0) {
+        // Delete all matching follow records (cleans up any pre-existing duplicates too)
+        for (const doc of existingDocs) {
+          await fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents/' + doc.$id, {
             method: 'DELETE', headers: H, credentials: 'include',
           });
-          setIsFollowing(false);
-          setFollowerCount((c) => Math.max(0, c - 1));
         }
+        setIsFollowing(false);
+        setFollowerCount((c) => Math.max(0, c - existingDocs.length));
       } else {
         await fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents', {
           method: 'POST',
@@ -163,6 +166,8 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
       }
     } catch (err) {
       console.error('Follow error:', err);
+    } finally {
+      setFollowBusy(false);
     }
   };
 
@@ -252,8 +257,8 @@ const ACCENT_COLORS: Record<string, string> = {
             </h1>
             <p style={{ margin: 0, color: '#657786', fontSize: '15px' }}>@{userName}</p>
           </div>
-          <button onClick={toggleFollow} style={{ background: isFollowing ? '#fff' : '#c41e3a', color: isFollowing ? '#c41e3a' : '#fff', border: '1.5px solid #c41e3a', padding: '8px 22px', borderRadius: '20px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            {isFollowing ? 'Following' : 'Follow'}
+          <button onClick={toggleFollow} disabled={followBusy} style={{ background: isFollowing ? '#fff' : '#c41e3a', color: isFollowing ? '#c41e3a' : '#fff', border: '1.5px solid #c41e3a', padding: '8px 22px', borderRadius: '20px', fontSize: '14px', fontWeight: 700, cursor: followBusy ? 'default' : 'pointer', opacity: followBusy ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+            {followBusy ? '...' : (isFollowing ? 'Following' : 'Follow')}
           </button>
         </div>
 
