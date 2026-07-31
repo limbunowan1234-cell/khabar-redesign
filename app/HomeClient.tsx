@@ -658,7 +658,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
         </div>
       )}
       <div style={{ background: "linear-gradient(135deg, #b91c1c, #7f1d1d)", color: "white", padding: "14px 20px", textAlign: "center", borderBottom: "3px solid #facc15" }}>
-        <span style={{ fontSize: isMobile ? "14px" : "16px", fontWeight: 700 }}>नेपाली भाषा दिवस (अगस्ट १–१९) — काव्य, निबन्ध र फोटो प्रतियोगिता छिट्टै सुरु हुँदैछ</span>
+        <span style={{ fontSize: isMobile ? "14px" : "16px", fontWeight: 700 }}>नेपाली भाषा दिवस सबमिशन खुला भयो! आफ्नो काव्य, निबन्ध र फोटो सबमिट गर्नुहोस्</span>
       </div>
 
       {isMobile && showMenu && (
@@ -674,6 +674,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             </div>
             <div style={{ padding: '16px' }}>
               {[
+                { href: '/nepali-bhasa-diwas', label: 'Nepali Bhasa Diwas' },
                 { href: '/', label: 'Home' },
                 { href: '/weekly', label: 'Weekly Edition' },
                 { href: '/post', label: 'Create Post' },
@@ -721,6 +722,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <Link href="/post" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Post</button></Link>
               <Link href="/contest" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Contest</button></Link>
+              <Link href="/nepali-bhasa-diwas" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#b91c1c', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Bhasa Diwas</button></Link>
               <Link href="/weekly" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Weekly</button></Link>
               {user ? (
                 <>
