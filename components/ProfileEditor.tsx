@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
@@ -22,6 +22,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
   const [bio, setBio] = useState('');
   const [bannerTheme, setBannerTheme] = useState('crimson');
   const [displayName, setDisplayName] = useState(userName || '');
+  const [homeDistrict, setHomeDistrict] = useState('');
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -41,6 +42,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
           setAvatarUrl(row.avatarUrl || '');
           setBio(row.bio || ''); setBannerTheme(row.bannerTheme || 'crimson');
           setDisplayName(row.displayName || userName || '');
+          setHomeDistrict(row.homeDistrict || '');
         }
       })
       .catch(() => {});
@@ -68,7 +70,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
   async function save() {
     setSaving(true); setErr('');
     try {
-      const data = { userId, displayName, userName: displayName, bio, avatarUrl, bannerTheme };
+      const data = { userId, displayName, userName: displayName, bio, avatarUrl, bannerTheme, homeDistrict };
       const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
       const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
       const checkRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' });
@@ -98,7 +100,7 @@ export default function ProfileEditor({ userId, userName }: Props) {
         <div style={{ width: '90px', height: '90px', borderRadius: '50%', backgroundColor: '#f5c518', color: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: 800, border: '4px solid rgba(255,255,255,0.3)', overflow: 'hidden' }}>
           {hasImg ? <img src={avatarUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setAvatarUrl('')} /> : getInitials(displayName || userName)}
         </div>
-        <button onClick={() => setOpen(true)} title="Edit profile" style={{ position: 'absolute', bottom: 0, right: 0, width: '30px', height: '30px', borderRadius: '50%', background: '#c41e3a', color: 'white', border: '2px solid white', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>✎</button>
+        <button onClick={() => setOpen(true)} title="Edit profile" style={{ position: 'absolute', bottom: 0, right: 0, width: '30px', height: '30px', borderRadius: '50%', background: '#c41e3a', color: 'white', border: '2px solid white', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>&#9998;</button>
       </div>
 
       {open && (
@@ -116,6 +118,18 @@ export default function ProfileEditor({ userId, userName }: Props) {
             </div>
             <label style={{ fontSize: '12px', fontWeight: 700, color: '#666' }}>Display Name</label>
             <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', margin: '4px 0 12px', boxSizing: 'border-box', fontSize: '14px' }} />
+            <label style={{ fontSize: '12px', fontWeight: 700, color: '#666' }}>Home District</label>
+            <select value={homeDistrict} onChange={(e) => setHomeDistrict(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', margin: '4px 0 12px', boxSizing: 'border-box', fontSize: '14px', backgroundColor: 'white' }}>
+              <option value="">Select your district</option>
+              <option value="Darjeeling">Darjeeling</option>
+              <option value="Kalimpong">Kalimpong</option>
+              <option value="Kurseong">Kurseong</option>
+              <option value="Mirik">Mirik</option>
+              <option value="Siliguri">Siliguri</option>
+              <option value="Sikkim">Sikkim</option>
+              <option value="West Bengal (Other)">West Bengal (Other)</option>
+              <option value="Other">Other</option>
+            </select>
             <label style={{ fontSize: '12px', fontWeight: 700, color: '#666' }}>Bio</label>
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={200} placeholder="Tell people about yourself..." style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', margin: '4px 0 4px', boxSizing: 'border-box', fontSize: '14px', resize: 'none', fontFamily: 'inherit' }} />
             <div style={{ fontSize: '11px', color: '#999', textAlign: 'right', marginBottom: '12px' }}>{bio.length}/200</div>
