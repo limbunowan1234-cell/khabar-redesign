@@ -18,7 +18,7 @@ export default function MagazineHero({ articles, isDarkMode }: { articles: any[]
   const featured = articles.filter((a: any) => a.isFeatured);
   const pool = featured.length >= 4 ? featured : [...featured, ...articles.filter((a: any) => !a.isFeatured)];
   const main = pool[0];
-  const side = pool.slice(1, 4);
+  const side = pool.slice(1, 3);
   if (!main) return null;
 
   const mainImg = imgOf(main);
@@ -32,7 +32,7 @@ export default function MagazineHero({ articles, isDarkMode }: { articles: any[]
       <style>{`
         .mag-hero-grid { display: grid; grid-template-columns: 1.9fr 1fr; gap: 16px; }
         .mag-hero-main { height: 440px; }
-        .mag-side-img { height: 150px; }
+        .mag-side-img { height: 205px; }
         @media (max-width: 900px) {
           .mag-hero-grid { grid-template-columns: 1fr; }
           .mag-hero-main { height: 300px; }
