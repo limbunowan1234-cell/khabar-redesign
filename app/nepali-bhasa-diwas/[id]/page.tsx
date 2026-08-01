@@ -43,9 +43,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const image = sub.imageFileId
     ? SITE + '/api/image-proxy?fileId=' + sub.imageFileId + '&bucket=6a67a307002f71e8dcf5'
     : SITE + '/assets/bhasa-diwas-hero.png';
+  const looksLowQuality = (sub.title || '').trim().length < 5 || (sub.description || '').trim().length < 20;
+
 
   return {
     title,
+    robots: looksLowQuality ? { index: false, follow: true } : { index: true, follow: true },
     description,
     alternates: { canonical: url },
     openGraph: {
