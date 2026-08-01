@@ -36,6 +36,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE, lastModified: new Date(), changeFrequency: 'hourly' as const, priority: 1 },
     { url: SITE + '/contest', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/reels', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
+    { url: SITE + '/nepali-bhasa-diwas', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 },
+    { url: SITE + '/weekly', lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
+    { url: SITE + '/about', lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.4 },
+    { url: SITE + '/contact', lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.3 },
   ];
 
   return [...staticUrls, ...articleUrls];
