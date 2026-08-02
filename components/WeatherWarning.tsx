@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { CITIES } from '@/components/WeatherWidget';
 
-const LAT = 27.041;
-const LON = 88.2663;
+
+
 
 function dayLabel(dateStr: string, index: number): string {
   if (index === 0) return 'Today';
@@ -26,19 +27,20 @@ function getSeverity(precip: number, code: number): { level: string; color: stri
   return null;
 }
 
-export default function WeatherWarning({ isDarkMode }: { isDarkMode?: boolean }) {
+export default function WeatherWarning({ isDarkMode, defaultCity }: { isDarkMode?: boolean; defaultCity?: string }) {
   const [data, setData] = useState<any>(null);
+  const city = CITIES.find((c) => c.name === defaultCity) || CITIES[0];
 
   useEffect(() => {
     let alive = true;
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON +
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + city.lat + '&longitude=' + city.lon +
       '&daily=weather_code,precipitation_sum,wind_speed_10m_max&timezone=Asia%2FKolkata&forecast_days=4';
     fetch(url)
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then((j) => { if (alive) setData(j); })
       .catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, [city.name]);
 
   if (!data || !data.daily) return null;
 
@@ -58,7 +60,7 @@ export default function WeatherWarning({ isDarkMode }: { isDarkMode?: boolean })
         <div style={{ display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: '800', marginBottom: '8px', letterSpacing: '0.5px' }}>
           WEATHER FORECAST ALERT
         </div>
-        <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: '800' }}>Darjeeling Hills</h3>
+        <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: '800' }}>{city.name} Hills</h3>
         <p style={{ margin: 0, fontSize: '11px', opacity: 0.85 }}>Based on forecast data - not an official IMD warning</p>
       </div>
 

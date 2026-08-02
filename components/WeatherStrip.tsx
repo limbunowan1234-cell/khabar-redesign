@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import WeatherWidget from '@/components/WeatherWidget';
+import WeatherWidget, { CITIES } from '@/components/WeatherWidget';
 import WeatherWarning from '@/components/WeatherWarning';
 
 const WMO_ICONS: { [key: number]: string } = {
@@ -12,14 +12,15 @@ const WMO_ICONS: { [key: number]: string } = {
   95: '\u26C8', 96: '\u26C8', 99: '\u26C8'
 };
 
-export default function WeatherStrip({ isDarkMode }: { isDarkMode?: boolean }) {
+export default function WeatherStrip({ isDarkMode, defaultCity }: { isDarkMode?: boolean; defaultCity?: string }) {
   const [open, setOpen] = useState(false);
   const [temp, setTemp] = useState<number | null>(null);
+  const city = CITIES.find((c) => c.name === defaultCity) || CITIES[0];
   const [icon, setIcon] = useState('\u26C5');
 
   useEffect(() => {
     let alive = true;
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=27.041&longitude=88.266&current_weather=true')
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=' + city.lat + '&longitude=' + city.lon + '&current_weather=true')
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!alive || !d?.current_weather) return;
@@ -29,7 +30,7 @@ export default function WeatherStrip({ isDarkMode }: { isDarkMode?: boolean }) {
       })
       .catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, [city.name]);
 
   return (
     <div style={{ marginBottom: '12px' }}>
@@ -54,7 +55,7 @@ export default function WeatherStrip({ isDarkMode }: { isDarkMode?: boolean }) {
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: isDarkMode ? '#ddd' : '#333' }}>
           <span style={{ fontSize: '15px' }}>{icon}</span>
-          Darjeeling Weather & Alerts
+          {city.name} Weather & Alerts
           {temp !== null && (
             <span style={{ fontSize: '12px', fontWeight: 800, color: '#c41e3a', backgroundColor: isDarkMode ? '#2a1518' : '#fdf0f2', padding: '2px 8px', borderRadius: '10px' }}>{temp}&deg;C</span>
           )}
@@ -65,8 +66,8 @@ export default function WeatherStrip({ isDarkMode }: { isDarkMode?: boolean }) {
       {open && (
         <div style={{ marginTop: '10px', animation: 'wsFadeIn 0.25s ease' }}>
           <style>{`@keyframes wsFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-          <WeatherWidget variant="banner" isDarkMode={isDarkMode} />
-          <WeatherWarning isDarkMode={isDarkMode} />
+          <WeatherWidget variant="banner" isDarkMode={isDarkMode} defaultCity={defaultCity} />
+          <WeatherWarning isDarkMode={isDarkMode} defaultCity={defaultCity} />
         </div>
       )}
     </div>

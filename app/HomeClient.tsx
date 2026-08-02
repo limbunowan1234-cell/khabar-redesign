@@ -619,6 +619,28 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
     load();
   }, []);
 
+  const [userDistrict, setUserDistrict] = useState<string | null>(null);
+  const [districtApplied, setDistrictApplied] = useState(false);
+  useEffect(() => {
+    if (!user?.$id || districtApplied) return;
+    (async () => {
+      try {
+        const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [user.$id] }));
+        const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
+        const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H });
+        if (res.ok) {
+          const d = await res.json();
+          const district = d.documents?.[0]?.homeDistrict;
+          if (district) {
+            setUserDistrict(district);
+            setSelectedDistrict(district);
+          }
+        }
+      } catch (e) { console.error(e); }
+      setDistrictApplied(true);
+    })();
+  }, [user, districtApplied]);
+
   useEffect(() => {
     let f = articles;
     if (selectedCategory !== 'All') { const aliases: any = { 'voice of people': ['voice of people', 'citizen journalism'], 'editorial': ['editorial', 'opinion'] }; const match = aliases[selectedCategory.toLowerCase()] || [selectedCategory.toLowerCase()]; f = f.filter(a => match.includes((a.genre || a.category || '').toLowerCase())); }
@@ -775,7 +797,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
 
       {isMobile && !searchQuery && selectedCategory === 'All' && (
         <div style={{ padding: '10px 16px 0' }}>
-          <WeatherStrip isDarkMode={isDarkMode} />
+          <WeatherStrip isDarkMode={isDarkMode} defaultCity={userDistrict || undefined} />
           <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '12px', padding: '12px 16px', textDecoration: 'none', marginBottom: '8px' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: '700', fontSize: '13px' }}>Download our Android App</div>
@@ -837,7 +859,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           </main>
           <aside style={{ position: 'sticky', top: '90px', alignSelf: 'start', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
-            <WeatherStrip isDarkMode={isDarkMode} />
+            <WeatherStrip isDarkMode={isDarkMode} defaultCity={userDistrict || undefined} />
               <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
             <SidebarTabs articles={articles} isDarkMode={isDarkMode} topTen={<TopTen articles={articles} isDarkMode={isDarkMode} />} breaking={<BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />} />

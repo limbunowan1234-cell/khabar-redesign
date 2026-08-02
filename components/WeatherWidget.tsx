@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-const CITIES = [
+export const CITIES = [
   { name: 'Darjeeling', lat: 27.041, lon: 88.2663 },
   { name: 'Kalimpong', lat: 27.0710, lon: 88.4700 },
   { name: 'Kurseong', lat: 26.8804, lon: 88.2803 },
@@ -44,12 +44,22 @@ const DEG = '\u00B0';
 interface WeatherWidgetProps {
   isDarkMode?: boolean;
   variant?: 'card' | 'banner';
+  defaultCity?: string;
 }
 
-export default function WeatherWidget({ isDarkMode = false, variant = 'card' }: WeatherWidgetProps) {
+export default function WeatherWidget({ isDarkMode = false, variant = 'card', defaultCity }: WeatherWidgetProps) {
   const [cityIndex, setCityIndex] = useState(0);
   const [data, setData] = useState<any>(null);
   const [failed, setFailed] = useState(false);
+  const [appliedDefault, setAppliedDefault] = useState(false);
+
+  useEffect(() => {
+    if (defaultCity && !appliedDefault) {
+      const idx = CITIES.findIndex((c) => c.name === defaultCity);
+      if (idx !== -1) setCityIndex(idx);
+      setAppliedDefault(true);
+    }
+  }, [defaultCity, appliedDefault]);
   const [loading, setLoadingState] = useState(true);
 
   const city = CITIES[cityIndex];
