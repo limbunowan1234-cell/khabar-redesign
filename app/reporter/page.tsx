@@ -63,10 +63,12 @@ export default function ReporterPage() {
           )}
         </div>
       </div>
-
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '30px 20px' }}>
         <div style={{ background: 'white', borderRadius: '12px', padding: '40px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <p style={{ color: '#6b7280' }}>Article management tools coming here next.</p>
+          <div style={{ fontSize: '40px', marginBottom: '12px' }}>&#128221;</div>
+          <h2 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 800, color: '#1a1a1a' }}>Manage Articles</h2>
+          <p style={{ color: '#6b7280', marginBottom: '20px' }}>View, edit, and publish articles for Khabar Darjeeling.</p>
+          <Link href='/admin' style={{ display: 'inline-block', background: '#0F4C5C', color: 'white', padding: '12px 28px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>Open Article Manager</Link>
         </div>
       </div>
     </div>
