@@ -594,8 +594,12 @@ function generateSlug(text: string): string {
             <button onClick={() => setView('manage')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'manage' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'manage' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>Manage</button>
             <button onClick={() => setView('publish')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'publish' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'publish' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>+ Publish</button>
               <button onClick={() => setView('photos')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'photos' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'photos' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>+ Photos</button>
+              {isAdminUser && (
+                <>
               <button onClick={() => { setView('weekly'); loadWeeklyPicks(); }} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'weekly' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'weekly' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>Weekly</button>
                 <button onClick={() => { setView('certificates'); loadCertRankings(); }} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'certificates' ? '#D4AF37' : 'rgba(255,255,255,0.15)', color: view === 'certificates' ? '#0F4C5C' : 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Certificates</button>
+                </>
+              )}
                 <Link href="/admin/bhasa-diwas"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#b91c1c', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Bhasa Diwas</button></Link>
           </div>
         </div>
