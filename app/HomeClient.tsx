@@ -620,6 +620,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
   }, []);
 
   const [userDistrict, setUserDistrict] = useState<string | null>(null);
+  const [showDistrictPrompt, setShowDistrictPrompt] = useState(false);
   const [districtApplied, setDistrictApplied] = useState(false);
   useEffect(() => {
     if (!user?.$id || districtApplied) return;
@@ -634,6 +635,8 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           if (district) {
             setUserDistrict(district);
             setSelectedDistrict(district);
+          } else if (!localStorage.getItem('districtPromptDismissed')) {
+            setShowDistrictPrompt(true);
           }
         }
       } catch (e) { console.error(e); }
@@ -672,6 +675,48 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5', color: isDarkMode ? '#e0e0e0' : '#1a1a1a', paddingBottom: isMobile ? '70px' : '0' }}>
+      {showDistrictPrompt && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '28px 24px', width: '100%', maxWidth: '360px', textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '10px' }}>&#128205;</div>
+            <h2 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 800, color: '#1a1a1a' }}>Which hills do you call home?</h2>
+            <p style={{ margin: '0 0 18px', fontSize: '13px', color: '#888' }}>See your district's news and weather first.</p>
+            <select id='homeDistrictPromptSelect' style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '14px', fontSize: '14px', backgroundColor: 'white' }}>
+              <option value=''>Select your district</option>
+              <option value='Darjeeling'>Darjeeling</option>
+              <option value='Kalimpong'>Kalimpong</option>
+              <option value='Kurseong'>Kurseong</option>
+              <option value='Mirik'>Mirik</option>
+              <option value='Siliguri'>Siliguri</option>
+              <option value='Sikkim'>Sikkim</option>
+              <option value='West Bengal (Other)'>West Bengal (Other)</option>
+              <option value='Other'>Other</option>
+            </select>
+            <button onClick={async () => {
+              const sel = document.getElementById('homeDistrictPromptSelect') as HTMLSelectElement;
+              const val = sel?.value;
+              if (!val) return;
+              try {
+                const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [user.$id] }));
+                const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
+                const checkRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H });
+                const checkData = checkRes.ok ? await checkRes.json() : { documents: [] };
+                const existingId = checkData.documents?.[0]?.$id;
+                const HJ2 = { ...H, 'Content-Type': 'application/json' };
+                if (existingId) {
+                  await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + existingId, { method: 'PATCH', headers: HJ2, credentials: 'include', body: JSON.stringify({ data: { homeDistrict: val } }) });
+                } else {
+                  await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents', { method: 'POST', headers: HJ2, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data: { userId: user.$id, displayName: user.name, userName: user.name, homeDistrict: val, joinedAT: new Date().toISOString() } }) });
+                }
+              } catch (e) { console.error(e); }
+              setUserDistrict(val);
+              setSelectedDistrict(val);
+              setShowDistrictPrompt(false);
+            }} style={{ width: '100%', padding: '12px', backgroundColor: '#c41e3a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', marginBottom: '8px' }}>Save</button>
+            <button onClick={() => { localStorage.setItem('districtPromptDismissed', '1'); setShowDistrictPrompt(false); }} style={{ width: '100%', padding: '10px', backgroundColor: 'transparent', color: '#888', border: 'none', fontSize: '13px', cursor: 'pointer' }}>Skip for now</button>
+          </div>
+        </div>
+      )}
       <style>{'.ticker-wrap{overflow:hidden;flex:1}.ticker-track{display:inline-flex;white-space:nowrap;animation:tickerScroll 35s linear infinite}.ticker-track:hover{animation-play-state:paused}@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}.cat-pill{transition:all 0.2s;cursor:pointer;border:none} main a img{transition:transform 0.45s ease} main a:hover img{transform:scale(1.045)}'}</style>
 
       {showBanner && (
