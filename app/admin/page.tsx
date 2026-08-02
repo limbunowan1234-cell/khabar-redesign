@@ -99,6 +99,7 @@ export default function AdminPage() {
   const [isFeatured, setIsFeatured] = useState(false);
   const [isContestEntry, setIsContestEntry] = useState(false);
   const [imageFileId, setImageFileId] = useState('');
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
@@ -107,11 +108,15 @@ export default function AdminPage() {
         const res = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
-          if (data.email?.toLowerCase() !== ADMIN_EMAIL && !(data as any).labels?.includes('admin')) {
-            setError('Access denied. Admin only.');
+          const labels = (data as any).labels || [];
+          const userIsAdmin = data.email?.toLowerCase() === ADMIN_EMAIL || labels.includes('admin');
+          const userIsReporter = userIsAdmin || labels.includes('reporter');
+          if (!userIsReporter) {
+            setError('Access denied. Reporter or Admin only.');
             setLoading(false);
             return;
           }
+          setIsAdminUser(userIsAdmin);
           setUser(data);
           await loadArticles();
           await loadApkDownloads();
