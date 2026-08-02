@@ -696,6 +696,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
               const sel = document.getElementById('homeDistrictPromptSelect') as HTMLSelectElement;
               const val = sel?.value;
               if (!val) return;
+              if (!user) return;
               try {
                 const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [user.$id] }));
                 const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
