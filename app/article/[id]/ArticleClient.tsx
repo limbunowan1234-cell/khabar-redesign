@@ -181,6 +181,11 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
   const { user } = useAuthStore();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [article, setArticle] = useState<any>(initialArticle || null);
+  const [isTranslated, setIsTranslated] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translatedTitle, setTranslatedTitle] = useState('');
+  const [translatedSideHeader, setTranslatedSideHeader] = useState('');
+  const [translatedContent, setTranslatedContent] = useState('');
   const [loading, setLoading] = useState(!initialArticle);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -204,6 +209,51 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
   const [following, setFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
+  function detectIsNepali(text: string): boolean {
+    return /[\u0900-\u097F]/.test(text || '');
+  }
+  async function translateText(text: string, source: string, target: string): Promise<string> {
+    if (!text || !text.trim()) return '';
+    try {
+      const res = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=' + source + '|' + target);
+      const data = await res.json();
+      return data?.responseData?.translatedText || text;
+    } catch {
+      return text;
+    }
+  }
+  async function handleTranslate() {
+    if (isTranslated) {
+      setIsTranslated(false);
+      return;
+    }
+    if (translatedTitle) {
+      setIsTranslated(true);
+      return;
+    }
+    if (!article) return;
+    setTranslating(true);
+    try {
+      const sourceIsNepali = detectIsNepali(article.title + ' ' + (article.content || ''));
+      const source = sourceIsNepali ? 'ne' : 'en';
+      const target = sourceIsNepali ? 'en' : 'ne';
+      const newTitle = await translateText(article.title, source, target);
+      const newSideHeader = article.sideHeader ? await translateText(article.sideHeader, source, target) : '';
+      const paragraphs = (article.content || article.summary || '').split(/\n+/).filter((p: string) => p.trim().length > 0);
+      const translatedParagraphs: string[] = [];
+      for (const para of paragraphs) {
+        const t = await translateText(para, source, target);
+        translatedParagraphs.push(t);
+      }
+      setTranslatedTitle(newTitle);
+      setTranslatedSideHeader(newSideHeader);
+      setTranslatedContent(translatedParagraphs.join('\n\n'));
+      setIsTranslated(true);
+    } catch (e) {
+      console.error('Translation failed:', e);
+    }
+    setTranslating(false);
+  }
   async function checkFollowing(authorId: string) {
     if (!user || !authorId || authorId === user.$id) return;
     try {
@@ -443,8 +493,8 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
         <div style={{ background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)', padding: '40px 20px 30px', color: 'white' }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             {(article.genre || article.category) && <span style={{ display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '16px' }}>{article.genre || article.category}</span>}
-            <h1 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: '800', lineHeight: '1.2', margin: 0, color: 'white' }}>{article.title}</h1>
-            {article.sideHeader && <p style={{ fontSize: 'clamp(14px, 2vw, 18px)', color: 'rgba(255,255,255,0.9)', margin: '8px 0 0', fontWeight: 500 }}>{article.sideHeader}</p>}
+            <h1 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: '800', lineHeight: '1.2', margin: 0, color: 'white' }}>{isTranslated ? translatedTitle : article.title}</h1>
+            {article.sideHeader && <p style={{ fontSize: 'clamp(14px, 2vw, 18px)', color: 'rgba(255,255,255,0.9)', margin: '8px 0 0', fontWeight: 500 }}>{isTranslated ? translatedSideHeader : article.sideHeader}</p>}
           </div>
         </div>
       )}
@@ -454,8 +504,8 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
         {/* TITLE BELOW HERO */}
         {imgUrl && (
           <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '24px 28px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
-            <h1 style={{ fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: '800', lineHeight: '1.3', color: isDarkMode ? '#fff' : '#1a1a1a', margin: 0 }}>{article.title}</h1>
-            {article.sideHeader && <p style={{ fontSize: '15px', color: isDarkMode ? '#bbb' : '#555', margin: '8px 0 0', fontWeight: 500 }}>{article.sideHeader}</p>}
+            <h1 style={{ fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: '800', lineHeight: '1.3', color: isDarkMode ? '#fff' : '#1a1a1a', margin: 0 }}>{isTranslated ? translatedTitle : article.title}</h1>
+            {article.sideHeader && <p style={{ fontSize: '15px', color: isDarkMode ? '#bbb' : '#555', margin: '8px 0 0', fontWeight: 500 }}>{isTranslated ? translatedSideHeader : article.sideHeader}</p>}
           </div>
         )}
 
@@ -489,6 +539,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button className="act-btn" onClick={handleLike} style={btnStyle(liked, '#c41e3a')}>{liked ? '❤️' : '🤍'} {likeCount > 0 ? likeCount : ''} Like</button>
               <button className="act-btn" onClick={handleBookmark} style={btnStyle(bookmarked, '#f5c518')} >{bookmarked ? '🔖 Saved' : '🔖 Save'}</button>
+              <button className='act-btn' onClick={handleTranslate} disabled={translating} style={{ ...btnStyle(isTranslated, '#0F4C5C') }}>{translating ? 'Translating...' : isTranslated ? '🌐 Original' : '🌐 Translate'}</button>
               <button className="act-btn" onClick={handleShare} style={btnStyle(false, '#333')}>🔗 {shareMsg || 'Share'}</button>
             </div>
           </div>
@@ -525,7 +576,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
         {/* CONTENT */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '28px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
           <div style={{ fontSize: '19px', lineHeight: '1.7', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', maxWidth: '700px', marginLeft: 'auto', marginRight: 'auto', fontFamily: 'Georgia, serif' }}>
-            {article.category === 'Photo Story' ? '' : renderContent(article.content || article.summary, isDarkMode, article.supportingImages)}
+            {article.category === 'Photo Story' ? '' : renderContent(isTranslated ? translatedContent : (article.content || article.summary), isDarkMode, article.supportingImages)}
           </div>
 
 
