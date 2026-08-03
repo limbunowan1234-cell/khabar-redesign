@@ -32,7 +32,7 @@ export default function MagazineHero({ articles, isDarkMode }: { articles: any[]
       <style>{`
         .mag-hero-grid { display: grid; grid-template-columns: 1.9fr 1fr; gap: 16px; }
         .mag-hero-main { height: 440px; }
-        .mag-side-img { height: 205px; }
+        .mag-side-img { height: 130px; }
         @media (max-width: 900px) {
           .mag-hero-grid { grid-template-columns: 1fr; }
           .mag-hero-main { height: 300px; }
