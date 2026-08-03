@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import AuthorBadge from '@/components/AuthorBadge';
 
 import { useEffect, useState } from 'react';
@@ -70,33 +70,59 @@ function extractTags(title: string, category: string, location: string): string[
   return deduped.slice(0, 3);
 }
 
-function renderContent(content: string, isDarkMode: boolean) {
+function renderContent(content: string, isDarkMode: boolean, supportingImages?: string[]) {
   if (!content) return null;
   const paragraphs = content.split(/\n+/).filter(p => p.trim().length > 0);
+  const images = (supportingImages || []).map((raw) => {
+    try { return JSON.parse(raw); } catch { return null; }
+  }).filter((img) => img && img.fileId);
   let firstParaDone = false;
-  return paragraphs.map((para, i) => {
+  let imageIdx = 0;
+  const output: any[] = [];
+  paragraphs.forEach((para, i) => {
     const trimmed = para.trim();
     if (trimmed.startsWith('>')) {
       const quoteText = trimmed.replace(/^>+\s*/, '');
-      return (
-        <blockquote key={i} style={{ margin: '28px 0', padding: '4px 0 4px 20px', borderLeft: '4px solid #c41e3a', fontStyle: 'italic', fontSize: '21px', lineHeight: '1.6', color: isDarkMode ? '#f0c0c0' : '#7a1020', fontFamily: 'Georgia, serif' }}>
+      output.push(
+        <blockquote key={'p' + i} style={{ margin: '28px 0', padding: '4px 0 4px 20px', borderLeft: '4px solid #c41e3a', fontStyle: 'italic', fontSize: '21px', lineHeight: '1.6', color: isDarkMode ? '#f0c0c0' : '#7a1020', fontFamily: 'Georgia, serif' }}>
           {quoteText}
         </blockquote>
       );
-    }
-    if (!firstParaDone) {
+    } else if (!firstParaDone) {
       firstParaDone = true;
       const firstChar = trimmed.charAt(0);
       const rest = trimmed.slice(1);
-      return (
-        <p key={i} style={{ margin: '0 0 20px' }}>
+      output.push(
+        <p key={'p' + i} style={{ margin: '0 0 20px' }}>
           <span style={{ float: 'left', fontSize: '64px', lineHeight: '52px', fontWeight: '800', paddingRight: '8px', paddingTop: '4px', color: '#c41e3a', fontFamily: 'Georgia, serif' }}>{firstChar}</span>
           {rest}
         </p>
       );
+    } else {
+      output.push(<p key={'p' + i} style={{ margin: '0 0 20px' }}>{trimmed}</p>);
     }
-    return <p key={i} style={{ margin: '0 0 20px' }}>{trimmed}</p>;
+    if ((i + 1) % 3 === 0 && imageIdx < images.length) {
+      const img = images[imageIdx];
+      imageIdx++;
+      output.push(
+        <figure key={'img' + i} style={{ margin: '24px 0' }}>
+          <img src={getImageUrl({ imageFileId: img.fileId })} alt={img.caption || ''} style={{ width: '100%', borderRadius: '10px', display: 'block' }} />
+          {img.caption && <figcaption style={{ fontSize: '13px', color: isDarkMode ? '#999' : '#777', marginTop: '8px', fontStyle: 'italic', textAlign: 'center' as const }}>{img.caption}</figcaption>}
+        </figure>
+      );
+    }
   });
+  while (imageIdx < images.length) {
+    const img = images[imageIdx];
+    imageIdx++;
+    output.push(
+      <figure key={'imgend' + imageIdx} style={{ margin: '24px 0' }}>
+        <img src={getImageUrl({ imageFileId: img.fileId })} alt={img.caption || ''} style={{ width: '100%', borderRadius: '10px', display: 'block' }} />
+        {img.caption && <figcaption style={{ fontSize: '13px', color: isDarkMode ? '#999' : '#777', marginTop: '8px', fontStyle: 'italic', textAlign: 'center' as const }}>{img.caption}</figcaption>}
+      </figure>
+    );
+  }
+  return output;
 }
 
 function readingTime(content: string): string {
@@ -418,6 +444,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             {(article.genre || article.category) && <span style={{ display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '16px' }}>{article.genre || article.category}</span>}
             <h1 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: '800', lineHeight: '1.2', margin: 0, color: 'white' }}>{article.title}</h1>
+            {article.sideHeader && <p style={{ fontSize: 'clamp(14px, 2vw, 18px)', color: 'rgba(255,255,255,0.9)', margin: '8px 0 0', fontWeight: 500 }}>{article.sideHeader}</p>}
           </div>
         </div>
       )}
@@ -428,6 +455,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
         {imgUrl && (
           <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '24px 28px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
             <h1 style={{ fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: '800', lineHeight: '1.3', color: isDarkMode ? '#fff' : '#1a1a1a', margin: 0 }}>{article.title}</h1>
+            {article.sideHeader && <p style={{ fontSize: '15px', color: isDarkMode ? '#bbb' : '#555', margin: '8px 0 0', fontWeight: 500 }}>{article.sideHeader}</p>}
           </div>
         )}
 
@@ -497,7 +525,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
         {/* CONTENT */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '28px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
           <div style={{ fontSize: '19px', lineHeight: '1.7', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', maxWidth: '700px', marginLeft: 'auto', marginRight: 'auto', fontFamily: 'Georgia, serif' }}>
-            {article.category === 'Photo Story' ? '' : renderContent(article.content || article.summary, isDarkMode)}
+            {article.category === 'Photo Story' ? '' : renderContent(article.content || article.summary, isDarkMode, article.supportingImages)}
           </div>
 
 
