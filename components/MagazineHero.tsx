@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import Link from 'next/link';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
@@ -67,39 +67,20 @@ export default function MagazineHero({ articles, isDarkMode }: { articles: any[]
           {side.map((a: any, i: number) => {
             const img = imgOf(a);
             const author = a.submitterName || a.authorName || 'Staff Reporter';
-            if (i === 0) {
-              return (
-                <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none' }}>
-                  <div className="mag-card" style={{ borderRadius: '12px', overflow: 'hidden', backgroundColor: cardBg, boxShadow: '0 3px 14px rgba(0,0,0,0.1)' }}>
-                    <div className="mag-side-img" style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
-                      {img ? (
-                        <img loading="lazy" src={img} alt={a.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      ) : (
-                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #c41e3a, #1a1a1a)' }} />
-                      )}
-                      <span style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#c41e3a', color: '#fff', padding: '3px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>{genreOf(a)}</span>
-                    </div>
-                    <div style={{ padding: '12px 14px' }}>
-                      <h3 style={{ fontSize: '15px', fontWeight: 800, color: textCol, lineHeight: 1.35, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.title}</h3>
-                      <p style={{ fontSize: '11px', color: subCol, margin: '6px 0 0', fontWeight: 600 }}>By {author}</p>
-                    </div>
-                  </div>
-                </Link>
-              );
-            }
             return (
               <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none' }}>
-                <div className="mag-card" style={{ display: 'flex', gap: '12px', borderRadius: '12px', overflow: 'hidden', backgroundColor: cardBg, boxShadow: '0 3px 14px rgba(0,0,0,0.1)', padding: '10px' }}>
-                  <div style={{ width: '86px', height: '68px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, backgroundColor: '#1a1a1a', position: 'relative' }}>
+                <div className='mag-card' style={{ borderRadius: '12px', overflow: 'hidden', backgroundColor: cardBg, boxShadow: '0 3px 14px rgba(0,0,0,0.1)' }}>
+                  <div className='mag-side-img' style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
                     {img ? (
-                      <img loading="lazy" src={img} alt={a.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <img loading='lazy' src={img} alt={a.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #c41e3a, #1a1a1a)' }} />
                     )}
+                    <span style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#c41e3a', color: '#fff', padding: '3px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>{genreOf(a)}</span>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{genreOf(a)}</span>
-                    <h3 style={{ fontSize: '13px', fontWeight: 700, color: textCol, lineHeight: 1.35, margin: '3px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.title}</h3>
+                  <div style={{ padding: '12px 14px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: textCol, lineHeight: 1.35, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.title}</h3>
+                    <p style={{ fontSize: '11px', color: subCol, margin: '6px 0 0', fontWeight: 600 }}>By {author}</p>
                   </div>
                 </div>
               </Link>

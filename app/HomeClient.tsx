@@ -658,6 +658,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
   const trendingArticles = [...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
   const gridArticles = filtered;
   const isAdmin = (user as any)?.labels?.includes('admin') || user?.email === 'nowanad@gmail.com';
+  const isReporter = isAdmin || (user as any)?.labels?.includes('reporter');
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #c41e3a 0%, #a01830 100%)' }}>
@@ -751,6 +752,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
                 { href: '/profile', label: 'My Profile' },
                 { href: '/bookmarks', label: 'Saved Articles' },
                 ...(isAdmin ? [{ href: '/admin', label: 'Admin Panel' }] : []),
+                ...(isReporter ? [{ href: '/reporter', label: 'Reporter Panel' }] : []),
               ].map(item => (
                 <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
                   <div onClick={() => setShowMenu(false)} style={{ padding: '14px 12px', fontSize: '15px', fontWeight: '600', color: isDarkMode ? '#ddd' : '#1a1a1a', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), cursor: 'pointer' }}>{item.label}</div>
@@ -798,6 +800,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
                   <NotificationBell light={true} />
                   <Link href="/profile" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Profile</button></Link>
                   {isAdmin && <Link href="/admin" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Admin</button></Link>}
+                  {isReporter && <Link href="/reporter" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#0F4C5C', color: 'white', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Reporter</button></Link>}
                   <button onClick={() => logOut()} style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Logout</button>
                 </>
               ) : (
@@ -958,6 +961,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
               { id: 'creators', href: '#', icon: '\u2605', label: 'Top' },
             { id: 'profile', href: user ? '/profile' : '/auth', icon: '👤', label: user ? 'Profile' : 'Login' },
             ...(isAdmin ? [{ id: 'admin', href: '/admin', icon: '⚙️', label: 'Admin' }] : []),
+            ...(isReporter ? [{ id: 'reporter', href: '/reporter', icon: '📰', label: 'Reporter' }] : []),
           ].map((item) => (
             <Link key={item.id} href={item.href} style={{ flex: 1, textDecoration: 'none' }}>
               <div onClick={(e) => { if (item.id === 'creators') { e.preventDefault(); setShowTopCreators(true); return; } setActiveNav(item.id); if (item.id === 'search') { window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => { const el = document.getElementById('mobile-search'); if (el) el.focus(); }, 300); } }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px', cursor: 'pointer' }}>

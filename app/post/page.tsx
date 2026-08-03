@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -232,14 +232,6 @@ export default function PostPage() {
               <input value={youtubeId} onChange={(e) => setYoutubeId(e.target.value)} placeholder="e.g. dQw4w9WgXcQ" style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }} />
               <p style={{ margin: '4px 0 0', fontSize: '12px', color: isDarkMode ? '#666' : '#aaa' }}>Paste just the 11-character ID from YouTube URL</p>
             </div>
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff8e1', borderRadius: '8px', border: '1px solid #f5c518' }}>
-              <input type="checkbox" checked={isContestEntry} onChange={(e) => setIsContestEntry(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
-              <div>
-                <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a' }}>Submit as Contest Entry</div>
-                <div style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#666', marginTop: '2px' }}>Enter this story in the Khabar Darjeeling Story Contest 2026</div>
-              </div>
-            </label>
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
               <Link href="/" style={{ flex: 1, textDecoration: 'none' }}>
