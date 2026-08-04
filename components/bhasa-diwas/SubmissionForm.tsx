@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
 import imageCompression from 'browser-image-compression';
 
@@ -51,7 +52,12 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
   const isSubmittingRef = useRef(false);
 
   if (authLoading) return <div style={{ textAlign: 'center', padding: '48px' }}>लोड हो रहेको छ...</div>;
-  if (!isAuthenticated || !user) return <div style={{ textAlign: 'center', padding: '48px' }}><p style={{ color: '#4b5563', fontSize: '18px' }}>कृपया लगिन गर्नुहोस्</p></div>;
+  if (!isAuthenticated || !user) return (
+    <div style={{ textAlign: 'center', padding: '48px' }}>
+      <p style={{ color: '#4b5563', fontSize: '18px', marginBottom: '20px' }}>सबमिट गर्न लगिन वा साइन अप गर्नुहोस्</p>
+      <Link href='/auth' style={{ display: 'inline-block', background: '#b91c1c', color: 'white', padding: '12px 28px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>लगिन / साइन अप गर्नुहोस्</Link>
+    </div>
+  );
 
   const currentCategory = CATEGORIES.find(c => c.value === formData.category)!;
   const wordCount = countWords(formData.description);
