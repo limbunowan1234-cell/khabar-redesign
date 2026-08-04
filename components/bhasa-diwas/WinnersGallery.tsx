@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 const CATS: Record<string, { emoji: string; nepali: string; color: string }> = {
   poetry: { emoji: '✍️', nepali: 'काव्य', color: 'linear-gradient(135deg, #9333ea, #6b21a8)' },
   essay: { emoji: '📚', nepali: 'निबन्ध', color: 'linear-gradient(135deg, #2563eb, #1e3a8a)' },
-  photo: { emoji: '📷', nepali: 'फोटो', color: 'linear-gradient(135deg, #16a34a, #14532d)' }
 };
 
 const MEDALS = ['🏆', '🥈', '🥉'];

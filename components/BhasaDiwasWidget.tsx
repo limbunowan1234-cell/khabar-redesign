@@ -11,7 +11,6 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function BhasaDiwasWidget({ isDarkMode }: { isDarkMode?: boolean }) {
   const [textSubmissions, setTextSubmissions] = useState<any[]>([]);
-  const [featuredPhotos, setFeaturedPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,9 +20,6 @@ export default function BhasaDiwasWidget({ isDarkMode }: { isDarkMode?: boolean 
         const data = await res.json();
         const all = data.submissions || [];
         setTextSubmissions(all.filter((s: any) => s.category !== 'photo').slice(0, 3));
-        const photos = all.filter((s: any) => s.category === 'photo');
-        const featured = photos.filter((s: any) => s.isFeatured);
-        setFeaturedPhotos((featured.length > 0 ? featured : photos).slice(0, 2));
       } catch (err) {
         console.error('Failed to load bhasa diwas submissions:', err);
       } finally {
@@ -65,28 +61,6 @@ export default function BhasaDiwasWidget({ isDarkMode }: { isDarkMode?: boolean 
           </div>
         </div>
       </Link>
-
-      {/* FEATURED PHOTOS (max 2, small) */}
-      {!loading && featuredPhotos.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: featuredPhotos.length === 1 ? 'minmax(140px, 200px)' : 'repeat(2, 1fr)', gap: '8px', marginBottom: '16px' }}>
-          {featuredPhotos.map((photo: any) => (
-            <Link key={photo.$id} href={'/nepali-bhasa-diwas/' + photo.$id} style={{ textDecoration: 'none' }}>
-              <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', height: '90px', background: '#e5e7eb' }}>
-                {photo.imageFileId && (
-                  <img
-                    src={'/api/image-proxy?fileId=' + photo.imageFileId + '&bucket=6a67a307002f71e8dcf5'}
-                    alt={photo.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                )}
-                <div style={{ position: 'absolute', top: '6px', left: '6px', background: '#facc15', color: '#78350f', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px' }}>
-                  उत्कृष्ट
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
 
       {/* LATEST TEXT SUBMISSIONS */}
       {!loading && textSubmissions.length > 0 && (

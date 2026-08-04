@@ -8,7 +8,6 @@ import imageCompression from 'browser-image-compression';
 const CATEGORIES = [
   { value: 'poetry', label: '✍️ काव्य', maxWords: 100, minWords: 0 },
   { value: 'essay', label: '📚 निबन्ध', maxWords: 250, minWords: 0 },
-  { value: 'photo', label: '📷 फोटो', maxWords: 999, minWords: 5 }
 ];
 
 function countWords(text: string): number {
@@ -132,8 +131,6 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
         <ul style={S.rulesList}>
           <li>काव्य (Poetry): अधिकतम १०० शब्द</li>
           <li>निबन्ध (Essay): अधिकतम २५० शब्द</li>
-          <li>फोटो (Photo): कम्तिमा ५ शब्दको क्याप्शन</li>
-          <li>फोटो साइज: अधिकतम ३० MB (स्वचालित संकुचित हुनेछ)</li>
           <li>केवल नेपाली भाषामा मात्र सबमिट गर्नुहोस् (Nepali language only)</li>
           <li>केवल आफ्नै मौलिक रचना - कुनै पनि किसिमको नक्कल/चोरी स्वीकार्य छैन</li>
           <li>अन्तिम मिति: अगस्ट १९, २०२६ (Deadline: August 19, 2026)</li>

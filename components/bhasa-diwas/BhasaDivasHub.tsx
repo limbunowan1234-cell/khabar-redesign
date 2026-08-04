@@ -141,7 +141,6 @@ export default function BhasaDivasHub() {
           <div style={S.grid3}>
             <Leaderboard category="poetry" leaderboard={leaderboard.poetry || []} />
             <Leaderboard category="essay" leaderboard={leaderboard.essay || []} />
-            <Leaderboard category="photo" leaderboard={leaderboard.photo || []} />
           </div>
         )}
 

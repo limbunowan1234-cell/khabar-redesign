@@ -7,7 +7,6 @@ import Link from 'next/link';
 const CATS: Record<string, { label: string; bg: string }> = {
   poetry: { label: '✍️ काव्य', bg: '#f3e8ff' },
   essay: { label: '📚 निबन्ध', bg: '#dbeafe' },
-  photo: { label: '📷 फोटो', bg: '#dcfce7' }
 };
 
 const S = {
