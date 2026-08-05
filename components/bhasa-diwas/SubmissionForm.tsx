@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef } from 'react';
 import Link from 'next/link';
@@ -6,8 +6,8 @@ import { useAuthStore } from '@/lib/authStore';
 import imageCompression from 'browser-image-compression';
 
 const CATEGORIES = [
-  { value: 'poetry', label: '✍️ काव्य', maxWords: 100, minWords: 0 },
-  { value: 'essay', label: '📚 निबन्ध', maxWords: 250, minWords: 0 },
+  { value: 'poetry', label: '✍️ काव्य', maxWords: 2000, minWords: 0 },
+  { value: 'essay', label: '📚 निबन्ध', maxWords: 5000, minWords: 0 },
 ];
 
 function countWords(text: string): number {
@@ -129,8 +129,8 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
       <div style={S.rulesBox}>
         <div style={S.rulesTitle}>⚠️ सबमिशन नियमहरू (Submission Rules)</div>
         <ul style={S.rulesList}>
-          <li>काव्य (Poetry): अधिकतम १०० शब्द</li>
-          <li>निबन्ध (Essay): अधिकतम २५० शब्द</li>
+          <li>काव्य (Poetry): अधिकतम २००० शब्द</li>
+          <li>निबन्ध (Essay): अधिकतम ५००० शब्द</li>
           <li>केवल नेपाली भाषामा मात्र सबमिट गर्नुहोस् (Nepali language only)</li>
           <li>केवल आफ्नै मौलिक रचना - कुनै पनि किसिमको नक्कल/चोरी स्वीकार्य छैन</li>
           <li>अन्तिम मिति: अगस्ट १९, २०२६ (Deadline: August 19, 2026)</li>
@@ -159,12 +159,12 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
 
       <div style={S.field}>
         <label style={S.label}>विवरण *</label>
-        <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} style={S.textarea} maxLength={2000} />
+        <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} style={S.textarea} maxLength={50000} />
         <p style={S.charCount}>{formData.description.length}/2000 अक्षर</p>
         <p style={wordCountValid ? S.wordCountOk : S.wordCountBad}>
           {wordCount} शब्द
           {currentCategory.minWords > 0 ? ` (कम्तिमा ${currentCategory.minWords}` : ' ('}
-          {currentCategory.maxWords < 999 ? `, अधिकतम ${currentCategory.maxWords} शब्द)` : ')'}
+          {`, अधिकतम ${currentCategory.maxWords} शब्द)`}
         </p>
       </div>
 
@@ -189,3 +189,6 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
     </form>
   );
 }
+
+
+
