@@ -30,7 +30,8 @@ export async function computeContestRankings(): Promise<RankedEntry[]> {
     let comments = 0;
     try {
       const lq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] }));
-      const lRes = await fetch(`${ENDPOINT}/databases/${DB}/collections/likes/documents?queries[]=${lq}`, { headers: H });
+      const llq = encodeURIComponent(JSON.stringify({ method: 'limit', values: [2000] }));
+      const lRes = await fetch(`${ENDPOINT}/databases/${DB}/collections/likes/documents?queries[]=${lq}&queries[]=${llq}`, { headers: H });
       if (lRes.ok) {
         const lData = await lRes.json();
         votes = (lData.documents || []).filter((l: any) => !l.commentId).length;
