@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
@@ -621,7 +621,13 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
   }, []);
 
   const [userDistrict, setUserDistrict] = useState<string | null>(null);
-  const [showDistrictPrompt, setShowDistrictPrompt] = useState(false);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
+  const [profilePromptDistrict, setProfilePromptDistrict] = useState('');
+  const [profilePromptBanner, setProfilePromptBanner] = useState('crimson');
+  const [profilePromptAvatarFile, setProfilePromptAvatarFile] = useState<File | null>(null);
+  const [profilePromptAvatarPreview, setProfilePromptAvatarPreview] = useState('');
+  const [profilePromptUploading, setProfilePromptUploading] = useState(false);
+  const [profilePromptNeeds, setProfilePromptNeeds] = useState<{ district: boolean; avatar: boolean; banner: boolean }>({ district: false, avatar: false, banner: false });
   const [districtApplied, setDistrictApplied] = useState(false);
   useEffect(() => {
     if (!user?.$id || districtApplied) return;
@@ -632,12 +638,17 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
         const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H });
         if (res.ok) {
           const d = await res.json();
-          const district = d.documents?.[0]?.homeDistrict;
-          if (district) {
-            setUserDistrict(district);
-            setSelectedDistrict(district);
-          } else if (!localStorage.getItem('districtPromptDismissed')) {
-            setShowDistrictPrompt(true);
+          const row = d.documents?.[0];
+          const district = row?.homeDistrict;
+          const avatarUrl = row?.avatarUrl;
+          const bannerTheme = row?.bannerTheme;
+          if (district) { setUserDistrict(district); setSelectedDistrict(district); }
+          const needsDistrict = !district;
+          const needsAvatar = !avatarUrl;
+          const needsBanner = !bannerTheme;
+          if ((needsDistrict || needsAvatar || needsBanner) && !localStorage.getItem('profilePromptDismissed')) {
+            setProfilePromptNeeds({ district: needsDistrict, avatar: needsAvatar, banner: needsBanner });
+            setShowProfilePrompt(true);
           }
         }
       } catch (e) { console.error(e); }
@@ -678,46 +689,108 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5', color: isDarkMode ? '#e0e0e0' : '#1a1a1a', paddingBottom: isMobile ? '70px' : '0' }}>
-      {showDistrictPrompt && (
+      {showProfilePrompt && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'white', borderRadius: '16px', padding: '28px 24px', width: '100%', maxWidth: '360px', textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', marginBottom: '10px' }}>&#128205;</div>
-            <h2 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 800, color: '#1a1a1a' }}>Which hills do you call home?</h2>
-            <p style={{ margin: '0 0 18px', fontSize: '13px', color: '#888' }}>See your district's news and weather first.</p>
-            <select id='homeDistrictPromptSelect' style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '14px', fontSize: '14px', backgroundColor: 'white' }}>
-              <option value=''>Select your district</option>
-              <option value='Darjeeling'>Darjeeling</option>
-              <option value='Kalimpong'>Kalimpong</option>
-              <option value='Kurseong'>Kurseong</option>
-              <option value='Mirik'>Mirik</option>
-              <option value='Siliguri'>Siliguri</option>
-              <option value='Sikkim'>Sikkim</option>
-              <option value='West Bengal (Other)'>West Bengal (Other)</option>
-              <option value='Other'>Other</option>
-            </select>
-            <button onClick={async () => {
-              const sel = document.getElementById('homeDistrictPromptSelect') as HTMLSelectElement;
-              const val = sel?.value;
-              if (!val) return;
+          <div style={{ background: 'white', borderRadius: '16px', padding: '28px 24px', width: '100%', maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto' as const, textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '10px' }}>&#10024;</div>
+            <h2 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 800, color: '#1a1a1a' }}>Let's make your profile shine!</h2>
+            <p style={{ margin: '0 0 18px', fontSize: '13px', color: '#888' }}>A few quick things and you're all set.</p>
+
+            {profilePromptNeeds.district && (
+              <div style={{ textAlign: 'left', marginBottom: '18px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>Which hills do you call home?</label>
+                <select value={profilePromptDistrict} onChange={(e) => setProfilePromptDistrict(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', backgroundColor: 'white' }}>
+                  <option value=''>Select your district</option>
+                  <option value='Darjeeling'>Darjeeling</option>
+                  <option value='Kalimpong'>Kalimpong</option>
+                  <option value='Kurseong'>Kurseong</option>
+                  <option value='Mirik'>Mirik</option>
+                  <option value='Siliguri'>Siliguri</option>
+                  <option value='Sikkim'>Sikkim</option>
+                  <option value='West Bengal (Other)'>West Bengal (Other)</option>
+                  <option value='Other'>Other</option>
+                </select>
+              </div>
+            )}
+
+            {profilePromptNeeds.avatar && (
+              <div style={{ textAlign: 'left', marginBottom: '18px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>Show us your face!</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: '#f5c518', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#1a1a1a' }}>
+                    {profilePromptAvatarPreview ? <img src={profilePromptAvatarPreview} alt='' style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (user?.name?.charAt(0).toUpperCase() || 'U')}
+                  </div>
+                  <input id='profilePromptAvatarInput' type='file' accept='image/*' style={{ display: 'none' }} onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setProfilePromptAvatarFile(file);
+                    setProfilePromptAvatarPreview(URL.createObjectURL(file));
+                  }} />
+                  <label htmlFor='profilePromptAvatarInput' style={{ background: '#f3f4f6', color: '#374151', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                    {profilePromptAvatarFile ? 'Change photo' : 'Choose photo'}
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {profilePromptNeeds.banner && (
+              <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '6px' }}>Pick your vibe</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                  {[
+                    { id: 'crimson', gradient: 'linear-gradient(135deg, #c41e3a 0%, #7a1220 100%)' },
+                    { id: 'evergreen', gradient: 'linear-gradient(135deg, #2e7d32 0%, #1b4d1f 100%)' },
+                    { id: 'glacier', gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0c4a6e 100%)' },
+                    { id: 'golden', gradient: 'linear-gradient(135deg, #f59e0b 0%, #92400e 100%)' },
+                    { id: 'royal', gradient: 'linear-gradient(135deg, #9333ea 0%, #4c1d95 100%)' },
+                    { id: 'midnight', gradient: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' },
+                    { id: 'sunrise', gradient: 'linear-gradient(135deg, #f97316 0%, #db2777 100%)' },
+                    { id: 'slate', gradient: 'linear-gradient(135deg, #64748b 0%, #334155 100%)' },
+                  ].map((t) => (
+                    <button key={t.id} type='button' onClick={() => setProfilePromptBanner(t.id)} style={{ height: '32px', borderRadius: '8px', border: profilePromptBanner === t.id ? '3px solid #1a1a1a' : '2px solid transparent', background: t.gradient, cursor: 'pointer', padding: 0 }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button disabled={profilePromptUploading} onClick={async () => {
               if (!user) return;
+              setProfilePromptUploading(true);
               try {
+                let avatarUrl = '';
+                if (profilePromptAvatarFile) {
+                  const form = new FormData();
+                  form.append('fileId', 'unique()');
+                  form.append('file', profilePromptAvatarFile);
+                  const upRes = await fetch(ENDPOINT + '/storage/buckets/article-image/files', { method: 'POST', headers: H, credentials: 'include', body: form });
+                  if (upRes.ok) {
+                    const upData = await upRes.json();
+                    avatarUrl = ENDPOINT + '/storage/buckets/article-image/files/' + upData.$id + '/view?project=' + projectId;
+                  }
+                }
                 const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [user.$id] }));
                 const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
                 const checkRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H });
                 const checkData = checkRes.ok ? await checkRes.json() : { documents: [] };
                 const existingId = checkData.documents?.[0]?.$id;
                 const HJ2 = { ...H, 'Content-Type': 'application/json' };
+                const updateData: any = {};
+                if (profilePromptNeeds.district && profilePromptDistrict) updateData.homeDistrict = profilePromptDistrict;
+                if (profilePromptNeeds.avatar && avatarUrl) updateData.avatarUrl = avatarUrl;
+                if (profilePromptNeeds.banner) updateData.bannerTheme = profilePromptBanner;
                 if (existingId) {
-                  await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + existingId, { method: 'PATCH', headers: HJ2, credentials: 'include', body: JSON.stringify({ data: { homeDistrict: val } }) });
+                  await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + existingId, { method: 'PATCH', headers: HJ2, credentials: 'include', body: JSON.stringify({ data: updateData }) });
                 } else {
-                  await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents', { method: 'POST', headers: HJ2, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data: { userId: user.$id, displayName: user.name, userName: user.name, homeDistrict: val, joinedAT: new Date().toISOString() } }) });
+                  await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents', { method: 'POST', headers: HJ2, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data: { userId: user.$id, displayName: user.name, userName: user.name, joinedAT: new Date().toISOString(), ...updateData } }) });
                 }
+                if (updateData.homeDistrict) { setUserDistrict(updateData.homeDistrict); setSelectedDistrict(updateData.homeDistrict); }
               } catch (e) { console.error(e); }
-              setUserDistrict(val);
-              setSelectedDistrict(val);
-              setShowDistrictPrompt(false);
-            }} style={{ width: '100%', padding: '12px', backgroundColor: '#c41e3a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', marginBottom: '8px' }}>Save</button>
-            <button onClick={() => { localStorage.setItem('districtPromptDismissed', '1'); setShowDistrictPrompt(false); }} style={{ width: '100%', padding: '10px', backgroundColor: 'transparent', color: '#888', border: 'none', fontSize: '13px', cursor: 'pointer' }}>Skip for now</button>
+              setProfilePromptUploading(false);
+              setShowProfilePrompt(false);
+            }} style={{ width: '100%', padding: '12px', backgroundColor: profilePromptUploading ? '#999' : '#c41e3a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: profilePromptUploading ? 'default' : 'pointer', marginBottom: '8px' }}>
+              {profilePromptUploading ? 'Saving...' : 'Save & Continue'}
+            </button>
+            <button onClick={() => { localStorage.setItem('profilePromptDismissed', '1'); setShowProfilePrompt(false); }} style={{ width: '100%', padding: '10px', backgroundColor: 'transparent', color: '#888', border: 'none', fontSize: '13px', cursor: 'pointer' }}>Skip for now</button>
           </div>
         </div>
       )}
