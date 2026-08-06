@@ -80,11 +80,12 @@ export default function BhasaDivasHub() {
     setActiveTab('browse');
   };
 
+  const winnersAnnounced = new Date() >= new Date('2026-08-30T00:00:00+05:30');
   const tabs = [
     { id: 'submit', label: '📝 सबमिट' },
     { id: 'browse', label: '🔍 सबमिशन' },
     { id: 'leaderboard', label: '🏆 शीर्ष' },
-    { id: 'winners', label: '🎖️ विजेता' }
+    ...(winnersAnnounced ? [{ id: 'winners', label: '🎖️ विजेता' }] : [])
   ];
 
   return (
@@ -139,8 +140,8 @@ export default function BhasaDivasHub() {
 
         {activeTab === 'leaderboard' && (
           <div style={S.grid3}>
-            <Leaderboard category="poetry" leaderboard={leaderboard.poetry || []} />
-            <Leaderboard category="essay" leaderboard={leaderboard.essay || []} />
+            <Leaderboard category="poetry" leaderboard={leaderboard.poetry || []} totalCount={leaderboard.poetryTotal} />
+            <Leaderboard category="essay" leaderboard={leaderboard.essay || []} totalCount={leaderboard.essayTotal} />
           </div>
         )}
 

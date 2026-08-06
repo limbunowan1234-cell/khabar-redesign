@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { Client, Databases, Query, ID } from 'node-appwrite';
 
 export async function POST(req: NextRequest) {
@@ -88,11 +88,12 @@ export async function GET(req: NextRequest) {
         [
           Query.equal('category', category),
           Query.orderDesc('votes'),
-          Query.limit(3)
+          Query.limit(5)
         ]
       );
 
       result[category] = response.documents;
+      result[category + 'Total'] = response.total;
     }
 
     const searchParams = req.nextUrl.searchParams;

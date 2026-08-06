@@ -6,9 +6,9 @@ const CAT_LABELS: Record<string, { emoji: string; nepali: string }> = {
   photo: { emoji: '📷', nepali: 'फोटो' }
 };
 
-const MEDALS = ['🏆', '🥈', '🥉'];
-const BORDER = ['#facc15', '#9ca3af', '#fb923c'];
-const BG = ['#fefce8', '#f9fafb', '#fff7ed'];
+const MEDALS = ['🏆', '🥈', '🥉', '4️⃣', '5️⃣'];
+const BORDER = ['#facc15', '#9ca3af', '#fb923c', '#93c5fd', '#c4b5fd'];
+const BG = ['#fefce8', '#f9fafb', '#fff7ed', '#eff6ff', '#f5f3ff'];
 
 const S = {
   wrapper: { background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' },
@@ -29,14 +29,14 @@ function rowStyle(idx: number) {
   return { padding: '20px', borderLeft: `4px solid ${BORDER[idx]}`, background: BG[idx], borderBottom: '1px solid #f3f4f6' };
 }
 
-export default function Leaderboard({ category, leaderboard }: { category: 'poetry' | 'essay' | 'photo'; leaderboard: any[] }) {
+export default function Leaderboard({ category, leaderboard, totalCount }: { category: 'poetry' | 'essay' | 'photo'; leaderboard: any[]; totalCount?: number }) {
   const categoryInfo = CAT_LABELS[category];
 
   return (
     <div style={S.wrapper}>
       <div style={S.header}>
         <h2 style={S.headerTitle}>{categoryInfo.emoji} {categoryInfo.nepali}</h2>
-        <p style={S.headerSub}>शीर्ष तीन रचना</p>
+        <p style={S.headerSub}>शीर्ष पाँच रचना (कुल {totalCount || 0} सबमिशन)</p>
       </div>
       <div>
         {leaderboard.length === 0 ? (
