@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { Client, Databases, Storage, ID } from 'node-appwrite';
 import { randomBytes } from 'crypto';
 
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
           {
             title: title.substring(0, 200),
             category,
-            description: description.substring(0, 2000),
+            description: description.substring(0, 35000),
             submitterName: submitterName.substring(0, 100),
             submitterId,
             imageFileId: imageFileId || null,

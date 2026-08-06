@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
@@ -719,7 +719,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           </div>
         </div>
       )}
-      <style>{'.ticker-wrap{overflow:hidden;flex:1}.ticker-track{display:inline-flex;white-space:nowrap;animation:tickerScroll 35s linear infinite}.ticker-track:hover{animation-play-state:paused}@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}.cat-pill{transition:all 0.2s;cursor:pointer;border:none} main a img{transition:transform 0.45s ease} main a:hover img{transform:scale(1.045)}'}</style>
+      <style>{'.ticker-wrap{overflow:hidden;flex:1;min-width:0}.ticker-track{display:inline-flex;white-space:nowrap;animation:tickerScroll 35s linear infinite}.ticker-track:hover{animation-play-state:paused}@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}.cat-pill{transition:all 0.2s;cursor:pointer;border:none} main a img{transition:transform 0.45s ease} main a:hover img{transform:scale(1.045)}'}</style>
 
       {showBanner && (
         <div style={{ backgroundColor: '#f5c518', color: '#c41e3a', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', borderBottom: '2px solid #c41e3a' }}>
@@ -882,7 +882,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           )}
         </div>
       ) : (
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', minWidth: 0 }}>
           <main>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
@@ -906,7 +906,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
               </div>
             )}
           </main>
-          <aside style={{ position: 'sticky', top: '90px', alignSelf: 'start', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
+          <aside style={{ position: 'sticky', top: '90px', alignSelf: 'start', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto', minWidth: 0, overflowX: 'hidden' }}>
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
             <WeatherStrip isDarkMode={isDarkMode} defaultCity={userDistrict || undefined} />
               <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
