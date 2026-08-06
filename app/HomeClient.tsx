@@ -14,6 +14,7 @@ import GenreNav from '@/components/GenreNav';
 import MagazineHero from '@/components/MagazineHero';
 import GenreColumns from '@/components/GenreColumns';
 import BhasaDiwasWidget from '@/components/BhasaDiwasWidget';
+import HillsInFrameWidget from '@/components/HillsInFrameWidget';
 import SidebarTabs from '@/components/SidebarTabs';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
@@ -869,6 +870,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           {/* HERO SECTION ON MOBILE */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget isDarkMode={isDarkMode} />}
           {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><TopTen articles={articles} isDarkMode={isDarkMode} /></div>}
           {!searchQuery && selectedCategory === 'All' && <ContestPreview articles={articles} isDarkMode={isDarkMode} />}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -887,6 +889,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
