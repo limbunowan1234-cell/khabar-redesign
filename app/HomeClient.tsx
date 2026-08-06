@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
@@ -790,7 +790,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           </Link>
           {!isMobile && <input type="text" placeholder="Search news..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, maxWidth: '280px', padding: '8px 16px', borderRadius: '20px', border: 'none', fontSize: '14px', backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', outline: 'none' }} />}
           {!isMobile && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Link href="/post" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Post</button></Link>
               <Link href="/contest" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Contest</button></Link>
               <Link href="/nepali-bhasa-diwas" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#b91c1c', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Bhasa Diwas</button></Link>

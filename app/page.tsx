@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
@@ -64,7 +64,7 @@ export default async function Page() {
       )}
 
       {/* SEO content block - crawlable by search engines, visually hidden (content matches page purpose) */}
-      <div style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }} aria-hidden="false">
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }} aria-hidden="false">
         <h1>Khabar Darjeeling - Latest News from Darjeeling and the Gorkha Community</h1>
         <p>Comprehensive news coverage of Darjeeling, Kalimpong, Kurseong, Mirik, Siliguri and West Bengal - politics, sports, culture, tea gardens, tourism and more.</p>
         <h2>Latest News</h2>
