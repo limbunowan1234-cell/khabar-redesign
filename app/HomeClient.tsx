@@ -820,6 +820,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             <div style={{ padding: '16px' }}>
               {[
                 { href: '/nepali-bhasa-diwas', label: 'Nepali Bhasa Diwas' },
+                { href: '/hills-in-frame', label: 'Hills in Frame' },
                 { href: '/', label: 'Home' },
                 { href: '/weekly', label: 'Weekly Edition' },
                 { href: '/post', label: 'Create Post' },
@@ -870,6 +871,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
               <Link href="/post" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Post</button></Link>
               <Link href="/contest" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Contest</button></Link>
               <Link href="/nepali-bhasa-diwas" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#b91c1c', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Bhasa Diwas</button></Link>
+              <Link href="/hills-in-frame" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Photos</button></Link>
               <Link href="/weekly" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Weekly</button></Link>
               {user ? (
                 <>

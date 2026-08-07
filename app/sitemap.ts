@@ -34,8 +34,23 @@ async function getBhasaDiwasSubmissions(): Promise<any[]> {
     return [];
   }
 }
+async function getPhotos(): Promise<any[]> {
+  try {
+    const q1 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
+    const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [500] }));
+    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/photography/documents?queries[]=' + q1 + '&queries[]=' + q2, {
+      headers: { 'X-Appwrite-Project': PROJECT },
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.documents || [];
+  } catch {
+    return [];
+  }
+}
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, submissions] = await Promise.all([getArticles(), getBhasaDiwasSubmissions()]);
+  const [articles, submissions, photos] = await Promise.all([getArticles(), getBhasaDiwasSubmissions(), getPhotos()]);
   const articleUrls: MetadataRoute.Sitemap = articles.map((a: any) => ({
     url: SITE + '/article/' + (a.slug || a.$id),
     lastModified: new Date(a.$updatedAt || a.publishedAt || a.$createdAt || Date.now()),
@@ -48,14 +63,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: 'weekly' as const,
     priority: 0.5,
   }));
+  const photoUrls: MetadataRoute.Sitemap = photos.map((p: any) => ({
+    url: SITE + '/hills-in-frame/' + p.$id,
+    lastModified: new Date(p.$updatedAt || p.$createdAt || Date.now()),
+    changeFrequency: 'weekly' as const,
+    priority: 0.5,
+  }));
   const staticUrls: MetadataRoute.Sitemap = [
     { url: SITE, lastModified: new Date(), changeFrequency: 'hourly' as const, priority: 1 },
     { url: SITE + '/contest', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/reels', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/nepali-bhasa-diwas', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 },
+    { url: SITE + '/hills-in-frame', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/weekly', lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
     { url: SITE + '/about', lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.4 },
     { url: SITE + '/contact', lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.3 },
   ];
-  return [...staticUrls, ...articleUrls, ...submissionUrls];
+  return [...staticUrls, ...articleUrls, ...submissionUrls, ...photoUrls];
 }
