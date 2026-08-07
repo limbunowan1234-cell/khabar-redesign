@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import BhasaDiwasSubmissionDetail from '@/components/bhasa-diwas/BhasaDiwasSubmissionDetail';
 
 const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const image = sub.imageFileId
     ? SITE + '/api/image-proxy?fileId=' + sub.imageFileId + '&bucket=6a67a307002f71e8dcf5'
     : SITE + '/assets/bhasa-diwas-hero.png';
-  const looksLowQuality = (sub.title || '').trim().length < 5 || (sub.description || '').trim().length < 20;
+  const looksLowQuality = (sub.title || '').trim().length < 5 || (sub.description || '').trim().length < 100;
 
 
   return {

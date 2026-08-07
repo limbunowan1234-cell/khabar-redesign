@@ -38,10 +38,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const description = photo.caption ? photo.caption.slice(0, 150) : 'Photography from Darjeeling and the Gorkha hills.';
   const url = SITE + '/hills-in-frame/' + id;
   const image = photo.imageFileId ? getImageUrl(photo.imageFileId) : SITE + '/assets/logo.png';
+  const looksLowQuality = (photo.caption || '').trim().length < 100;
+
 
   return {
     title,
     description,
+    robots: looksLowQuality ? { index: false, follow: true } : { index: true, follow: true },
     alternates: { canonical: url },
     openGraph: {
       title,
