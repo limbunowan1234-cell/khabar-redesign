@@ -12,6 +12,14 @@ const BUCKET = 'article-image';
 const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 
+const COMMENT_COLORS = [
+  { bg: '#fef2f2', border: '#fecaca', avatar: '#dc2626' },
+  { bg: '#eff6ff', border: '#bfdbfe', avatar: '#2563eb' },
+  { bg: '#f0fdf4', border: '#bbf7d0', avatar: '#16a34a' },
+  { bg: '#fefce8', border: '#fef08a', avatar: '#ca8a04' },
+  { bg: '#faf5ff', border: '#e9d5ff', avatar: '#9333ea' },
+  { bg: '#fff7ed', border: '#fed7aa', avatar: '#ea580c' },
+];
 function getImageUrl(fileId: string): string {
   return 'https://nyc.cloud.appwrite.io/v1/storage/buckets/' + BUCKET + '/files/' + fileId + '/view?project=' + PROJECT;
 }
@@ -247,15 +255,18 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
           {comments.length === 0 ? (
             <p style={{ color: '#9ca3af', fontSize: '13px' }}>No comments yet.</p>
           ) : (
-            comments.map((c: any) => (
-              <div key={c.$id} style={{ display: 'flex', gap: '10px', padding: '14px 0', borderBottom: '1px solid #f3f4f6' }}>
-              <div key={c.$id} style={{ display: 'flex', gap: '10px', padding: '12px 14px', marginBottom: '10px', background: '#f9fafb', borderRadius: '10px' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '13px', color: '#1a1a1a' }}>{c.authorName}</div>
-                  <div style={{ fontSize: '13px', color: '#374151', marginTop: '3px', lineHeight: 1.5 }}>{c.commentText}</div>
+            comments.map((c: any, ci: number) => {
+              const cc = COMMENT_COLORS[ci % COMMENT_COLORS.length];
+              return (
+                <div key={c.$id} style={{ display: 'flex', gap: '10px', padding: '12px 14px', marginBottom: '10px', background: cc.bg, borderRadius: '10px', border: '1px solid ' + cc.border }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: cc.avatar, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>{(c.authorName || 'U').charAt(0).toUpperCase()}</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#1a1a1a' }}>{c.authorName}</div>
+                    <div style={{ fontSize: '13px', color: '#374151', marginTop: '3px', lineHeight: 1.5 }}>{c.commentText}</div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
