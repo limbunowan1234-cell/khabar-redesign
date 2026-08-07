@@ -177,7 +177,7 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             onDoubleClick={handleDoubleTapLike}
-            style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', background: '#e5e7eb', marginBottom: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', touchAction: 'pan-y' }}
+            style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', background: '#e5e7eb', marginBottom: '20px', boxShadow: '0 12px 36px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.05)', touchAction: 'pan-y' }}
           >
             {photo.imageFileId && (
               <img src={getImageUrl(photo.imageFileId)} alt={photo.title} style={{ width: '100%', display: 'block' }} draggable={false} />
@@ -209,7 +209,7 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
           <span style={{ fontSize: '14px', fontWeight: 700, color: '#374151' }}>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>
         </div>
 
-        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px' }}>{photo.title}</h1>
+        <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#1a1a1a', margin: '0 0 10px', fontFamily: 'Georgia, serif' }}>{photo.title}</h1>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '18px', flexWrap: 'wrap' as const }}>
           {photo.location && (
@@ -248,9 +248,12 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
             <p style={{ color: '#9ca3af', fontSize: '13px' }}>No comments yet.</p>
           ) : (
             comments.map((c: any) => (
-              <div key={c.$id} style={{ padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
-                <div style={{ fontWeight: 700, fontSize: '13px', color: '#1a1a1a' }}>{c.authorName}</div>
-                <div style={{ fontSize: '13px', color: '#374151', marginTop: '3px' }}>{c.commentText}</div>
+              <div key={c.$id} style={{ display: 'flex', gap: '10px', padding: '14px 0', borderBottom: '1px solid #f3f4f6' }}>
+              <div key={c.$id} style={{ display: 'flex', gap: '10px', padding: '12px 14px', marginBottom: '10px', background: '#f9fafb', borderRadius: '10px' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '13px', color: '#1a1a1a' }}>{c.authorName}</div>
+                  <div style={{ fontSize: '13px', color: '#374151', marginTop: '3px', lineHeight: 1.5 }}>{c.commentText}</div>
+                </div>
               </div>
             ))
           )}

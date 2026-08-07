@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
 const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
@@ -72,24 +72,27 @@ export default async function HillsInFramePage() {
             No photos yet - check back soon.
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+          <>
+          <style>{'.hif-card { transition: transform 0.25s ease, box-shadow 0.25s ease; } .hif-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(0,0,0,0.16) !important; } .hif-card img { transition: transform 0.5s ease; } .hif-card:hover img { transform: scale(1.06); }'}</style>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '26px' }}>
             {photos.map((photo: any) => (
               <Link key={photo.$id} href={'/hills-in-frame/' + photo.$id} style={{ textDecoration: 'none' }}>
-                <div style={{ borderRadius: '12px', overflow: 'hidden', background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                  <div style={{ height: '180px', background: '#e5e7eb' }}>
+                <div className='hif-card' style={{ borderRadius: '4px', overflow: 'hidden', background: 'white', padding: '10px 10px 0', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #eee' }}>
+                  <div style={{ position: 'relative', height: '200px', background: '#e5e7eb', borderRadius: '2px', overflow: 'hidden' }}>
                     {photo.imageFileId && (
-                      <img src={getImageUrl(photo.imageFileId)} alt={photo.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={getImageUrl(photo.imageFileId)} alt={photo.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     )}
                   </div>
-                  <div style={{ padding: '14px' }}>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{photo.title}</div>
-                    {photo.location && <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>{photo.location}</div>}
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '6px' }}>By {photo.submitterName}</div>
+                  <div style={{ padding: '14px 6px 16px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, fontFamily: 'Georgia, serif' }}>{photo.title}</div>
+                    {photo.location && <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '5px' }}>&#128205; {photo.location}</div>}
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f3f4f6' }}>By {photo.submitterName}</div>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
+          </>
         )}
       </div>
     </div>
