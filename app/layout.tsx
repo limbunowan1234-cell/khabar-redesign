@@ -65,6 +65,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body style={{ margin: 0, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <Script id="infolinks-config" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: "var infolinks_pid = 3446930; var infolinks_wsid = 0;" }} />
+        <Script async src="//resources.infolinks.com/js/infolinks_main.js" strategy="afterInteractive" />
         <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5223539471824662" crossOrigin="anonymous" strategy="afterInteractive" />
         <AuthProvider>{children}</AuthProvider>
       </body>
