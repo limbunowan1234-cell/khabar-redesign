@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toggleCommentLike, getCommentLikes } from '@/lib/appwrite';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
 
@@ -49,6 +50,11 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
   const [commentText, setCommentText] = useState('');
   const [postingComment, setPostingComment] = useState(false);
 
+  const [commentLikes, setCommentLikes] = useState<Record<string, number>>({});
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [postingReply, setPostingReply] = useState(false);
   const photo = photos[index];
 
   useEffect(() => {
@@ -78,6 +84,15 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
       if (res.ok) {
         const data = await res.json();
         setComments(data.documents || []);
+        const likeCounts: Record<string, number> = {};
+        const likedSet = new Set<string>();
+        for (const c of (data.documents || [])) {
+          const cLikes = await getCommentLikes(c.$id);
+          likeCounts[c.$id] = cLikes.length;
+          if (user && cLikes.some((l: any) => l.userId === user.$id)) likedSet.add(c.$id);
+        }
+        setCommentLikes(likeCounts);
+        setLikedComments(likedSet);
       }
     } catch {}
   }
@@ -138,6 +153,40 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
       loadComments();
     } catch {}
     setPostingComment(false);
+  }
+  async function handleReply(parentCommentId: string) {
+    if (!isAuthenticated || !user) {
+      router.push('/auth');
+      return;
+    }
+    if (!replyText.trim()) return;
+    setPostingReply(true);
+    try {
+      await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents', {
+        method: 'POST', headers: HJ, credentials: 'include',
+        body: JSON.stringify({
+          documentId: 'unique()',
+          data: { articleId: photo.$id, userId: user.$id, authorName: user.name || 'User', commentText: replyText.trim(), parentCommentId, avatarUrl: '', createdAt: new Date().toISOString() }
+        })
+      });
+      setReplyText('');
+      setReplyingTo(null);
+      loadComments();
+    } catch {}
+    setPostingReply(false);
+  }
+  async function handleCommentLikeClick(commentId: string) {
+    if (!isAuthenticated || !user) {
+      router.push('/auth');
+      return;
+    }
+    const nowLiked = await toggleCommentLike(commentId, user.$id, photo.$id);
+    setCommentLikes((prev) => ({ ...prev, [commentId]: nowLiked ? (prev[commentId] || 0) + 1 : Math.max(0, (prev[commentId] || 0) - 1) }));
+    setLikedComments((prev) => {
+      const next = new Set(prev);
+      if (nowLiked) next.add(commentId); else next.delete(commentId);
+      return next;
+    });
   }
 
   function goTo(newIndex: number) {
@@ -252,24 +301,55 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
             </p>
           )}
 
-          {comments.length === 0 ? (
-            <p style={{ color: '#9ca3af', fontSize: '13px' }}>No comments yet.</p>
-          ) : (
-            comments.map((c: any, ci: number) => {
+          {(() => {
+            const topLevel = comments.filter((c: any) => !c.parentCommentId);
+            const getReplies = (parentId: string) => comments.filter((c: any) => c.parentCommentId === parentId);
+            if (topLevel.length === 0) return <p style={{ color: '#9ca3af', fontSize: '13px' }}>No comments yet.</p>;
+            return topLevel.map((c: any, ci: number) => {
               const cc = COMMENT_COLORS[ci % COMMENT_COLORS.length];
+              const replies = getReplies(c.$id);
+              const isLiked = likedComments.has(c.$id);
               return (
-                <div key={c.$id} style={{ display: 'flex', gap: '10px', padding: '12px 14px', marginBottom: '10px', background: cc.bg, borderRadius: '10px', border: '1px solid ' + cc.border }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: cc.avatar, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>{(c.authorName || 'U').charAt(0).toUpperCase()}</div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#1a1a1a' }}>{c.authorName}</div>
-                    <div style={{ fontSize: '13px', color: '#374151', marginTop: '3px', lineHeight: 1.5 }}>{c.commentText}</div>
+                <div key={c.$id} style={{ marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', padding: '12px 14px', background: cc.bg, borderRadius: '10px', border: '1px solid ' + cc.border }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: cc.avatar, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>{(c.authorName || 'U').charAt(0).toUpperCase()}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: '13px', color: '#1a1a1a' }}>{c.authorName}</div>
+                      <div style={{ fontSize: '13px', color: '#374151', marginTop: '3px', lineHeight: 1.5 }}>{c.commentText}</div>
+                      <div style={{ display: 'flex', gap: '14px', marginTop: '8px' }}>
+                        <button onClick={() => handleCommentLikeClick(c.$id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: isLiked ? '#c41e3a' : '#6b7280', padding: 0 }}>
+                          {isLiked ? '\u2764\uFE0F' : '\u{1F90D}'} {commentLikes[c.$id] || 0}
+                        </button>
+                        <button onClick={() => setReplyingTo(replyingTo === c.$id ? null : c.$id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#6b7280', padding: 0 }}>Reply</button>
+                      </div>
+                    </div>
                   </div>
+                  {replyingTo === c.$id && (
+                    <div style={{ marginLeft: '30px', marginTop: '8px' }}>
+                      <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder='Write a reply...' style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', minHeight: '50px', boxSizing: 'border-box' as const, fontFamily: 'inherit', marginBottom: '6px' }} />
+                      <button onClick={() => handleReply(c.$id)} disabled={postingReply} style={{ background: '#c41e3a', color: 'white', padding: '6px 16px', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', fontSize: '12px' }}>
+                        {postingReply ? 'Posting...' : 'Post Reply'}
+                      </button>
+                    </div>
+                  )}
+                  {replies.length > 0 && (
+                    <div style={{ marginLeft: '30px', marginTop: '8px', display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                      {replies.map((r: any) => (
+                        <div key={r.$id} style={{ display: 'flex', gap: '8px', padding: '10px 12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #eee' }}>
+                          <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#9ca3af', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>{(r.authorName || 'U').charAt(0).toUpperCase()}</div>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '12px', color: '#1a1a1a' }}>{r.authorName}</div>
+                            <div style={{ fontSize: '12px', color: '#374151', marginTop: '2px', lineHeight: 1.5 }}>{r.commentText}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
-            })
-          )}
+            });
+          })()}
         </div>
-
         <p style={{ textAlign: 'center', fontSize: '12px', color: '#c0c0c0', marginTop: '30px' }}>Swipe or use arrows to browse - double-tap to like</p>
       </div>
     </div>
