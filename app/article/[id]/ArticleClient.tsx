@@ -1,7 +1,8 @@
-﻿'use client';
+'use client';
 import AuthorBadge from '@/components/AuthorBadge';
 
 import { useEffect, useState } from 'react';
+import StoryCard from '@/components/StoryCard';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike, incrementViews } from '@/lib/appwrite';
@@ -180,6 +181,8 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
   const { user } = useAuthStore();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [article, setArticle] = useState<any>(initialArticle || null);
+  const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
+  const [authorArticles, setAuthorArticles] = useState<any[]>([]);
   const [isTranslated, setIsTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [translatedTitle, setTranslatedTitle] = useState('');
@@ -301,6 +304,31 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
       incrementViews(id);
         const data = await getArticle(id);
       if (data) setArticle(data);
+        if (data?.genre) {
+          try {
+            const rq1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'genre', values: [data.genre] }));
+            const rq2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }));
+            const rq3 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
+            const rq4 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [5] }));
+            const rRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + rq1 + '&queries[]=' + rq2 + '&queries[]=' + rq3 + '&queries[]=' + rq4, { headers: H });
+            if (rRes.ok) {
+              const rData = await rRes.json();
+              setRelatedArticles((rData.documents || []).filter((a: any) => a.$id !== id).slice(0, 4));
+            }
+          } catch {}
+        }
+        if (data?.submitterId) {
+          try {
+            const aq1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [data.submitterId] }));
+            const aq2 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
+            const aq3 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [5] }));
+            const aRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + aq1 + '&queries[]=' + aq2 + '&queries[]=' + aq3, { headers: H });
+            if (aRes.ok) {
+              const aData = await aRes.json();
+              setAuthorArticles((aData.documents || []).filter((a: any) => a.$id !== id).slice(0, 4));
+            }
+          } catch {}
+        }
       setLoading(false);
       const cms = await fetchComments(id);
       setComments(cms);
@@ -636,6 +664,26 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
           </a>
         </div>
 
+        {relatedArticles.length > 0 && (
+          <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '28px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), marginBottom: '20px' }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', fontWeight: 700, color: isDarkMode ? '#fff' : '#1a1a1a', margin: '0 0 18px' }}>Related Stories</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+              {relatedArticles.map((a: any) => (
+                <StoryCard key={a.$id} variant='compact' story={{ $id: a.$id, slug: a.slug, title: a.title, imageUrl: getImageUrl(a), genre: a.genre || a.category, publishedAt: a.publishedAt }} />
+              ))}
+            </div>
+          </div>
+        )}
+        {authorArticles.length > 0 && (
+          <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '28px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), marginBottom: '20px' }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', fontWeight: 700, color: isDarkMode ? '#fff' : '#1a1a1a', margin: '0 0 18px' }}>More from {article.submitterName || article.authorName || 'this author'}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+              {authorArticles.map((a: any) => (
+                <StoryCard key={a.$id} variant='compact' story={{ $id: a.$id, slug: a.slug, title: a.title, imageUrl: getImageUrl(a), genre: a.genre || a.category, publishedAt: a.publishedAt }} />
+              ))}
+            </div>
+          </div>
+        )}
         {/* COMMENTS */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '24px 28px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '24px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '20px', paddingBottom: '12px', borderBottom: '2px solid #f5c518', display: 'flex', alignItems: 'center', gap: '8px' }}>
