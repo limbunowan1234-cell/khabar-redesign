@@ -45,6 +45,7 @@ export default function ReporterPostPage() {
 
   const [imageFileId, setImageFileId] = useState('');
   const [imagePreview, setImagePreview] = useState('');
+  const [imageCaption, setImageCaption] = useState('');
   const [uploadingMain, setUploadingMain] = useState(false);
 
   const [supportingImages, setSupportingImages] = useState<SupportingImage[]>([]);
@@ -144,6 +145,7 @@ export default function ReporterPostPage() {
             locationDistrict,
             locationArea: locationArea || null,
             imageFileId: imageFileId || null,
+            imageCaption: imageCaption.trim() || null,
             youtube_id: youtubeId || null,
             isBreaking,
             isFeatured,
@@ -210,6 +212,9 @@ export default function ReporterPostPage() {
               {uploadingMain ? 'Uploading...' : imageFileId ? 'Change Main Photo' : 'Upload Main Photo'}
             </label>
           </div>
+          {imageFileId && (
+            <input value={imageCaption} onChange={(e) => setImageCaption(e.target.value)} placeholder='Photo caption / credit (optional)' style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '13px', marginTop: '10px', marginBottom: '18px', boxSizing: 'border-box' as const }} />
+          )}
 
           <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Content *</label>
           <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write the full article content..." rows={12} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '6px', fontSize: '15px', lineHeight: 1.6, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />

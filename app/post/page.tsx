@@ -37,6 +37,7 @@ export default function PostPage() {
   const [isContestEntry, setIsContestEntry] = useState(false);
   const [imageFileId, setImageFileId] = useState('');
   const [imagePreview, setImagePreview] = useState('');
+  const [imageCaption, setImageCaption] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -105,6 +106,7 @@ export default function PostPage() {
             locationDistrict,
             locationArea: locationArea || null,
             imageFileId: imageFileId || null,
+            imageCaption: imageCaption.trim() || null,
             youtube_id: youtubeId || null,
             isBreaking: false,
             isFeatured: false,
@@ -223,6 +225,9 @@ export default function PostPage() {
                 )}
                 <input id="imageInput" type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} style={{ display: 'none' }} />
               </div>
+              {imageFileId && (
+                <input value={imageCaption} onChange={(e) => setImageCaption(e.target.value)} placeholder='Photo caption / credit (optional)' style={{ width: '100%', padding: '10px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '13px', marginTop: '10px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' as const }} />
+              )}
               {uploadingImage && <p style={{ color: '#c41e3a', fontSize: '13px', marginTop: '8px' }}>Uploading image...</p>}
               {imageFileId && !uploadingImage && <p style={{ color: '#2e7d32', fontSize: '13px', marginTop: '8px' }}>Image ready</p>}
             </div>

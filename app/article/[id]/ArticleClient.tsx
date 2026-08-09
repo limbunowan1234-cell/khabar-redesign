@@ -507,12 +507,15 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
 
       {/* HERO IMAGE */}
       {imgUrl && (
-        <div style={{ position: 'relative', width: '100%', maxWidth: '900px', margin: '0 auto', aspectRatio: '4 / 3', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
-          <img src={imgUrl} alt={article.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.7) 100%)' }} />
-          {(article.genre || article.category) && <div style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: '#c41e3a', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>{article.genre || article.category}</div>}
-          {article.isBreaking && <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: '#f5c518', color: '#1a1a1a', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700' }}>🔴 BREAKING</div>}
-        </div>
+        <>
+          <div style={{ position: 'relative', width: '100%', maxWidth: '900px', margin: '0 auto', aspectRatio: '4 / 3', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
+            <img src={imgUrl} alt={article.imageCaption || article.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.7) 100%)' }} />
+            {(article.genre || article.category) && <div style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: '#c41e3a', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>{article.genre || article.category}</div>}
+            {article.isBreaking && <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: '#f5c518', color: '#1a1a1a', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700' }}>&#128308; BREAKING</div>}
+          </div>
+          {article.imageCaption && <p style={{ maxWidth: '900px', margin: '8px auto 0', padding: '0 16px', fontSize: '13px', color: isDarkMode ? '#999' : '#888', fontStyle: 'italic' }}>{article.imageCaption}</p>}
+        </>
       )}
 
       {/* NO IMAGE HERO */}

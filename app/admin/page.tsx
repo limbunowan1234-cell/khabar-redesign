@@ -100,6 +100,7 @@ export default function AdminPage() {
   const [isContestEntry, setIsContestEntry] = useState(false);
   const [imageFileId, setImageFileId] = useState('');
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [imageCaption, setImageCaption] = useState('');
   const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
@@ -374,6 +375,7 @@ function generateSlug(text: string): string {
               slug: generateSlug(title),
               trackerData: parseTracker(trackerTitle, trackerLines),
             imageFileId: imageFileId || null,
+            imageCaption: imageCaption.trim() || null,
             youtube_id: youtubeId || null,
             isBreaking, isFeatured, isContestEntry,
             authorName: user?.name || 'Unknown',
@@ -505,6 +507,7 @@ function generateSlug(text: string): string {
     setIsFeatured(article.isFeatured);
     setIsContestEntry(article.isContestEntry);
     setImageFileId(article.imageFileId);
+    setImageCaption(article.imageCaption || '');
     try {
       const t = article.trackerData ? JSON.parse(article.trackerData) : null;
       setTrackerTitle(t?.title || '');
@@ -526,6 +529,7 @@ function generateSlug(text: string): string {
           data: {
             title, content, genre, locationDistrict, locationArea: locationArea || null,
             imageFileId: imageFileId || null,
+            imageCaption: imageCaption.trim() || null,
             youtube_id: youtubeId || null,
             trackerData: parseTracker(trackerTitle, trackerLines),
             isBreaking, isFeatured, isContestEntry
@@ -703,6 +707,7 @@ function generateSlug(text: string): string {
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Featured Image</label>
                 <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#fafafa' }} />
+                <input value={imageCaption} onChange={(e) => setImageCaption(e.target.value)} placeholder='Photo caption / credit (optional)' style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '13px', marginTop: '10px', boxSizing: 'border-box' as const }} />
                 {uploadingImage && <p style={{ color: '#0F4C5C', marginTop: '8px', fontSize: '14px' }}>Uploading...</p>}
                 {imagePreview && <img src={imagePreview} alt="Preview" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '12px' }} />}
               </div>
@@ -910,6 +915,7 @@ function generateSlug(text: string): string {
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Featured Image</label>
                 <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#fafafa' }} />
+                <input value={imageCaption} onChange={(e) => setImageCaption(e.target.value)} placeholder='Photo caption / credit (optional)' style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '13px', marginTop: '10px', boxSizing: 'border-box' as const }} />
                 {uploadingImage && <p style={{ color: '#0F4C5C', marginTop: '8px', fontSize: '14px' }}>Uploading...</p>}
                 {imagePreview && <img src={imagePreview} alt="Preview" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '12px' }} />}
               </div>
