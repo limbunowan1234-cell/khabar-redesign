@@ -9,7 +9,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   photo: 'फोटो'
 };
 
-export default function BhasaDiwasWidget({ isDarkMode }: { isDarkMode?: boolean }) {
+export default function BhasaDiwasWidget() {
   const [textSubmissions, setTextSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,15 +30,15 @@ export default function BhasaDiwasWidget({ isDarkMode }: { isDarkMode?: boolean 
   }, []);
 
   return (
-    <div style={{ marginBottom: '24px' }}>
+    <div style={{ marginBottom: '32px', background: 'var(--color-surface)', borderRadius: '8px', padding: '24px' }}>
       {/* HERO BANNER */}
       <Link href="/nepali-bhasa-diwas" style={{ textDecoration: 'none' }}>
         <div style={{
           position: 'relative',
-          borderRadius: '14px',
+          borderRadius: '6px',
           overflow: 'hidden',
           height: '160px',
-          marginBottom: '16px',
+          marginBottom: '18px',
           backgroundImage: 'linear-gradient(105deg, rgba(30,10,10,0.85) 0%, rgba(60,15,15,0.55) 45%, rgba(60,15,15,0.2) 75%), url(/assets/bhasa-diwas-hero.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -49,13 +49,13 @@ export default function BhasaDiwasWidget({ isDarkMode }: { isDarkMode?: boolean 
           cursor: 'pointer'
         }}>
           <div>
-            <div style={{ color: 'white', fontSize: '24px', fontWeight: 700, fontFamily: 'Georgia, serif', textShadow: '0 2px 10px rgba(0,0,0,0.5)', marginBottom: '4px' }}>
+            <div style={{ color: 'white', fontSize: '24px', fontWeight: 700, fontFamily: 'var(--font-serif)', textShadow: '0 2px 10px rgba(0,0,0,0.5)', marginBottom: '4px' }}>
               नेपाली भाषा दिवस
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.92)', fontSize: '13px', marginBottom: '10px' }}>
+            <div style={{ color: 'rgba(255,255,255,0.92)', fontFamily: 'var(--font-sans)', fontSize: '13px', marginBottom: '10px' }}>
               सबमिशन खुला भयो
             </div>
-            <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.15)', border: '1.5px solid #facc15', borderRadius: '20px', padding: '6px 16px', color: 'white', fontSize: '12px', fontWeight: 600 }}>
+            <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.15)', border: '1.5px solid var(--color-accent)', borderRadius: '20px', padding: '6px 16px', color: 'white', fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 600 }}>
               आफ्नो रचना पठाउनुहोस्
             </div>
           </div>
@@ -65,15 +65,12 @@ export default function BhasaDiwasWidget({ isDarkMode }: { isDarkMode?: boolean 
       {/* LATEST TEXT SUBMISSIONS */}
       {!loading && textSubmissions.length > 0 && (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '4px', height: '18px', backgroundColor: '#b91c1c', borderRadius: '2px', display: 'inline-block' }} />
-              <h3 style={{ fontSize: '14px', fontWeight: 800, color: isDarkMode ? '#fff' : '#b91c1c', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-                पछिल्ला रचनाहरू
-              </h3>
-            </div>
-            <Link href="/nepali-bhasa-diwas" style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#888', textDecoration: 'none' }}>
-              सबै हेर्नुहोस् →
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>
+              पछिल्ला रचनाहरू
+            </h2>
+            <Link href="/nepali-bhasa-diwas" style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-caption)', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600 }}>
+              सबै हेर्नुहोस् &rarr;
             </Link>
           </div>
 
@@ -81,22 +78,22 @@ export default function BhasaDiwasWidget({ isDarkMode }: { isDarkMode?: boolean 
             {textSubmissions.map((sub: any) => (
               <Link key={sub.$id} href={'/nepali-bhasa-diwas/' + sub.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div style={{
-                  background: isDarkMode ? '#1e1e1e' : 'white',
-                  borderRadius: '10px',
+                  background: 'var(--color-bg)',
+                  borderRadius: '6px',
                   padding: '10px 14px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  borderLeft: '3px solid #b91c1c',
+                  borderLeft: '3px solid var(--color-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '10px'
                 }}>
-                  <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: 700, flexShrink: 0 }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--color-primary)', fontWeight: 700, flexShrink: 0 }}>
                     {CATEGORY_LABELS[sub.category] || sub.category}
                   </span>
                   <span style={{
+                    fontFamily: 'var(--font-sans)',
                     fontSize: '13px',
                     fontWeight: 700,
-                    color: isDarkMode ? '#fff' : '#1a1a1a',
+                    color: 'var(--color-text)',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap' as const,
@@ -104,7 +101,7 @@ export default function BhasaDiwasWidget({ isDarkMode }: { isDarkMode?: boolean 
                   }}>
                     {sub.title}
                   </span>
-                  <span style={{ fontSize: '11px', color: isDarkMode ? '#999' : '#888', flexShrink: 0 }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--color-text-muted)', flexShrink: 0 }}>
                     {sub.submitterName}
                   </span>
                 </div>

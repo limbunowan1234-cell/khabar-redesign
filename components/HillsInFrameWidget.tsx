@@ -13,7 +13,7 @@ function getImageUrl(fileId: string): string {
   return ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + fileId + '/view?project=' + PROJECT;
 }
 
-export default function HillsInFrameWidget({ isDarkMode }: { isDarkMode?: boolean }) {
+export default function HillsInFrameWidget() {
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,32 +39,30 @@ export default function HillsInFrameWidget({ isDarkMode }: { isDarkMode?: boolea
   if (!loading && photos.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ width: '4px', height: '18px', backgroundColor: '#374151', borderRadius: '2px', display: 'inline-block' }} />
-          <h3 style={{ fontSize: '14px', fontWeight: 800, color: isDarkMode ? '#fff' : '#1f2937', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-            Hills in Frame
-          </h3>
-        </div>
-        <Link href="/hills-in-frame" style={{ fontSize: '12px', color: isDarkMode ? '#aaa' : '#888', textDecoration: 'none' }}>
+    <div style={{ marginBottom: '32px', background: 'var(--color-surface)', borderRadius: '8px', padding: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '18px' }}>
+        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>
+          Hills in Frame
+        </h2>
+        <Link href="/hills-in-frame" style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-caption)', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600 }}>
           View all &rarr;
         </Link>
       </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
         {photos.map((photo: any) => (
           <Link key={photo.$id} href={'/hills-in-frame/' + photo.$id} style={{ textDecoration: 'none' }}>
-            <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', aspectRatio: '1', background: '#e5e7eb' }}>
+            <div style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', aspectRatio: '1', background: 'linear-gradient(135deg, #94a3b8, #475569)' }}>
               {photo.imageFileId && (
                 <img
                   src={getImageUrl(photo.imageFileId)}
                   alt={photo.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  loading="lazy"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               )}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)', padding: '16px 8px 6px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: 'white', margin: 0, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' as const }}>{photo.title}</p>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)', padding: '20px 10px 8px' }}>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 700, color: 'white', margin: 0, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' as const }}>{photo.title}</p>
               </div>
             </div>
           </Link>
