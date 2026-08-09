@@ -1,6 +1,7 @@
 'use client';
 
 import StoryCard from './StoryCard';
+import { selectHeroPool } from '@/lib/homepageSelection';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -42,11 +43,7 @@ function toStory(a: any) {
 }
 
 export default function MagazineHero({ articles }: { articles: any[]; isDarkMode?: boolean }) {
-  const featured = articles.filter((a: any) => a.isFeatured);
-  const pool = featured.length >= 4 ? featured : [...featured, ...articles.filter((a: any) => !a.isFeatured)];
-  const main = pool[0];
-  const side = pool.slice(1, 3);
-
+  const { main, side } = selectHeroPool(articles);
   if (!main) return null;
 
   return (

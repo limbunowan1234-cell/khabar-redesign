@@ -14,6 +14,7 @@ import GenreNav from '@/components/GenreNav';
 import MagazineHero from '@/components/MagazineHero';
 import GenreColumns from '@/components/GenreColumns';
 import BhasaDiwasWidget from '@/components/BhasaDiwasWidget';
+import LatestSection from '@/components/LatestSection';
 import HillsInFrameWidget from '@/components/HillsInFrameWidget';
 import SidebarTabs from '@/components/SidebarTabs';
 
@@ -947,6 +948,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
         <div style={{ padding: '4px 16px 16px' }}>
           {/* HERO SECTION ON MOBILE */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget isDarkMode={isDarkMode} />}
           {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><TopTen articles={articles} isDarkMode={isDarkMode} /></div>}
@@ -966,6 +968,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           <main>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
