@@ -1,5 +1,6 @@
 'use client';
-import Link from 'next/link';
+
+import StoryCard from './StoryCard';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -14,80 +15,55 @@ function genreOf(a: any): string {
   return a?.genre || a?.category || 'News';
 }
 
-export default function MagazineHero({ articles, isDarkMode }: { articles: any[]; isDarkMode?: boolean }) {
+function deckOf(a: any): string {
+  const text = (a?.content || a?.summary || '').trim();
+  if (!text) return '';
+  return text.length > 130 ? text.slice(0, 130).trim() + '...' : text;
+}
+
+function readingTimeOf(a: any): string {
+  const words = (a?.content || '').split(' ').length;
+  return Math.max(1, Math.ceil(words / 200)) + ' min read';
+}
+
+function toStory(a: any) {
+  return {
+    $id: a.$id,
+    slug: a.slug,
+    title: a.title,
+    deck: deckOf(a),
+    imageUrl: imgOf(a),
+    genre: genreOf(a),
+    authorName: a.submitterName || a.authorName || 'Staff Reporter',
+    authorId: a.submitterId,
+    publishedAt: a.publishedAt,
+    readingTime: readingTimeOf(a),
+  };
+}
+
+export default function MagazineHero({ articles }: { articles: any[]; isDarkMode?: boolean }) {
   const featured = articles.filter((a: any) => a.isFeatured);
   const pool = featured.length >= 4 ? featured : [...featured, ...articles.filter((a: any) => !a.isFeatured)];
   const main = pool[0];
   const side = pool.slice(1, 3);
+
   if (!main) return null;
 
-  const mainImg = imgOf(main);
-  const mainAuthor = main.submitterName || main.authorName || 'Staff Reporter';
-  const cardBg = isDarkMode ? '#1e1e1e' : '#ffffff';
-  const textCol = isDarkMode ? '#fff' : '#1a1a1a';
-  const subCol = isDarkMode ? '#999' : '#888';
-
   return (
-    <div style={{ marginBottom: '28px' }}>
-      <style>{`
-        .mag-hero-grid { display: grid; grid-template-columns: 1.9fr 1fr; gap: 16px; }
-        .mag-hero-main { height: 440px; }
-        .mag-side-img { height: 130px; }
-        @media (max-width: 900px) {
-          .mag-hero-grid { grid-template-columns: 1fr; }
-          .mag-hero-main { height: 300px; }
-        }
-        .mag-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
-        .mag-card:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.22) !important; }
-        .mag-card img { transition: transform 0.5s ease; }
-        .mag-card:hover img { transform: scale(1.05); }
-      `}</style>
-
-      <div className="mag-hero-grid">
-        <Link href={'/article/' + (main.slug || main.$id)} style={{ textDecoration: 'none' }}>
-          <div className="mag-card mag-hero-main" style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#1a1a1a', boxShadow: '0 6px 24px rgba(0,0,0,0.15)' }}>
-            {mainImg ? (
-              <img loading="lazy" src={mainImg} alt={main.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            ) : (
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #c41e3a 0%, #7a1020 100%)' }} />
-            )}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.85) 100%)' }} />
-            <div style={{ position: 'absolute', top: '16px', left: '16px', display: 'flex', gap: '8px' }}>
-              <span style={{ backgroundColor: '#c41e3a', color: '#fff', padding: '5px 13px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{genreOf(main)}</span>
-              {main.isBreaking && <span style={{ backgroundColor: '#f5c518', color: '#1a1a1a', padding: '5px 13px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>Breaking</span>}
-            </div>
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 26px 22px' }}>
-              <h2 style={{ fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: '0 0 10px', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>{main.title}</h2>
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', margin: 0, fontWeight: 600 }}>By {mainAuthor}</p>
-            </div>
-          </div>
-        </Link>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {side.map((a: any, i: number) => {
-            const img = imgOf(a);
-            const author = a.submitterName || a.authorName || 'Staff Reporter';
-            return (
-              <Link key={a.$id} href={'/article/' + (a.slug || a.$id)} style={{ textDecoration: 'none' }}>
-                <div className='mag-card' style={{ borderRadius: '12px', overflow: 'hidden', backgroundColor: cardBg, boxShadow: '0 3px 14px rgba(0,0,0,0.1)' }}>
-                  <div className='mag-side-img' style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
-                    {img ? (
-                      <img loading='lazy' src={img} alt={a.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    ) : (
-                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #c41e3a, #1a1a1a)' }} />
-                    )}
-                    <span style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#c41e3a', color: '#fff', padding: '3px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>{genreOf(a)}</span>
-                  </div>
-                  <div style={{ padding: '12px 14px' }}>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: textCol, lineHeight: 1.35, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.title}</h3>
-                    <p style={{ fontSize: '11px', color: subCol, margin: '6px 0 0', fontWeight: 600 }}>By {author}</p>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+    <div style={{ marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.9fr 1fr', gap: '28px' }} className="mag-hero-responsive">
+        <StoryCard story={toStory(main)} variant="hero" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+          {side.map((a: any) => (
+            <StoryCard key={a.$id} story={toStory(a)} variant="secondary" />
+          ))}
         </div>
       </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .mag-hero-responsive { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }

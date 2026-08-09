@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import Byline from './Byline';
@@ -28,7 +28,7 @@ export default function StoryCard({
 
   if (variant === 'hero') {
     return (
-      <Link href={href} style={{ textDecoration: 'none' }}>
+      <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div>
           <div style={{ position: 'relative', height: '340px', borderRadius: '4px', overflow: 'hidden', background: 'var(--color-surface)' }}>
             {story.imageUrl && (
@@ -38,7 +38,7 @@ export default function StoryCard({
           {story.genre && <div style={{ marginTop: '14px' }}><GenreTag genre={story.genre} /></div>}
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-h1)', lineHeight: 1.2, margin: '8px 0', color: 'var(--color-text)' }}>{story.title}</h1>
           {story.deck && <p style={{ fontFamily: 'var(--font-sans)', fontSize: '15px', color: 'var(--color-text-muted)', lineHeight: 1.5, margin: '0 0 10px' }}>{story.deck}</p>}
-          <Byline author={story.authorName || 'Staff Reporter'} authorId={story.authorId} date={story.publishedAt} readingTime={story.readingTime} />
+          <Byline author={story.authorName || 'Staff Reporter'} date={story.publishedAt} readingTime={story.readingTime} />
         </div>
       </Link>
     );
@@ -46,7 +46,7 @@ export default function StoryCard({
 
   if (variant === 'secondary') {
     return (
-      <Link href={href} style={{ textDecoration: 'none' }}>
+      <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div>
           <div style={{ position: 'relative', height: '150px', borderRadius: '4px', overflow: 'hidden', background: 'var(--color-surface)' }}>
             {story.imageUrl && (
@@ -63,7 +63,7 @@ export default function StoryCard({
 
   if (variant === 'compact') {
     return (
-      <Link href={href} style={{ textDecoration: 'none' }}>
+      <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
           <div style={{ width: '90px', height: '68px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: 'var(--color-surface)' }}>
             {story.imageUrl && (
@@ -82,7 +82,7 @@ export default function StoryCard({
 
   // variant === 'list'
   return (
-    <Link href={href} style={{ textDecoration: 'none' }}>
+    <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
       <div style={{ display: 'flex', gap: '14px', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ width: '70px', height: '56px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: 'var(--color-surface)' }}>
           {story.imageUrl && (
