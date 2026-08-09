@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import AuthProvider from '@/components/AuthProvider';
+import { Noto_Serif, Noto_Serif_Devanagari, Inter, Noto_Sans_Devanagari } from 'next/font/google';
+
+const notoSerif = Noto_Serif({ subsets: ['latin'], variable: '--font-noto-serif', display: 'swap' });
+const notoSerifDev = Noto_Serif_Devanagari({ subsets: ['devanagari'], weight: ['400', '600', '700'], variable: '--font-noto-serif-dev', display: 'swap' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const notoSansDev = Noto_Sans_Devanagari({ subsets: ['devanagari'], weight: ['400', '500', '700'], variable: '--font-noto-sans-dev', display: 'swap' });
 
 const SITE = 'https://khabardarjeeling.in';
 
@@ -37,7 +43,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={notoSerif.variable + " " + notoSerifDev.variable + " " + inter.variable + " " + notoSansDev.variable}>
 
       <head>
         <script
