@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
@@ -951,8 +951,8 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
-            {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget isDarkMode={isDarkMode} />}
-            {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget />}
+            {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget />}
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
           {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><TopTen articles={articles} isDarkMode={isDarkMode} /></div>}
           {!searchQuery && selectedCategory === 'All' && <ContestPreview articles={articles} isDarkMode={isDarkMode} />}
@@ -973,8 +973,8 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
-            {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget isDarkMode={isDarkMode} />}
-            {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget />}
+            {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget />}
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
