@@ -102,10 +102,23 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     articleSection: a.genre || a.category || 'News',
   } : null;
 
+  const breadcrumbLd = a ? {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE },
+      { '@type': 'ListItem', position: 2, name: a.genre || a.category || 'News', item: SITE + '/genre/' + (a.genre || a.category || 'news').toLowerCase().replace(/\s+/g, '-') },
+      { '@type': 'ListItem', position: 3, name: (a.title || '').slice(0, 110) },
+    ],
+  } : null;
+
   return (
     <>
       {jsonLd && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      )}
+      {breadcrumbLd && (
+        <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       )}
       <ArticleClient initialArticle={a} />
     </>
