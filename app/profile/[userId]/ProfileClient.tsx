@@ -338,14 +338,14 @@ const ACCENT_COLORS: Record<string, string> = {
             const img = getImageUrl(article);
             return (
               <Link key={article.$id} href={'/article/' + (article.slug || article.$id)} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <div className="profile-grid-card" style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                <div className="profile-grid-card" style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--color-border)', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                   <div style={{ height: '120px', background: img ? '#e5e5e5' : 'linear-gradient(135deg, #c41e3a 0%, #a01830 60%, #f5c518 140%)', position: 'relative' }}>
                     {img ? <img src={img} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', textAlign: 'center' }}><span style={{ color: '#fff', fontSize: '12px', fontWeight: 700, opacity: 0.9 }}>{article.title}</span></div>}
-                    <span style={{ position: 'absolute', top: '8px', left: '8px', background: '#c41e3a', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>{article.category}</span>
+                    <span style={{ position: 'absolute', top: '8px', left: '8px', background: 'var(--color-primary)', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>{article.category}</span>
                   </div>
                   <div style={{ padding: '10px 12px' }}>
-                    <h3 style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
-                    <p style={{ margin: 0, fontSize: '10px', color: '#999' }}>{(article.views || 0).toLocaleString()} views</p>
+                    <h3 style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-serif)', color: 'var(--color-text)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
+                    <p style={{ margin: 0, fontSize: '10px', color: 'var(--color-text-muted)' }}>{(article.views || 0).toLocaleString()} views</p>
                   </div>
                 </div>
               </Link>
