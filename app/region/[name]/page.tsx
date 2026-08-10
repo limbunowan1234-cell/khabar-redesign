@@ -4,6 +4,7 @@ import StoryCard from '@/components/StoryCard';
 import SiteFooter from '@/components/SiteFooter';
 
 const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
+const IMAGE_ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';
@@ -34,7 +35,7 @@ function unslugify(slug: string): string | null {
 function imgOf(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';
   if (!a?.imageFileId) return '';
-  return ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + a.imageFileId + '/preview?width=600&quality=70&project=' + PROJECT;
+  return IMAGE_ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + a.imageFileId + '/preview?width=600&quality=70&project=' + PROJECT;
 }
 
 function toStory(a: any) {
@@ -56,7 +57,7 @@ async function fetchRegionArticles(region: string): Promise<any[]> {
     const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'locationDistrict', values: [region] }));
     const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }));
     const q3 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-    const q4 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [30] }));
+    const q4 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] }));
     const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q1 + '&queries[]=' + q2 + '&queries[]=' + q3 + '&queries[]=' + q4, {
       headers: { 'X-Appwrite-Project': PROJECT },
       next: { revalidate: 300 },
@@ -67,6 +68,15 @@ async function fetchRegionArticles(region: string): Promise<any[]> {
   } catch {
     return [];
   }
+}
+
+function selectHeroAndPinned(articles: any[]) {
+  const featuredCandidates = articles.filter((a: any) => a.isRegionFeatured);
+  const hero = featuredCandidates.length > 0 ? featuredCandidates[0] : articles[0];
+  const pinned = articles.filter((a: any) => a.isRegionPinned && a.$id !== hero?.$id).slice(0, 3);
+  const usedIds = new Set([hero?.$id, ...pinned.map((a: any) => a.$id)].filter(Boolean));
+  const rest = articles.filter((a: any) => !usedIds.has(a.$id));
+  return { hero, pinned, rest };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ name: string }> }): Promise<Metadata> {
@@ -102,8 +112,7 @@ export default async function RegionPage({ params }: { params: Promise<{ name: s
   }
 
   const articles = await fetchRegionArticles(region);
-  const featured = articles[0];
-  const rest = articles.slice(1);
+  const { hero, pinned, rest } = selectHeroAndPinned(articles);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-sans)' }}>
@@ -124,17 +133,30 @@ export default async function RegionPage({ params }: { params: Promise<{ name: s
           </div>
         ) : (
           <>
-            {featured && (
-              <div style={{ marginBottom: '40px', maxWidth: '700px' }}>
-                <StoryCard story={toStory(featured)} variant="hero" />
+            {hero && (
+              <div style={{ marginBottom: '32px', maxWidth: '700px' }}>
+                <StoryCard story={toStory(hero)} variant="hero" />
+              </div>
+            )}
+            {pinned.length > 0 && (
+              <div style={{ marginBottom: '40px' }}>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', fontWeight: 700, color: 'var(--color-text)', margin: '0 0 16px' }}>Editor's Picks</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px' }}>
+                  {pinned.map((a: any) => (
+                    <StoryCard key={a.$id} story={toStory(a)} variant="secondary" />
+                  ))}
+                </div>
               </div>
             )}
             {rest.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '28px' }}>
-                {rest.map((a: any) => (
-                  <StoryCard key={a.$id} story={toStory(a)} variant="secondary" />
-                ))}
-              </div>
+              <>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', fontWeight: 700, color: 'var(--color-text)', margin: '0 0 16px' }}>Latest Stories</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '28px' }}>
+                  {rest.map((a: any) => (
+                    <StoryCard key={a.$id} story={toStory(a)} variant='secondary' />
+                  ))}
+                </div>
+              </>
             )}
           </>
         )}
