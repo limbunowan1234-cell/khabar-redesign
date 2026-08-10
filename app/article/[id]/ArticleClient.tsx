@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import AuthorBadge from '@/components/AuthorBadge';
 
 import { useEffect, useState } from 'react';
@@ -481,8 +481,8 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .act-btn:hover { opacity: 0.85; transform: scale(1.03); }
         .act-btn { transition: all 0.2s; }
-        .reply-btn { background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 4px; transition: background 0.2s; }
-        .del-btn { background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 700; color: #c41e3a; padding: 3px 8px; border-radius: 4px; transition: background 0.2s; }
+        .reply-btn { background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 700; padding: 8px 12px; border-radius: 4px; transition: background 0.2s; min-height: 24px; }
+        .del-btn { background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 700; color: #c41e3a; padding: 8px 12px; border-radius: 4px; transition: background 0.2s; min-height: 24px; }
         .del-btn:hover { background: rgba(196,30,58,0.1); }
         .reply-btn:hover { background: rgba(0,0,0,0.06); }
       `}</style>
