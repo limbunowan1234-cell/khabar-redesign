@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { computeContestRankings, rankToCertRank, RankedEntry } from '@/lib/certRanking';
@@ -605,6 +605,7 @@ function generateSlug(text: string): string {
                 </>
               )}
                 <Link href="/admin/bhasa-diwas"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#b91c1c', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Bhasa Diwas</button></Link>
+                <Link href="/admin/curate"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#0F4C5C', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Curate</button></Link>
           </div>
         </div>
       </div>
