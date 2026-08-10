@@ -44,11 +44,12 @@ function ImageBlock({ story, height }: { story: Story; height: string }) {
     <div style={{ position: 'relative', width: '100%', height, borderRadius: '4px', overflow: 'hidden', background: s.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <span style={{ fontSize: '28px', opacity: 0.55 }}>{s.icon}</span>
       {story.imageUrl && (
-        <img
+        <Image
           src={story.imageUrl}
           alt={story.title}
-          loading='lazy'
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          fill
+          sizes='(max-width: 768px) 100vw, 400px'
+          style={{ objectFit: 'cover' }}
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
       )}

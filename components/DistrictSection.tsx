@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useState } from 'react';
@@ -10,7 +10,7 @@ const DISTRICTS = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', '
 
 function imgOf(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';
-  if (!a?.imageFileId) return '';
+  if (!a?.imageFileId || ['Text', 'null', 'undefined', ''].includes(String(a.imageFileId))) return '';
   return ENDPOINT + '/storage/buckets/article-image/files/' + a.imageFileId + '/preview?width=300&quality=70&project=' + PROJECT;
 }
 
