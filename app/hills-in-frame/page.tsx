@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
 const PROJECT = 'khabardarjeeling';
@@ -80,7 +81,7 @@ export default async function HillsInFramePage() {
                 <div className='hif-card' style={{ borderRadius: '4px', overflow: 'hidden', background: 'white', padding: '10px 10px 0', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #eee' }}>
                   <div style={{ position: 'relative', height: '200px', background: '#e5e7eb', borderRadius: '2px', overflow: 'hidden' }}>
                     {photo.imageFileId && (
-                      <img src={getImageUrl(photo.imageFileId)} alt={photo.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <Image src={getImageUrl(photo.imageFileId)} alt={photo.title} fill sizes='(max-width: 768px) 50vw, 300px' style={{ objectFit: 'cover' }} />
                     )}
                   </div>
                   <div style={{ padding: '14px 6px 16px' }}>
