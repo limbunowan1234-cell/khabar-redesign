@@ -1,5 +1,6 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
+import { headers } from 'next/headers';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -45,6 +46,8 @@ async function fetchLatestArticles(): Promise<any[]> {
 
 export default async function Page() {
   const articles = await fetchLatestArticles();
+  const ua = (await headers()).get('user-agent') || '';
+  const initialIsMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(ua);
 
   const itemListJsonLd = articles.length > 0 ? {
     '@context': 'https://schema.org',
@@ -81,7 +84,7 @@ export default async function Page() {
         </ul>
       </div>
 
-      <HomeClient initialArticles={articles} />
+      <HomeClient initialArticles={articles} initialIsMobile={initialIsMobile} />
     </>
   );
 }

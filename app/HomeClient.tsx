@@ -569,7 +569,7 @@ function BreakingNewsSidebar({ articles, isDarkMode }: any) {
   );
 }
 
-export default function HomeClient({ initialArticles = [] }: { initialArticles?: any[] }) {
+export default function HomeClient({ initialArticles = [], initialIsMobile = false }: { initialArticles?: any[]; initialIsMobile?: boolean }) {
   const { initAuth, user, logOut } = useAuthStore();
   const [articles, setArticles] = useState<any[]>(initialArticles);
   const [totalSiteArticles, setTotalSiteArticles] = useState(0);
@@ -580,7 +580,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDistrict, setSelectedDistrict] = useState('All Regions');
   const [shown, setShown] = useState(12);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(initialIsMobile);
   const [activeNav, setActiveNav] = useState('home');
   const [showMenu, setShowMenu] = useState(false);
   const [showTopCreators, setShowTopCreators] = useState(false);
