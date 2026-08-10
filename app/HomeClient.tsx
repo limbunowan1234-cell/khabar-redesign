@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
@@ -956,14 +956,18 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
           {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><TopTen articles={articles} isDarkMode={isDarkMode} /></div>}
           {!searchQuery && selectedCategory === 'All' && <ContestPreview articles={articles} isDarkMode={isDarkMode} />}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <span style={{ width: '4px', height: '16px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
-            <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Results' : 'Latest News'}</span>
-            <span style={{ marginLeft: 'auto', fontSize: '12px', color: isDarkMode ? '#999' : '#888' }}>{(selectedCategory === 'All' && !searchQuery) ? totalSiteArticles : filtered.length} stories</span>
-          </div>
-          {filtered.slice(0, shown).map((article, i) => (<div key={article.$id}><MobileCard article={article} isDarkMode={isDarkMode} index={i} />{(i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
-          {shown < filtered.length && (
-            <button onClick={() => setShown(s => s + 10)} style={{ width: '100%', padding: '14px', backgroundColor: '#c41e3a', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', marginTop: '8px' }}>Load More ({filtered.length - shown} more)</button>
+          {(selectedCategory !== 'All' || searchQuery) && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <span style={{ width: '4px', height: '16px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
+                <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Results' : 'Latest News'}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '12px', color: isDarkMode ? '#999' : '#888' }}>{(selectedCategory === 'All' && !searchQuery) ? totalSiteArticles : filtered.length} stories</span>
+              </div>
+              {filtered.slice(0, shown).map((article, i) => (<div key={article.$id}><MobileCard article={article} isDarkMode={isDarkMode} index={i} />{(i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
+              {shown < filtered.length && (
+                <button onClick={() => setShown(s => s + 10)} style={{ width: '100%', padding: '14px', backgroundColor: '#c41e3a', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', marginTop: '8px' }}>Load More ({filtered.length - shown} more)</button>
+              )}
+            </>
           )}
         </div>
       ) : (
@@ -977,21 +981,25 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
             {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget />}
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
-              <h2 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Search Results' : 'Latest News'}</h2>
-              <span style={{ marginLeft: 'auto', fontSize: '13px', color: isDarkMode ? '#999' : '#888' }}>{(selectedCategory === 'All' && !searchQuery) ? totalSiteArticles : filtered.length} articles</span>
-            </div>
-            {gridArticles.slice(0, shown).map((article, i) => (<div key={article.$id}><DesktopCard article={article} isDarkMode={isDarkMode} featured={false} />{(i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
-            {filtered.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '60px 20px', color: isDarkMode ? '#666' : '#ccc' }}>
-                <p style={{ fontSize: '18px', fontWeight: '600' }}>No articles found</p>
-              </div>
-            )}
-            {shown < gridArticles.length && (
-              <div style={{ textAlign: 'center', marginTop: '24px' }}>
-                <button onClick={() => setShown(s => s + 10)} style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '12px 32px', borderRadius: '30px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Load More ({gridArticles.length - shown} more)</button>
-              </div>
+            {(selectedCategory !== 'All' || searchQuery) && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
+                  <h2 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Search Results' : 'Latest News'}</h2>
+                  <span style={{ marginLeft: 'auto', fontSize: '13px', color: isDarkMode ? '#999' : '#888' }}>{(selectedCategory === 'All' && !searchQuery) ? totalSiteArticles : filtered.length} articles</span>
+                </div>
+                {gridArticles.slice(0, shown).map((article, i) => (<div key={article.$id}><DesktopCard article={article} isDarkMode={isDarkMode} featured={false} />{(i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
+                {filtered.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '60px 20px', color: isDarkMode ? '#666' : '#ccc' }}>
+                    <p style={{ fontSize: '18px', fontWeight: '600' }}>No articles found</p>
+                  </div>
+                )}
+                {shown < gridArticles.length && (
+                  <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                    <button onClick={() => setShown(s => s + 10)} style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '12px 32px', borderRadius: '30px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Load More ({gridArticles.length - shown} more)</button>
+                  </div>
+                )}
+              </>
             )}
           </main>
           <aside style={{ position: 'sticky', top: '90px', alignSelf: 'start', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto', minWidth: 0, overflowX: 'hidden' }}>
