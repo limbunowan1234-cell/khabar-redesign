@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import Byline from './Byline';
 import GenreTag from './GenreTag';
@@ -112,8 +113,11 @@ export default function StoryCard({
   return (
     <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
       <div style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '16px 0', minHeight: '108px', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ width: '96px', height: '76px', flexShrink: 0 }}>
-          <ImageBlock story={story} height="76px" />
+        <div style={{ position: 'relative', width: '96px', height: '76px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: styleFor(story.genre).gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '20px', opacity: 0.55, position: 'absolute' }}>{styleFor(story.genre).icon}</span>
+          {story.imageUrl && (
+            <Image src={story.imageUrl} alt={story.title} fill sizes='96px' style={{ objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          )}
         </div>
         <div>
           <h3 style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '16px', lineHeight: 1.35, margin: '0 0 6px', color: 'var(--color-text)' }}>{story.title}</h3>
