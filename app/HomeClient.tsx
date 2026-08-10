@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
@@ -608,7 +608,7 @@ export default function HomeClient({ initialArticles = [] }: { initialArticles?:
           ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
           encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
           '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
+          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [300] })),
           { headers: H }
         );
         if (res.ok) {
