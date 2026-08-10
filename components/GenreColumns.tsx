@@ -75,7 +75,7 @@ export default function GenreColumns({ articles, isDarkMode, onSelectGenre }: {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderBottom: '3px solid ' + color }}>
                 <span style={{ width: '5px', height: '18px', backgroundColor: color, borderRadius: '3px' }} />
                 <h2 style={{ fontSize: '14px', fontWeight: 900, color: textCol, textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>{genre}</h2>
-                <button onClick={() => onSelectGenre(genre)} style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: 800, color: color, background: 'none', border: 'none', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.4px', fontFamily: 'inherit' }}>View All &rarr;</button>
+                <Link href={'/genre/' + genre.toLowerCase().replace(/\s+/g, '-')} style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: 800, color: color, textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.4px' }}>View All &rarr;</Link>
               </div>
 
               <Link href={'/article/' + (lead.slug || lead.$id)} style={{ textDecoration: 'none' }}>

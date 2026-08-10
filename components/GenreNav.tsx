@@ -1,7 +1,9 @@
-﻿'use client';
+'use client';
+import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 
 const NAV_GENRES = ['All', 'Voice of People', 'Politics', 'Tourism', 'Poetry', 'Editorial', 'Business'];
+function slugify(name: string): string { return name.toLowerCase().replace(/\s+/g, '-'); }
 const MORE_GENRES = ['Culture', 'Health', 'Education', 'Technology', 'Sports'];
 const DISTRICTS = ['All Regions', 'Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim'];
 
@@ -66,14 +68,14 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
       <div className="genre-nav-outer" style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', padding: '0 12px' }}>
         <div className="genre-nav-scroll" style={{ flex: '0 1 auto', minWidth: 0 }}>
           {NAV_GENRES.map((g) => (
-            <button
+            <Link
               key={g}
+              href={g === 'All' ? '/' : '/genre/' + slugify(g)}
               className={'genre-link' + (selectedGenre === g ? ' active' : '')}
-              onClick={() => onSelectGenre(g)}
-              style={{ color: selectedGenre === g ? '#c41e3a' : textColor }}
+              style={{ color: selectedGenre === g ? '#c41e3a' : textColor, textDecoration: 'none' }}
             >
               {g === 'All' ? 'Home' : g}
-            </button>
+            </Link>
           ))}
 
         </div>
@@ -89,18 +91,21 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
             {showMore && (
               <div style={{ ...dropdownStyle, right: 'auto', left: 0 }}>
                 {MORE_GENRES.map((g) => (
-                  <button
+                  <Link
                     key={g}
-                    className="region-item"
-                    onClick={() => { onSelectGenre(g); setShowMore(false); }}
+                    href={'/genre/' + slugify(g)}
+                    className='region-item'
+                    onClick={() => setShowMore(false)}
                     style={{
+                      display: 'block',
                       color: selectedGenre === g ? '#c41e3a' : (isDarkMode ? '#ddd' : '#333'),
                       backgroundColor: selectedGenre === g ? (isDarkMode ? '#2a1518' : '#fdf0f2') : 'transparent',
-                      fontWeight: selectedGenre === g ? 800 : 600
+                      fontWeight: selectedGenre === g ? 800 : 600,
+                      textDecoration: 'none'
                     }}
                   >
                     {g}
-                  </button>
+                  </Link>
                 ))}
               </div>
             )}
@@ -128,18 +133,21 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
           {showRegions && (
             <div style={dropdownStyle}>
               {DISTRICTS.map((d) => (
-                <button
+                <Link
                   key={d}
-                  className="region-item"
-                  onClick={() => { onSelectDistrict(d); setShowRegions(false); }}
+                  href={d === 'All Regions' ? '/' : '/region/' + slugify(d)}
+                  className='region-item'
+                  onClick={() => setShowRegions(false)}
                   style={{
+                    display: 'block',
                     color: selectedDistrict === d ? '#c41e3a' : (isDarkMode ? '#ddd' : '#333'),
                     backgroundColor: selectedDistrict === d ? (isDarkMode ? '#2a1518' : '#fdf0f2') : 'transparent',
-                    fontWeight: selectedDistrict === d ? 800 : 600
+                    fontWeight: selectedDistrict === d ? 800 : 600,
+                    textDecoration: 'none'
                   }}
                 >
                   {d}
-                </button>
+                </Link>
               ))}
             </div>
           )}

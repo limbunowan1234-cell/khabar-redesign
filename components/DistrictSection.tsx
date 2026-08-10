@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import StoryCard from './StoryCard';
 
@@ -35,7 +36,10 @@ export default function DistrictSection({ articles, defaultDistrict }: { article
   if (articles.length === 0) return null;
   return (
     <div style={{ marginBottom: '32px', background: 'var(--color-surface)', borderRadius: '8px', padding: '24px' }}>
-      <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 700, color: 'var(--color-text)', margin: '0 0 18px' }}>Regions</h2>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '18px' }}>
+        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>Regions</h2>
+        <Link href={'/region/' + active.toLowerCase().replace(/\s+/g, '-')} style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600 }}>View all {active} &rarr;</Link>
+      </div>
       <div style={{ display: 'flex', gap: '24px', marginBottom: '22px', borderBottom: '2px solid var(--color-border)', overflowX: 'auto' as const, flexWrap: 'nowrap' as const }}>
         {DISTRICTS.map((d) => (
           <button
