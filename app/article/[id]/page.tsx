@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import ArticleClient from './ArticleClient';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
@@ -88,7 +88,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
     headline: (a.title || '').slice(0, 110),
-    image: [imgUrl(a)],
+    image: {
+      '@type': 'ImageObject',
+      url: imgUrl(a),
+      width: 1200,
+      height: 630,
+      caption: a.imageCaption || (a.title || '').slice(0, 110),
+    },
     datePublished: a.publishedAt || a.$createdAt,
     dateModified: a.$updatedAt || a.publishedAt || a.$createdAt,
     author: [{ '@type': 'Person', name: a.submitterName || a.authorName || 'Khabar Darjeeling' }],
