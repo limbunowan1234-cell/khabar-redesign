@@ -26,6 +26,7 @@ export default function CuratePage() {
   const [selected, setSelected] = useState('Politics');
   const [articles, setArticles] = useState<any[]>([]);
   const [busyId, setBusyId] = useState('');
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     async function checkAuth() {
@@ -124,6 +125,30 @@ export default function CuratePage() {
     }
   }
 
+  async function syncAuthorNames() {
+    setSyncing(true);
+    try {
+      const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
+      const jwtData = await jwtRes.json();
+      const res = await fetch('/api/admin/sync-author-names', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jwt: jwtData.jwt }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Synced! Updated ' + data.updatedCount + ' of ' + data.totalArticles + ' articles.');
+        await loadArticles();
+      } else {
+        alert('Sync failed: ' + (data.error || 'unknown error'));
+      }
+    } catch {
+      alert('Sync failed - network error.');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   if (loading) return <div style={{ padding: '60px', textAlign: 'center', fontFamily: 'system-ui' }}>Loading...</div>;
   if (error) return <div style={{ padding: '60px', textAlign: 'center', fontFamily: 'system-ui', color: '#c41e3a' }}>{error}</div>;
 
@@ -136,7 +161,10 @@ export default function CuratePage() {
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Curate Genre / Region Pages</h1>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button onClick={syncAuthorNames} disabled={syncing} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#0F4C5C', color: 'white', cursor: 'pointer', fontWeight: 700, fontSize: '13px' }}>{syncing ? 'Syncing...' : 'Sync Author Names'}</button>
           <Link href="/admin" style={{ color: '#c41e3a', fontWeight: 700, textDecoration: 'none', fontSize: '14px' }}>Back to Admin</Link>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
