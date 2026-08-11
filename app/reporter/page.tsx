@@ -6,6 +6,7 @@ import Link from 'next/link';
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
+const dbId = 'Khabar_db';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 
 export default function ReporterPage() {
@@ -13,6 +14,8 @@ export default function ReporterPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [articlesLoading, setArticlesLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -30,6 +33,14 @@ export default function ReporterPage() {
           }
           setUser(data);
           setIsAdmin(userIsAdmin);
+          const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [data.$id] }));
+          const q2 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
+          const q3 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] }));
+          const artRes = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + q1 + '&queries[]=' + q2 + '&queries[]=' + q3, { headers: H, credentials: 'include' });
+          if (artRes.ok) {
+            const artData = await artRes.json();
+            setArticles(artData.documents || []);
+          }
         } else {
           setError('Please log in.');
         }
@@ -37,6 +48,7 @@ export default function ReporterPage() {
         setError('Failed to load.');
       }
       setLoading(false);
+      setArticlesLoading(false);
     }
     load();
   }, []);
@@ -48,7 +60,6 @@ export default function ReporterPage() {
       <Link href="/" style={{ color: '#c41e3a' }}>Back to Home</Link>
     </div>
   );
-
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ background: 'linear-gradient(135deg, #0F4C5C, #0a3540)', color: 'white', padding: '20px' }}>
@@ -64,12 +75,34 @@ export default function ReporterPage() {
         </div>
       </div>
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '30px 20px' }}>
-        <div style={{ background: 'white', borderRadius: '12px', padding: '40px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ background: 'white', borderRadius: '12px', padding: '40px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
           <div style={{ fontSize: '40px', marginBottom: '12px' }}>&#128221;</div>
           <h2 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 800, color: '#1a1a1a' }}>Manage Articles</h2>
           <p style={{ color: '#6b7280', marginBottom: '20px' }}>View, edit, and publish articles for Khabar Darjeeling.</p>
           <Link href='/admin' style={{ display: 'inline-block', background: '#0F4C5C', color: 'white', padding: '12px 28px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>Open Article Manager</Link>
           <Link href='/reporter/post' style={{ display: 'inline-block', background: '#c41e3a', color: 'white', padding: '12px 28px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, marginLeft: '12px' }}>Write New Article</Link>
+        </div>
+
+        <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h2 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 800, color: '#1a1a1a' }}>My Articles</h2>
+          {articlesLoading ? (
+            <p style={{ color: '#9ca3af', textAlign: 'center', padding: '20px' }}>Loading...</p>
+          ) : articles.length === 0 ? (
+            <p style={{ color: '#9ca3af', textAlign: 'center', padding: '20px' }}>You haven't published any articles yet.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {articles.map((a) => (
+                <div key={a.$id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', border: '1px solid #eee', borderRadius: '8px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{a.title}</div>
+                    <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>{a.genre || 'News'} &middot; {new Date(a.publishedAt || a.$createdAt).toLocaleDateString()}</div>
+                  </div>
+                  <Link href={'/reporter/edit/' + a.$id} style={{ background: '#f3f4f6', color: '#374151', padding: '8px 16px', borderRadius: '6px', textDecoration: 'none', fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>Edit</Link>
+                  <Link href={'/article/' + (a.slug || a.$id)} style={{ background: '#0F4C5C', color: 'white', padding: '8px 16px', borderRadius: '6px', textDecoration: 'none', fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>View</Link>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
