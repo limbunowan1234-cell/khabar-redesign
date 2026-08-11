@@ -606,6 +606,7 @@ function generateSlug(text: string): string {
               )}
                 <Link href="/admin/bhasa-diwas"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#b91c1c', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Bhasa Diwas</button></Link>
                 <Link href="/admin/curate"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#0F4C5C', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Curate</button></Link>
+                <Link href="/admin/news-digest"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#c41e3a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>News Digest</button></Link>
           </div>
         </div>
       </div>
