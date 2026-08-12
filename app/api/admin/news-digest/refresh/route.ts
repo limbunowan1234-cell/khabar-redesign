@@ -33,6 +33,7 @@ const SECTION_QUERIES: { title: string; query: string }[] = [
 ];
 
 const ITEMS_PER_SECTION = 3;
+const MAX_AGE_DAYS = 10;
 
 interface RssItem {
   title: string;
@@ -89,7 +90,14 @@ async function fetchSection(title: string, query: string) {
   });
   if (!res.ok) return { title, items: [] as ReturnType<typeof buildItem>[] };
   const xml = await res.text();
-  const rssItems = parseRssItems(xml).slice(0, ITEMS_PER_SECTION);
+  const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+  const rssItems = parseRssItems(xml)
+    .filter((item) => {
+      const parsed = item.pubDate ? new Date(item.pubDate).getTime() : NaN;
+      return !Number.isNaN(parsed) && parsed >= cutoff;
+    })
+    .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+    .slice(0, ITEMS_PER_SECTION);
   return { title, items: rssItems.map(buildItem) };
 }
 
