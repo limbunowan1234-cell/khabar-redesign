@@ -174,6 +174,44 @@ export default function NewsDigestAdminPage() {
   const [digest, setDigest] = useState<DigestSection[]>(DEFAULT_DIGEST);
   const [lastVerified, setLastVerified] = useState(DEFAULT_LAST_VERIFIED);
   const [isLive, setIsLive] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState('');
+
+  async function getAdminJwt(): Promise<string | null> {
+    const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
+    if (!jwtRes.ok) return null;
+    const { jwt } = await jwtRes.json();
+    return jwt;
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setRefreshError('');
+    try {
+      const jwt = await getAdminJwt();
+      if (!jwt) {
+        setRefreshError('Could not verify admin session.');
+        return;
+      }
+      const res = await fetch('/api/admin/news-digest/refresh', {
+        method: 'POST',
+        headers: { 'x-admin-jwt': jwt },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRefreshError(data.error || 'Refresh failed.');
+        return;
+      }
+      const parsed = JSON.parse(data.digest.sectionsJson);
+      setDigest(parsed);
+      setLastVerified(data.digest.lastVerified);
+      setIsLive(true);
+    } catch {
+      setRefreshError('Refresh failed. Try again.');
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   useEffect(() => {
     async function checkAuth() {
@@ -246,13 +284,37 @@ export default function NewsDigestAdminPage() {
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: isLive ? '#6fbf73' : '#D4AF37', display: 'inline-block' }} />
               {isLive ? 'Live — auto-refreshes daily' : 'Showing bundled fallback content'}
             </div>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              style={{
+                marginTop: '8px',
+                display: 'block',
+                marginLeft: 'auto',
+                backgroundColor: refreshing ? 'rgba(255,255,255,0.2)' : '#D4AF37',
+                color: refreshing ? '#dcecef' : '#0F4C5C',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: refreshing ? 'default' : 'pointer',
+              }}
+            >
+              {refreshing ? 'Refreshing…' : 'Refresh now (free)'}
+            </button>
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px 60px' }}>
+        {refreshError && (
+          <div style={{ padding: '10px 16px', backgroundColor: '#fdecea', border: '1px solid #f3b4ac', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', color: '#a3271e' }}>
+            {refreshError}
+          </div>
+        )}
         <div style={{ padding: '14px 18px', backgroundColor: '#fff7e8', border: '1px solid #f0dfb8', borderRadius: '10px', marginBottom: '28px', fontSize: '13px', color: '#6b5b2a' }}>
-          Curated regional news for editorial planning — Darjeeling, Kalimpong, Kurseong, Mirik, Siliguri and the wider Gorkha region. Dates shown are each story&apos;s original publish date. Items marked &ldquo;Recent&rdquo;, &ldquo;Watch&rdquo; or &ldquo;Developing&rdquo; don&apos;t have a precise public timestamp yet — verify before using as a dateline.
+          Curated regional news for editorial planning — Darjeeling, Kalimpong, Kurseong, Mirik, Siliguri and the wider Gorkha region. Dates shown are each story&apos;s original publish date. Items marked &ldquo;Recent&rdquo;, &ldquo;Watch&rdquo; or &ldquo;Developing&rdquo; don&apos;t have a precise public timestamp yet — verify before using as a dateline. Pulling fresh headlines via the free-RSS refresh replaces the curated summaries with raw wire headlines — re-editorialize before publishing.
         </div>
 
         {digest.map((section) => (
