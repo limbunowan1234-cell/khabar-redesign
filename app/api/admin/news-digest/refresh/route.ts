@@ -21,95 +21,152 @@ async function checkAdminJwt(jwt: string | null): Promise<boolean> {
   }
 }
 
-// Sections mirror app/admin/news-digest/page.tsx. Each query hits Google
-// News' free public RSS search endpoint — no API key, no LLM call.
+const TAVILY_ENDPOINT = 'https://api.tavily.com/search';
+const TAVILY_TIMEOUT_MS = 30000;
+
+// Sections mirror app/admin/news-digest/page.tsx.
 const SECTION_QUERIES: { title: string; query: string }[] = [
-  { title: 'Weather & Landslides', query: 'Darjeeling landslide OR rain OR weather' },
-  { title: 'Governance & Politics', query: 'GTA Darjeeling OR Gorkhaland politics' },
-  { title: 'Civic & Infrastructure', query: 'Darjeeling hospital OR road OR infrastructure' },
+  { title: 'Weather & Landslides', query: 'Darjeeling landslide rain weather monsoon' },
+  { title: 'Governance & Politics', query: 'GTA Gorkhaland Darjeeling politics civic administration' },
+  { title: 'Civic & Infrastructure', query: 'Darjeeling hospital road infrastructure project' },
   { title: 'Tourism', query: 'Darjeeling tourism' },
-  { title: 'Tea & Economy', query: 'Darjeeling tea garden' },
-  { title: 'Sports', query: 'Darjeeling football OR sports' },
+  { title: 'Tea & Economy', query: 'Darjeeling tea garden economy' },
+  { title: 'Sports', query: 'Darjeeling football sports' },
 ];
 
 const ITEMS_PER_SECTION = 3;
 const MAX_AGE_DAYS = 10;
+// Tavily's own `days` filter isn't strictly enforced server-side (we saw a
+// 3-week-old result come back with days:10), so freshness is re-checked
+// client-side below. This score floor just drops the weakest matches.
+const MIN_SCORE = 0.25;
+const FETCH_PER_SECTION = 6; // over-fetch so filtering still leaves ITEMS_PER_SECTION
 
-interface RssItem {
+type Badge = 'dated' | 'watch';
+
+interface DigestItem {
+  headline: string;
+  summary: string;
+  source: string;
+  dateLabel: string;
+  badge: Badge;
+}
+
+interface DigestSection {
   title: string;
-  pubDate: string;
+  items: DigestItem[];
 }
 
-function decodeXmlEntities(text: string): string {
-  return text
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, '&');
+interface TavilyResult {
+  title: string;
+  url: string;
+  content: string;
+  score: number;
+  published_date: string | null;
 }
 
-function stripCdata(text: string): string {
-  const match = text.match(/^<!\[CDATA\[([\s\S]*?)\]\]>$/);
-  return decodeXmlEntities((match ? match[1] : text).trim());
+// Tavily's `content` field concatenates several extracted chunks joined by
+// "[...]"; the first chunk is almost always the clean lead paragraph, with
+// later chunks being nav/related-links noise pulled from elsewhere on the
+// page. Take just the first chunk and tidy whitespace.
+function cleanSummary(content: string): string {
+  const firstChunk = (content.split('[...]')[0] || '').trim();
+  const collapsed = firstChunk.replace(/\s*\n+\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  const MAX_LEN = 400;
+  if (collapsed.length <= MAX_LEN) return collapsed;
+  const truncated = collapsed.slice(0, MAX_LEN);
+  const lastPeriod = truncated.lastIndexOf('. ');
+  return lastPeriod > 100 ? truncated.slice(0, lastPeriod + 1) : truncated.trim() + '…';
 }
 
-function extractTag(block: string, tag: string): string {
-  const match = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i'));
-  return match ? stripCdata(match[1]) : '';
-}
-
-function parseRssItems(xml: string): RssItem[] {
-  const items: RssItem[] = [];
-  const itemBlocks = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
-  for (const block of itemBlocks) {
-    const title = extractTag(block, 'title');
-    const pubDate = extractTag(block, 'pubDate');
-    if (title) items.push({ title, pubDate });
+function sourceFromUrl(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return 'Unknown source';
   }
-  return items;
 }
 
-function splitHeadlineAndSource(rawTitle: string): { headline: string; source: string } {
-  const idx = rawTitle.lastIndexOf(' - ');
-  if (idx === -1) return { headline: rawTitle, source: 'Google News' };
-  return { headline: rawTitle.slice(0, idx).trim(), source: rawTitle.slice(idx + 3).trim() };
-}
-
-function formatDateLabel(pubDate: string): string {
-  const parsed = pubDate ? new Date(pubDate) : null;
-  if (!parsed || Number.isNaN(parsed.getTime())) return 'Recent';
-  return parsed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-async function fetchSection(title: string, query: string) {
-  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en`;
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KhabarDigestBot/1.0)' },
-    cache: 'no-store',
-  });
-  if (!res.ok) return { title, items: [] as ReturnType<typeof buildItem>[] };
-  const xml = await res.text();
-  const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
-  const rssItems = parseRssItems(xml)
-    .filter((item) => {
-      const parsed = item.pubDate ? new Date(item.pubDate).getTime() : NaN;
-      return !Number.isNaN(parsed) && parsed >= cutoff;
-    })
-    .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
-    .slice(0, ITEMS_PER_SECTION);
-  return { title, items: rssItems.map(buildItem) };
-}
-
-function buildItem(raw: RssItem) {
-  const { headline, source } = splitHeadlineAndSource(raw.title);
+function formatDateLabel(dateStr: string | null): { dateLabel: string; badge: Badge; timestamp: number | null } {
+  if (!dateStr) return { dateLabel: 'Recent', badge: 'watch', timestamp: null };
+  const parsed = new Date(dateStr);
+  if (Number.isNaN(parsed.getTime())) return { dateLabel: 'Recent', badge: 'watch', timestamp: null };
   return {
-    headline,
-    summary: headline,
-    source,
-    dateLabel: formatDateLabel(raw.pubDate),
-    badge: 'dated' as const,
+    dateLabel: parsed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+    badge: 'dated',
+    timestamp: parsed.getTime(),
   };
+}
+
+function toDigestItem(raw: TavilyResult): (DigestItem & { timestamp: number | null }) | null {
+  if (!raw.title?.trim() || !raw.content?.trim()) return null;
+  const summary = cleanSummary(raw.content);
+  if (!summary) return null;
+  const { dateLabel, badge, timestamp } = formatDateLabel(raw.published_date);
+
+  // A result WITH a specific date that's stale gets dropped (this is
+  // supposed to be the latest news). A result with no date at all is kept
+  // and treated as an ongoing/evergreen "watch" item, same as before.
+  if (timestamp !== null) {
+    const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+    if (timestamp < cutoff) return null;
+  }
+
+  return {
+    headline: raw.title.trim(),
+    summary,
+    source: sourceFromUrl(raw.url),
+    dateLabel,
+    badge,
+    timestamp,
+  };
+}
+
+async function fetchSection(title: string, query: string, apiKey: string): Promise<DigestSection> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TAVILY_TIMEOUT_MS);
+  try {
+    const res = await fetch(TAVILY_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query,
+        topic: 'news',
+        search_depth: 'advanced',
+        days: MAX_AGE_DAYS,
+        max_results: FETCH_PER_SECTION,
+        include_raw_content: false,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error(`news-digest: Tavily call failed for "${title}" (${res.status}): ${body.slice(0, 500)}`);
+      return { title, items: [] };
+    }
+
+    const data = await res.json();
+    const results: TavilyResult[] = Array.isArray(data?.results) ? data.results : [];
+
+    const items = results
+      .filter((r) => (r.score ?? 0) >= MIN_SCORE)
+      .map(toDigestItem)
+      .filter((item): item is DigestItem & { timestamp: number | null } => item !== null)
+      .sort((a, b) => (b.timestamp ?? -Infinity) - (a.timestamp ?? -Infinity))
+      .slice(0, ITEMS_PER_SECTION)
+      .map(({ timestamp: _timestamp, ...item }) => item);
+
+    return { title, items };
+  } catch (error) {
+    console.error(`news-digest: error fetching section "${title}":`, error);
+    return { title, items: [] };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -119,18 +176,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 
+  const apiKey = process.env.TAVILY_API_KEY;
+  if (!apiKey) {
+    console.error('news-digest refresh error: TAVILY_API_KEY is not set');
+    return NextResponse.json({ error: 'Server is missing TAVILY_API_KEY.' }, { status: 500 });
+  }
+
   try {
     const results = await Promise.allSettled(
-      SECTION_QUERIES.map(({ title, query }) => fetchSection(title, query))
+      SECTION_QUERIES.map(({ title, query }) => fetchSection(title, query, apiKey))
     );
 
     const sections = results
-      .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof fetchSection>>> => r.status === 'fulfilled')
+      .filter((r): r is PromiseFulfilledResult<DigestSection> => r.status === 'fulfilled')
       .map((r) => r.value)
       .filter((section) => section.items.length > 0);
 
     if (sections.length === 0) {
-      return NextResponse.json({ error: 'Could not fetch any live news right now. Try again shortly.' }, { status: 502 });
+      return NextResponse.json({ error: 'Tavily could not find any live news right now. Try again shortly.' }, { status: 502 });
     }
 
     const lastVerified = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
