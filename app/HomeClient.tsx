@@ -42,9 +42,12 @@ function getImageUrl(article: any): string {
   return ENDPOINT + '/storage/buckets/article-image/files/' + article.imageFileId + '/view?project=' + projectId;
 }
 
-function getThumbUrl(article: any, width: number): string {
+function getThumbUrl(article: any, _width: number): string {
+  // Appwrite's own preview/transform can't decode AVIF/HEIC sources and
+  // silently returns a generic placeholder icon, so serve the original
+  // and let next/image's optimizer (which handles AVIF fine) resize it.
   if (!article.imageFileId) return '';
-  return ENDPOINT + '/storage/buckets/article-image/files/' + article.imageFileId + '/preview?width=' + width + '&quality=70&project=' + projectId;
+  return ENDPOINT + '/storage/buckets/article-image/files/' + article.imageFileId + '/view?project=' + projectId;
 }
 
 function truncateText(text: string, words: number): string {

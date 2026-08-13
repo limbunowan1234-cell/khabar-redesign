@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import imageCompression from 'browser-image-compression';
+
+async function toUploadableJpeg(file: File): Promise<File> {
+  // Appwrite's storage preview/transform endpoint can't read AVIF/HEIC
+  // source files (it silently falls back to a generic file-icon
+  // placeholder), so re-encode every upload to JPEG before it lands there.
+  const compressed = await imageCompression(file, { maxSizeMB: 8, maxWidthOrHeight: 2400, useWebWorker: true, fileType: 'image/jpeg', initialQuality: 0.85 });
+  return new File([compressed], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+}
 
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
@@ -82,9 +91,10 @@ export default function ReporterPostPage() {
     if (!file) return;
     setUploadingMain(true);
     try {
+      const jpeg = await toUploadableJpeg(file);
       const formData = new FormData();
       formData.append('fileId', 'unique()');
-      formData.append('file', file);
+      formData.append('file', jpeg);
       const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
@@ -101,9 +111,10 @@ export default function ReporterPostPage() {
     if (!file) return;
     setUploadingSupporting(true);
     try {
+      const jpeg = await toUploadableJpeg(file);
       const formData = new FormData();
       formData.append('fileId', 'unique()');
-      formData.append('file', file);
+      formData.append('file', jpeg);
       const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();

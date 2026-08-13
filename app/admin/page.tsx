@@ -653,7 +653,7 @@ function generateSlug(text: string): string {
                 pagedArticles.map((article) => (
                   <div key={article.$id} style={{ display: 'grid', gridTemplateColumns: '70px 1fr auto', gap: '16px', padding: '16px', borderBottom: '1px solid #f0f0f0', alignItems: 'center' }}>
                     {article.imageFileId ? (
-                      <img loading="lazy" src={getImageUrl(article.imageFileId).replace('/view?', '/preview?width=120&quality=60&')} alt="" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
+                      <img loading="lazy" src={getImageUrl(article.imageFileId)} alt="" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
                     ) : (
                       <div style={{ width: '60px', height: '60px', backgroundColor: '#e0e0e0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>IMG</div>
                     )}

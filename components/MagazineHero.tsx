@@ -9,7 +9,7 @@ const PROJECT = 'khabardarjeeling';
 function imgOf(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';
   if (!a?.imageFileId) return '';
-  return ENDPOINT + '/storage/buckets/article-image/files/' + a.imageFileId + '/preview?width=1200&quality=70&project=' + PROJECT;
+  return ENDPOINT + '/storage/buckets/article-image/files/' + a.imageFileId + '/view?project=' + PROJECT;
 }
 
 function genreOf(a: any): string {

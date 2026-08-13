@@ -37,7 +37,7 @@ function unslugify(slug: string): string | null {
 function imgOf(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';
   if (!a?.imageFileId) return '';
-  return IMAGE_ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + a.imageFileId + '/preview?width=600&quality=70&project=' + PROJECT;
+  return IMAGE_ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + a.imageFileId + '/view?project=' + PROJECT;
 }
 
 function toStory(a: any) {

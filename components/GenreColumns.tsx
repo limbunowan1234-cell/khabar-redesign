@@ -27,7 +27,7 @@ const GENRE_COLORS: { [key: string]: string } = {
 function imgOf(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';
   if (!a?.imageFileId || ['Text', 'null', 'undefined', ''].includes(String(a.imageFileId))) return '';
-  return ENDPOINT + '/storage/buckets/article-image/files/' + a.imageFileId + '/preview?width=600&quality=70&project=' + PROJECT;
+  return ENDPOINT + '/storage/buckets/article-image/files/' + a.imageFileId + '/view?project=' + PROJECT;
 }
 
 function genreOf(a: any): string {
