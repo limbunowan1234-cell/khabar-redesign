@@ -18,6 +18,7 @@ import LatestSection from '@/components/LatestSection';
 import DistrictSection from '@/components/DistrictSection';
 import HillsInFrameWidget from '@/components/HillsInFrameWidget';
 import SidebarTabs from '@/components/SidebarTabs';
+import ContestResultsBanner from '@/components/ContestResultsBanner';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
@@ -511,45 +512,15 @@ function TopTen({ articles, isDarkMode }: any) {
   );
 }
 
-function calcContestScore(a: any): number {
-  return (a.views || 0) * 0.5 + (a.likes || 0) * 1 + (a.comments || 0) * 3;
-}
-
-function ContestPreview({ articles, isDarkMode }: any) {
-  const contestArticles = [...articles].filter((a: any) => a.isContestEntry === true).sort((a, b) => calcContestScore(b) - calcContestScore(a)).slice(0, 5);
-  if (contestArticles.length === 0) return null;
+function ContestResultsSidebarLink({ isDarkMode }: any) {
   return (
-    <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Contest Top 5</h3>
-        <Link href="/contest" style={{ textDecoration: 'none', fontSize: '12px', color: '#c41e3a', fontWeight: '700' }}>See All</Link>
+    <Link href="/contest" style={{ textDecoration: 'none' }}>
+      <div style={{ background: 'linear-gradient(135deg, #c41e3a, #a01830)', borderRadius: '10px', padding: '20px', marginBottom: '20px', textAlign: 'center', cursor: 'pointer' }}>
+        <div style={{ color: 'white', fontWeight: '800', fontSize: '15px', marginBottom: '4px' }}>🏆 Story Contest 2026</div>
+        <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', marginBottom: '12px' }}>Results are out!</div>
+        <div style={{ backgroundColor: '#f5c518', color: '#1a1a1a', padding: '8px 16px', borderRadius: '20px', fontWeight: '700', fontSize: '13px', display: 'inline-block' }}>View Final Results</div>
       </div>
-      {contestArticles.map((a: any, i: number) => {
-        const imgUrl = getThumbUrl(a, 600);
-        const medal = i === 0 ? '1st' : i === 1 ? '2nd' : i === 2 ? '3rd' : '#' + (i + 1);
-        return (
-          <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div style={{ display: 'flex', gap: '10px', padding: '8px 0', borderBottom: i < contestArticles.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f5f5f5') : 'none', alignItems: 'center', cursor: 'pointer' }}>
-              <span style={{ fontSize: '12px', fontWeight: '800', flexShrink: 0, width: '24px', textAlign: 'center', color: '#c41e3a' }}>{medal}</span>
-              {imgUrl ? (
-                <img loading="lazy" src={imgUrl} alt={a.title} style={{ width: '52px', height: '40px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              ) : (
-                <div style={{ width: '52px', height: '40px', backgroundColor: '#c41e3a22', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#c41e3a' }}>{medal}</span>
-                </div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: '12px', fontWeight: '700', color: isDarkMode ? '#ddd' : '#1a1a1a', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.title}</p>
-                <p style={{ margin: '2px 0 0', fontSize: '11px', color: isDarkMode ? '#888' : '#aaa' }}>{a.submitterName || a.authorName || 'Author'}</p>
-              </div>
-            </div>
-          </Link>
-        );
-      })}
-      <Link href="/contest" style={{ textDecoration: 'none' }}>
-        <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#c41e3a', borderRadius: '8px', textAlign: 'center', color: 'white', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>View Full Leaderboard</div>
-      </Link>
-    </div>
+    </Link>
   );
 }
 
@@ -952,13 +923,13 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
         <div style={{ padding: '4px 16px 16px' }}>
           {/* HERO SECTION ON MOBILE */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget />}
             {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget />}
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
           {!searchQuery && selectedCategory === 'All' && <div style={{ marginBottom: '16px' }}><TopTen articles={articles} isDarkMode={isDarkMode} /></div>}
-          {!searchQuery && selectedCategory === 'All' && <ContestPreview articles={articles} isDarkMode={isDarkMode} />}
           {(selectedCategory !== 'All' || searchQuery) && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -978,6 +949,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
           <main>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget />}
@@ -1011,14 +983,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
               <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
             <SidebarTabs articles={articles} isDarkMode={isDarkMode} topTen={<TopTen articles={articles} isDarkMode={isDarkMode} />} breaking={<BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />} />
-            <ContestPreview articles={articles} isDarkMode={isDarkMode} />
-            <Link href="/contest" style={{ textDecoration: 'none' }}>
-              <div style={{ background: 'linear-gradient(135deg, #c41e3a, #a01830)', borderRadius: '10px', padding: '20px', marginBottom: '20px', textAlign: 'center', cursor: 'pointer' }}>
-                <div style={{ color: 'white', fontWeight: '800', fontSize: '15px', marginBottom: '4px' }}>Story Contest 2026</div>
-                <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', marginBottom: '12px' }}>Rs.10,000 Prize Pool</div>
-                <div style={{ backgroundColor: '#f5c518', color: '#1a1a1a', padding: '8px 16px', borderRadius: '20px', fontWeight: '700', fontSize: '13px', display: 'inline-block' }}>Enter Now</div>
-              </div>
-            </Link>
+            <ContestResultsSidebarLink isDarkMode={isDarkMode} />
             <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ textDecoration: 'none' }}>
               <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                 <div style={{ flex: 1 }}>
