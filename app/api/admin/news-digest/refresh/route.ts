@@ -87,14 +87,31 @@ function sourceFromUrl(url: string): string {
   }
 }
 
+// Relative labels ("2 hours ago") are computed once, at refresh time, and
+// stored as a plain string — so they're accurate as of the refresh and
+// will read a little behind by the time of the *next* refresh, same as
+// every other dateLabel here. Anything past 24h just gets the absolute date.
 function formatDateLabel(dateStr: string | null): { dateLabel: string; badge: Badge; timestamp: number | null } {
   if (!dateStr) return { dateLabel: 'Recent', badge: 'watch', timestamp: null };
   const parsed = new Date(dateStr);
   if (Number.isNaN(parsed.getTime())) return { dateLabel: 'Recent', badge: 'watch', timestamp: null };
+  const timestamp = parsed.getTime();
+  const diffMs = Date.now() - timestamp;
+
+  if (diffMs >= 0 && diffMs < 24 * 60 * 60 * 1000) {
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    let dateLabel: string;
+    if (diffMins < 1) dateLabel = 'Just now';
+    else if (diffMins < 60) dateLabel = `${diffMins} min${diffMins === 1 ? '' : 's'} ago`;
+    else dateLabel = `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    return { dateLabel, badge: 'dated', timestamp };
+  }
+
   return {
     dateLabel: parsed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
     badge: 'dated',
-    timestamp: parsed.getTime(),
+    timestamp,
   };
 }
 
