@@ -1,6 +1,7 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { CONTEST_VOTE_CUTOFF_MS } from '@/lib/certRanking';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -28,18 +29,11 @@ function fmtDate(s: string): string {
 export default function ContestClient({ initialEntries = [] }: { initialEntries?: any[] }) {
   const [entries, setEntries] = useState<any[]>(initialEntries);
   const [loading, setLoading] = useState(initialEntries.length === 0);
-  const [user, setUser] = useState<any>(null);
   const [sortBy, setSortBy] = useState('score');
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [likedMap, setLikedMap] = useState<any>({});
 
   useEffect(() => {
     async function load() {
-      try {
-        const userRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
-        if (userRes.ok) setUser(await userRes.json());
-      } catch {}
-
       try {
         const res = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
@@ -74,18 +68,25 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
                   commentCount = commentsData.total || 0;
                 }
               } catch {}
-              const articleLikes = (likesData.documents || []).filter((l: any) => !l.commentId).length;
+              const articleLikes = (likesData.documents || []).filter((l: any) => !l.commentId && new Date(l.$createdAt).getTime() < CONTEST_VOTE_CUTOFF_MS).length;
               return { ...a, _votes: articleLikes, _comments: commentCount };
               }
             } catch {}
             return { ...a, _votes: 0 };
           }));
-          if (withVotes.length > 0) setEntries(withVotes);
 
-          try {
-            const liked = JSON.parse(localStorage.getItem('kd_liked') || '{}');
-            setLikedMap(liked);
-          } catch {}
+          // Results are final: keep only each author's best-scoring entry so
+          // no one occupies multiple leaderboard spots. Matches the same
+          // dedup rule used for certificates (lib/certRanking.ts).
+          const scoreOf = (a: any) => (a.views || 0) * 0.5 + (a._votes || 0) * 1 + (a._comments || 0) * 3;
+          const bestPerAuthor = new Map<string, any>();
+          for (const a of withVotes) {
+            const key = a.submitterId || a.$id;
+            const existing = bestPerAuthor.get(key);
+            if (!existing || scoreOf(a) > scoreOf(existing)) bestPerAuthor.set(key, a);
+          }
+          const deduped = Array.from(bestPerAuthor.values());
+          if (deduped.length > 0) setEntries(deduped);
         }
       } catch {}
       setLoading(false);
@@ -93,52 +94,11 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
     load();
   }, []);
 
-  async function handleVote(articleId: string) {
-    if (!user) { window.location.href = '/auth'; return; }
-    const isLiked = !!likedMap[articleId];
-    const newLikedMap = { ...likedMap };
-
-    if (isLiked) {
-      delete newLikedMap[articleId];
-      setLikedMap(newLikedMap);
-      localStorage.setItem('kd_liked', JSON.stringify(newLikedMap));
-      setEntries(prev => prev.map(a => a.$id === articleId ? { ...a, _votes: Math.max(0, (a._votes || 1) - 1) } : a));
-      try {
-        const res = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [articleId] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [user.$id] })),
-          { headers: H, credentials: 'include' }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          if (data.documents?.[0]) {
-            await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents/' + data.documents[0].$id, { method: 'DELETE', headers: H, credentials: 'include' });
-          }
-        }
-      } catch {}
-    } else {
-      newLikedMap[articleId] = true;
-      setLikedMap(newLikedMap);
-      localStorage.setItem('kd_liked', JSON.stringify(newLikedMap));
-      setEntries(prev => prev.map(a => a.$id === articleId ? { ...a, _votes: (a._votes || 0) + 1 } : a));
-      try {
-        await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents', {
-          method: 'POST',
-          headers: { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ documentId: 'unique()', data: { articleId, userId: user.$id, commentId: null } })
-        });
-      } catch {}
-    }
-  }
-
   function calcScore(a: any): number {
     const views = (a.views || 0) * 0.5;
     const likes = (a._votes || 0) * 1;
     const comments = (a._comments || 0) * 3;
-    const shares = (a._shares || 0) * 0.2;
-    return views + likes + comments + shares;
+    return views + likes + comments;
   }
   const sorted = [...entries].sort((a, b) => {
     if (sortBy === "score") return calcScore(b) - calcScore(a);
@@ -152,7 +112,7 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <img src="/assets/logo.png" alt="logo" style={{ width: '70px', height: '70px', borderRadius: '50%', border: '3px solid rgba(255,255,255,0.4)', marginBottom: '20px' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
       <div style={{ width: '36px', height: '36px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-      <p style={{ color: 'rgba(255,255,255,0.8)', marginTop: '16px', fontSize: '14px' }}>Loading contest...</p>
+      <p style={{ color: 'rgba(255,255,255,0.8)', marginTop: '16px', fontSize: '14px' }}>Loading results...</p>
     </div>
   );
 
@@ -184,14 +144,11 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
         />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 40%, rgba(0,0,0,0.75) 100%)" }} />
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "30px 20px", textAlign: "center", color: "white" }}>
-          <div style={{ fontSize: "36px", fontWeight: "800", color: "#f5c518" }}>₹10,000 Prize Pool</div>
-          <p style={{ margin: "8px 0 20px", fontSize: "16px", opacity: 0.95 }}>Theme: <strong>Life After Election</strong> • Deadline: July 31, 2026</p>
+          <div style={{ fontSize: "36px", fontWeight: "800", color: "#f5c518" }}>Results Are In!</div>
+          <p style={{ margin: "8px 0 20px", fontSize: "16px", opacity: 0.95 }}>Theme: <strong>Life After Election</strong> • ₹10,000 Prize Pool</p>
           <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/post" style={{ textDecoration: "none" }}>
-              <button style={{ backgroundColor: "#f5c518", color: "#1a1a1a", border: "none", padding: "12px 28px", borderRadius: "30px", fontWeight: "800", fontSize: "15px", cursor: "pointer" }}>✍️ Submit Your Story</button>
-            </Link>
             <a href="#leaderboard" style={{ textDecoration: "none" }}>
-              <button style={{ backgroundColor: "transparent", color: "white", border: "2px solid rgba(255,255,255,0.6)", padding: "12px 28px", borderRadius: "30px", fontWeight: "700", fontSize: "15px", cursor: "pointer" }}>📚 View Entries</button>
+              <button style={{ backgroundColor: "#f5c518", color: "#1a1a1a", border: "none", padding: "12px 28px", borderRadius: "30px", fontWeight: "800", fontSize: "15px", cursor: "pointer" }}>🏆 View Final Results</button>
             </a>
           </div>
         </div>
@@ -204,7 +161,6 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
             { icon: '🏆', label: 'Prize Pool', value: '₹10,000' },
             { icon: '📅', label: 'Deadline', value: 'July 31, 2026' },
             { icon: '🎉', label: 'Results', value: 'Aug 15, 2026' },
-            { icon: '📝', label: 'Rules', value: 'No Limits!' },
             { icon: '👥', label: 'Entries', value: entries.length + ' Stories' },
           ].map(card => (
             <div key={card.label} style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
@@ -215,27 +171,21 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
           ))}
         </div>
 
-        {/* HOW TO ENTER */}
-        <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
-            How to Enter
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-            {[
-              { step: '1', title: 'Create Account', desc: 'Sign up or login to KhabarDarjeeling' },
-              { step: '2', title: 'Write Your Story', desc: 'Click "Create Post" and write about Life After Election' },
-              { step: '3', title: 'Mark as Contest Entry', desc: 'Check the Contest Entry box before publishing' },
-              { step: '4', title: 'Get Votes!', desc: 'Share your story and collect votes from readers' },
-            ].map(s => (
-              <div key={s.step} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '14px', flexShrink: 0 }}>{s.step}</div>
-                <div>
-                  <div style={{ fontWeight: '700', fontSize: '14px', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '4px' }}>{s.title}</div>
-                  <div style={{ fontSize: '13px', color: isDarkMode ? '#aaa' : '#666', lineHeight: '1.4' }}>{s.desc}</div>
-                </div>
-              </div>
-            ))}
+        {/* RESULTS ANNOUNCEMENT */}
+        <div style={{ background: 'linear-gradient(135deg, #c41e3a, #a01830)', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 16px rgba(196,30,58,0.25)', marginBottom: '24px', color: 'white', textAlign: 'center' }}>
+          <div style={{ fontSize: '32px', marginBottom: '10px' }}>🎉</div>
+          <h2 style={{ fontSize: '19px', fontWeight: '800', margin: '0 0 10px' }}>The Story Contest 2026 results are out!</h2>
+          <p style={{ fontSize: '14px', lineHeight: '1.6', opacity: 0.95, margin: '0 auto', maxWidth: '640px' }}>
+            Please visit your <strong>Profile</strong> page to collect your certificate. If you placed in the <strong>Top 3</strong>, please contact us to claim your prize.
+            Everyone who took part did wonderfully — best of luck for your future writing!
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '18px' }}>
+            <Link href="/profile" style={{ textDecoration: 'none' }}>
+              <button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '10px 22px', borderRadius: '24px', fontWeight: '800', fontSize: '14px', cursor: 'pointer' }}>🎓 Collect Your Certificate</button>
+            </Link>
+            <Link href="/contact" style={{ textDecoration: 'none' }}>
+              <button style={{ backgroundColor: 'transparent', color: 'white', border: '2px solid rgba(255,255,255,0.6)', padding: '10px 22px', borderRadius: '24px', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>✉️ Contact Us</button>
+            </Link>
           </div>
         </div>
 
@@ -244,7 +194,7 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
-              Live Leaderboard <span style={{ display: 'inline-block', width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', marginLeft: '4px' }} />
+              Final Results
             </h2>
             <div style={{ display: 'flex', gap: '6px' }}>
               {[['score', '🏆 Score'], ['votes', '❤️ Votes'], ['views', '👁 Views'], ['newest', '🆕 Newest']].map(([val, label]) => (
@@ -256,11 +206,7 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
           {sorted.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
-              <p style={{ fontSize: '18px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', margin: '0 0 8px' }}>No entries yet!</p>
-              <p style={{ fontSize: '14px', color: isDarkMode ? '#aaa' : '#666', margin: '0 0 20px' }}>Be the first to submit your story</p>
-              <Link href="/post" style={{ textDecoration: 'none' }}>
-                <button style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '24px', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>✍️ Submit Now</button>
-              </Link>
+              <p style={{ fontSize: '18px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', margin: 0 }}>No entries found.</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', marginBottom: '40px' }}>
@@ -268,7 +214,6 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
                 const imgUrl = getImageUrl(a);
                 const author = a.submitterName || a.authorName || 'Anonymous';
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
-                const isLiked = !!likedMap[a.$id];
                 return (
                   <div key={a.$id} style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: i < 3 ? '0 4px 16px rgba(196,30,58,0.15)' : '0 2px 8px rgba(0,0,0,0.08)', border: i < 3 ? '2px solid ' + (i === 0 ? '#f5c518' : i === 1 ? '#c0c0c0' : '#cd7f32') : 'none', position: 'relative', transition: 'transform 0.2s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
@@ -305,17 +250,14 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
                         </div>
                       </div>
 
-                      {/* STATS + VOTE */}
+                      {/* STATS */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
                         <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: isDarkMode ? '#888' : '#aaa' }}>
                           <span>👁 {(a.views || 0).toLocaleString()}</span>
                           <span>❤️ {a._votes || 0}</span>
                           <span>💬 {a._comments || 0}</span>
-                          <span style={{ color: "#f5c518", fontWeight: "700" }}>⭐ {Math.round((a.views||0)*0.5 + (a._votes||0)*1 + (a._comments||0)*3).toLocaleString()}</span>
                         </div>
-                        <button onClick={() => handleVote(a.$id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: isLiked ? '#c41e3a' : isDarkMode ? '#2a2a2a' : '#f5f5f5', color: isLiked ? 'white' : isDarkMode ? '#ddd' : '#333', border: 'none', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '12px', transition: 'all 0.2s' }}>
-                          {isLiked ? '❤️ Voted' : '🤍 Vote'}
-                        </button>
+                        <span style={{ color: "#f5c518", fontWeight: "700", fontSize: '12px' }}>⭐ {Math.round(calcScore(a)).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -328,9 +270,3 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
     </div>
   );
 }
-
-
-
-
-
-

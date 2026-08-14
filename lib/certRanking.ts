@@ -17,6 +17,12 @@ export interface RankedEntry {
   rank: number; // 1-based
 }
 
+// Contest results are final as of this instant — votes cast at or after it
+// don't count toward rankings or certificates. Shared by the public
+// results page, the admin certificate tool, and the profile page so all
+// three agree on the same frozen standings.
+export const CONTEST_VOTE_CUTOFF_MS = new Date('2026-08-14T19:15:57Z').getTime();
+
 export async function computeContestRankings(): Promise<RankedEntry[]> {
   const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'isContestEntry', values: [true] }));
   const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [200] }));
@@ -34,7 +40,7 @@ export async function computeContestRankings(): Promise<RankedEntry[]> {
       const lRes = await fetch(`${ENDPOINT}/databases/${DB}/collections/likes/documents?queries[]=${lq}&queries[]=${llq}`, { headers: H });
       if (lRes.ok) {
         const lData = await lRes.json();
-        votes = (lData.documents || []).filter((l: any) => !l.commentId).length;
+        votes = (lData.documents || []).filter((l: any) => !l.commentId && new Date(l.$createdAt).getTime() < CONTEST_VOTE_CUTOFF_MS).length;
       }
     } catch {}
     try {
@@ -55,8 +61,20 @@ export async function computeContestRankings(): Promise<RankedEntry[]> {
     };
   }));
 
-  enriched.sort((a, b) => b.score - a.score);
-  return enriched.map((e, i) => ({ ...e, rank: i + 1 }));
+  // Keep only each author's single best-scoring entry. Without this, an
+  // author with several contest entries could occupy multiple ranks and
+  // receive multiple certificates, and would also crowd out other authors
+  // from the actual top placements.
+  const bestPerAuthor = new Map<string, (typeof enriched)[number]>();
+  for (const entry of enriched) {
+    const key = entry.submitterId || entry.articleId;
+    const existing = bestPerAuthor.get(key);
+    if (!existing || entry.score > existing.score) bestPerAuthor.set(key, entry);
+  }
+  const deduped = Array.from(bestPerAuthor.values());
+
+  deduped.sort((a, b) => b.score - a.score);
+  return deduped.map((e, i) => ({ ...e, rank: i + 1 }));
 }
 
 export function rankToCertRank(rank: number): '1st' | '2nd' | '3rd' | 'participation' {

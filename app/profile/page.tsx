@@ -3,7 +3,7 @@ import ProfileEditor from '@/components/ProfileEditor';
 import ProfileBio from '@/components/ProfileBio';
 import AuthorBadge from '@/components/AuthorBadge';
 import TierProgress from '@/components/TierProgress';
-import { computeContestRankings, rankToCertRank } from '@/lib/certRanking';
+import { computeContestRankings, rankToCertRank, CONTEST_VOTE_CUTOFF_MS } from '@/lib/certRanking';
 import { generateCertificateBlob, downloadBlob } from '@/lib/certGenerator';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -80,7 +80,7 @@ export default function ProfilePage() {
         try {
           const lq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] }));
           const lRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' + lq, { headers: H });
-          if (lRes.ok) { const lData = await lRes.json(); votes = (lData.documents || []).filter((l: any) => !l.commentId).length; }
+          if (lRes.ok) { const lData = await lRes.json(); votes = (lData.documents || []).filter((l: any) => !l.commentId && new Date(l.$createdAt).getTime() < CONTEST_VOTE_CUTOFF_MS).length; }
         } catch {}
         try {
           const cq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] }));
