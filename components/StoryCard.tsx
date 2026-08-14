@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import Byline from './Byline';
+import Byline, { timeAgo } from './Byline';
 import GenreTag from './GenreTag';
 
 interface Story {
@@ -103,7 +103,7 @@ export default function StoryCard({
           <div>
             {story.genre && <GenreTag genre={story.genre} />}
             <h3 style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '14px', lineHeight: 1.35, margin: '4px 0 4px', color: 'var(--color-text)' }}>{story.title}</h3>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--color-text-muted)' }}>{story.publishedAt ? new Date(story.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--color-text-muted)' }}>{story.publishedAt ? timeAgo(story.publishedAt) : ''}</div>
           </div>
         </div>
       </Link>
@@ -124,7 +124,7 @@ export default function StoryCard({
           <h3 style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '16px', lineHeight: 1.35, margin: '0 0 6px', color: 'var(--color-text)' }}>{story.title}</h3>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-text-muted)' }}>
             {story.genre && <span>{story.genre} &middot; </span>}
-            {story.publishedAt ? new Date(story.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+            {story.publishedAt ? timeAgo(story.publishedAt) : ''}
           </div>
         </div>
       </div>

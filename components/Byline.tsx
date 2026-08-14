@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-function timeAgo(dateStr: string): string {
+export function timeAgo(dateStr: string): string {
   try {
     const diff = Date.now() - new Date(dateStr).getTime();
     const min = Math.floor(diff / 60000);
