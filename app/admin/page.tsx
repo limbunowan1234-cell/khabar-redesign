@@ -64,13 +64,19 @@ export default function AdminPage() {
     setPublishing2(true);
     try {
       const newVal = !certificatesLive;
-      await fetch(endpoint + '/databases/Khabar_db/collections/contest_settings/documents/main', {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { certificatesLive: newVal } })
+      const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
+      if (!jwtRes.ok) throw new Error('Could not verify admin session.');
+      const { jwt } = await jwtRes.json();
+      const res = await fetch('/api/admin/contest/publish-certificates', {
+        method: 'POST',
+        headers: { 'x-admin-jwt': jwt, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ live: newVal }),
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update publish status');
       setCertificatesLive(newVal);
       setSuccess(newVal ? 'Certificates are now live for all participants!' : 'Certificates unpublished.');
-    } catch (e) { setError('Failed to update publish status'); }
+    } catch (e: any) { setError(e?.message || 'Failed to update publish status'); }
     setPublishing2(false);
   }
 
