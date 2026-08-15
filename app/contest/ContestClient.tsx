@@ -2,18 +2,17 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CONTEST_VOTE_CUTOFF_MS } from '@/lib/certRanking';
+import { timeAgo } from '@/components/Byline';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
+const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 const DB = 'Khabar_db';
 
-function getImageUrl(a: any): string {
-  const id = a.imageFileId;
-  if (!id || ['Text','null','undefined',''].includes(String(id))) return '';
-  if (String(id).startsWith('http')) return id;
-  return ENDPOINT + '/storage/buckets/article-image/files/' + id + '/view?project=' + PROJECT;
-}
+// Contest-wide discussion reuses the same comments collection articles use,
+// scoped under this fixed pseudo-article id instead of a real article.
+const DISCUSSION_ID = 'contest-2026-discussion';
 
 function getInitials(name: string): string {
   if (!name) return 'KD';
@@ -21,19 +20,55 @@ function getInitials(name: string): string {
   return p.length === 1 ? p[0][0].toUpperCase() : (p[0][0] + p[p.length-1][0]).toUpperCase();
 }
 
-function fmtDate(s: string): string {
-  try { return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
-  catch { return ''; }
+async function fetchDiscussion() {
+  const res = await fetch(
+    ENDPOINT + '/databases/' + DB + '/collections/comments/documents?queries[]=' +
+    encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [DISCUSSION_ID] })) +
+    '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
+    '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [200] })),
+    { headers: H, credentials: 'include' }
+  );
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.documents || [];
+}
+
+async function postDiscussionComment(userId: string, authorName: string, commentText: string) {
+  const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents', {
+    method: 'POST', headers: HJ, credentials: 'include',
+    body: JSON.stringify({
+      documentId: 'unique()',
+      data: { articleId: DISCUSSION_ID, userId, authorName, commentText, parentCommentId: null, avatarUrl: '', createdAt: new Date().toISOString() }
+    })
+  });
+  if (!res.ok) throw new Error('Failed to post');
+  return res.json();
+}
+
+async function deleteDiscussionComment(commentId: string) {
+  await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents/' + commentId, {
+    method: 'DELETE', headers: H, credentials: 'include'
+  });
 }
 
 export default function ContestClient({ initialEntries = [] }: { initialEntries?: any[] }) {
   const [entries, setEntries] = useState<any[]>(initialEntries);
   const [loading, setLoading] = useState(initialEntries.length === 0);
-  const [sortBy, setSortBy] = useState('score');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<'list' | 'discussion'>('list');
+  const [user, setUser] = useState<any>(null);
+
+  const [discussion, setDiscussion] = useState<any[]>([]);
+  const [discussionText, setDiscussionText] = useState('');
+  const [posting, setPosting] = useState(false);
 
   useEffect(() => {
     async function load() {
+      try {
+        const userRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
+        if (userRes.ok) setUser(await userRes.json());
+      } catch {}
+
       try {
         const res = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
@@ -85,34 +120,48 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
             const existing = bestPerAuthor.get(key);
             if (!existing || scoreOf(a) > scoreOf(existing)) bestPerAuthor.set(key, a);
           }
-          const deduped = Array.from(bestPerAuthor.values());
+          const deduped = Array.from(bestPerAuthor.values()).sort((a, b) => scoreOf(b) - scoreOf(a));
           if (deduped.length > 0) setEntries(deduped);
         }
       } catch {}
+
+      try { setDiscussion(await fetchDiscussion()); } catch {}
+
       setLoading(false);
     }
     load();
   }, []);
 
-  function calcScore(a: any): number {
-    const views = (a.views || 0) * 0.5;
-    const likes = (a._votes || 0) * 1;
-    const comments = (a._comments || 0) * 3;
-    return views + likes + comments;
+  async function handlePostDiscussion() {
+    if (!user) { window.location.href = '/auth'; return; }
+    if (!discussionText.trim()) return;
+    setPosting(true);
+    try {
+      await postDiscussionComment(user.$id, user.name || 'User', discussionText.trim());
+      setDiscussionText('');
+      setDiscussion(await fetchDiscussion());
+    } catch { alert('Could not post. Try again.'); }
+    setPosting(false);
   }
-  const sorted = [...entries].sort((a, b) => {
-    if (sortBy === "score") return calcScore(b) - calcScore(a);
-    if (sortBy === "votes") return (b._votes || 0) - (a._votes || 0);
-    if (sortBy === "views") return (b.views || 0) - (a.views || 0);
-    return new Date(b.$createdAt).getTime() - new Date(a.$createdAt).getTime();
-  });
+
+  async function handleDeleteDiscussion(commentId: string) {
+    if (!confirm('Delete this message?')) return;
+    try {
+      await deleteDiscussionComment(commentId);
+      setDiscussion(await fetchDiscussion());
+    } catch {}
+  }
+
+  function calcScore(a: any): number {
+    return (a.views || 0) * 0.5 + (a._votes || 0) * 1 + (a._comments || 0) * 3;
+  }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #c41e3a, #a01830)' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <img src="/assets/logo.png" alt="logo" style={{ width: '70px', height: '70px', borderRadius: '50%', border: '3px solid rgba(255,255,255,0.4)', marginBottom: '20px' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
       <div style={{ width: '36px', height: '36px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-      <p style={{ color: 'rgba(255,255,255,0.8)', marginTop: '16px', fontSize: '14px' }}>Loading results...</p>
+      <p style={{ color: 'rgba(255,255,255,0.8)', marginTop: '16px', fontSize: '14px' }}>Loading...</p>
     </div>
   );
 
@@ -147,7 +196,7 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
           <div style={{ fontSize: "36px", fontWeight: "800", color: "#f5c518" }}>Results Are In!</div>
           <p style={{ margin: "8px 0 20px", fontSize: "16px", opacity: 0.95 }}>Theme: <strong>Life After Election</strong> • ₹10,000 Prize Pool</p>
           <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="#leaderboard" style={{ textDecoration: "none" }}>
+            <a href="#results" style={{ textDecoration: "none" }}>
               <button style={{ backgroundColor: "#f5c518", color: "#1a1a1a", border: "none", padding: "12px 28px", borderRadius: "30px", fontWeight: "800", fontSize: "15px", cursor: "pointer" }}>🏆 View Final Results</button>
             </a>
           </div>
@@ -189,83 +238,102 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
           </div>
         </div>
 
-        {/* LEADERBOARD */}
-        <div id="leaderboard">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              <span style={{ width: '4px', height: '20px', backgroundColor: '#f5c518', borderRadius: '2px', display: 'inline-block' }} />
-              Final Results
-            </h2>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {[['score', '🏆 Score'], ['votes', '❤️ Votes'], ['views', '👁 Views'], ['newest', '🆕 Newest']].map(([val, label]) => (
-                <button key={val} onClick={() => setSortBy(val)} style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '700', backgroundColor: sortBy === val ? '#c41e3a' : isDarkMode ? '#2a2a2a' : '#f5f5f5', color: sortBy === val ? 'white' : isDarkMode ? '#aaa' : '#666' }}>{label}</button>
-              ))}
-            </div>
-          </div>
+        {/* TABS */}
+        <div id="results" style={{ display: 'flex', gap: '8px', marginBottom: '18px', borderBottom: '2px solid ' + (isDarkMode ? '#2a2a2a' : '#e5e5e5'), scrollMarginTop: '70px' }}>
+          {([
+            ['list', '📋 Results List'],
+            ['discussion', '💬 Discussion'],
+          ] as const).map(([key, label]) => (
+            <button key={key} onClick={() => setActiveTab(key)} style={{
+              padding: '12px 18px', border: 'none', background: 'transparent', cursor: 'pointer',
+              fontSize: '14px', fontWeight: '800',
+              color: activeTab === key ? '#c41e3a' : (isDarkMode ? '#888' : '#999'),
+              borderBottom: activeTab === key ? '3px solid #c41e3a' : '3px solid transparent',
+              marginBottom: '-2px',
+            }}>{label}</button>
+          ))}
+        </div>
 
-          {sorted.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        {/* RESULTS LIST */}
+        {activeTab === 'list' && (
+          entries.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '40px' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
               <p style={{ fontSize: '18px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', margin: 0 }}>No entries found.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', marginBottom: '40px' }}>
-              {sorted.map((a, i) => {
-                const imgUrl = getImageUrl(a);
+            <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '40px', overflow: 'hidden' }}>
+              {entries.map((a, i) => {
                 const author = a.submitterName || a.authorName || 'Anonymous';
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
                 return (
-                  <div key={a.$id} style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: i < 3 ? '0 4px 16px rgba(196,30,58,0.15)' : '0 2px 8px rgba(0,0,0,0.08)', border: i < 3 ? '2px solid ' + (i === 0 ? '#f5c518' : i === 1 ? '#c0c0c0' : '#cd7f32') : 'none', position: 'relative', transition: 'transform 0.2s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
-
-                    {/* RANK BADGE */}
-                    <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10, backgroundColor: i < 3 ? 'transparent' : '#c41e3a', color: i < 3 ? 'transparent' : 'white', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: i < 3 ? '24px' : '13px', fontWeight: '800' }}>
-                      {medal || (i + 1)}
-                    </div>
-
-                    {/* IMAGE */}
-                    <Link href={'/article/' + a.$id} style={{ textDecoration: 'none', display: 'block' }}>
-                      {imgUrl ? (
-                        <img src={imgUrl} alt={a.title} style={{ width: '100%', height: '180px', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '140px', background: 'linear-gradient(135deg, #c41e3a, #a01830)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: '48px', opacity: 0.3 }}>📰</span>
-                        </div>
-                      )}
-                    </Link>
-
-                    <div style={{ padding: '14px' }}>
-                      <Link href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <h3 style={{ fontSize: '15px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: '0 0 8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.title}</h3>
-                        <p style={{ fontSize: '13px', color: isDarkMode ? '#bbb' : '#555', lineHeight: '1.4', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{(a.content || '').substring(0, 100)}...</p>
-                      </Link>
-
-                      {/* AUTHOR */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>{getInitials(author)}</div>
-                        <div>
-                          <div style={{ fontSize: '12px', fontWeight: '600', color: isDarkMode ? '#ddd' : '#333' }}>{author}</div>
-                          <div style={{ fontSize: '11px', color: isDarkMode ? '#888' : '#aaa' }}>{fmtDate(a.$createdAt)}</div>
-                        </div>
+                  <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderBottom: i < entries.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f0f0f0') : 'none', cursor: 'pointer' }}>
+                      <div style={{ width: '30px', flexShrink: 0, textAlign: 'center', fontSize: medal ? '20px' : '14px', fontWeight: '800', color: medal ? undefined : (isDarkMode ? '#666' : '#aaa') }}>
+                        {medal || (i + 1)}
                       </div>
-
-                      {/* STATS */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
-                        <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: isDarkMode ? '#888' : '#aaa' }}>
-                          <span>👁 {(a.views || 0).toLocaleString()}</span>
-                          <span>❤️ {a._votes || 0}</span>
-                          <span>💬 {a._comments || 0}</span>
-                        </div>
-                        <span style={{ color: "#f5c518", fontWeight: "700", fontSize: '12px' }}>⭐ {Math.round(calcScore(a)).toLocaleString()}</span>
+                      <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>{getInitials(author)}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</div>
+                        <div style={{ fontSize: '12px', color: isDarkMode ? '#888' : '#999' }}>{author}</div>
                       </div>
+                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#f5c518', flexShrink: 0 }}>⭐ {Math.round(calcScore(a)).toLocaleString()}</div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
-          )}
-        </div>
+          )
+        )}
+
+        {/* DISCUSSION */}
+        {activeTab === 'discussion' && (
+          <div style={{ marginBottom: '40px' }}>
+            <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '16px' }}>
+              <textarea
+                value={discussionText}
+                onChange={(e) => setDiscussionText(e.target.value)}
+                placeholder={user ? "Share what went well, what didn't, or any thoughts on the contest..." : 'Login to join the discussion'}
+                disabled={!user}
+                rows={3}
+                style={{ width: '100%', border: '1px solid ' + (isDarkMode ? '#333' : '#e5e5e5'), borderRadius: '8px', padding: '10px 12px', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical', backgroundColor: isDarkMode ? '#121212' : '#fafafa', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                {user ? (
+                  <button onClick={handlePostDiscussion} disabled={posting || !discussionText.trim()} style={{ backgroundColor: (posting || !discussionText.trim()) ? '#999' : '#c41e3a', color: 'white', border: 'none', padding: '9px 22px', borderRadius: '20px', cursor: (posting || !discussionText.trim()) ? 'default' : 'pointer', fontWeight: '700', fontSize: '13px' }}>
+                    {posting ? 'Posting...' : 'Post'}
+                  </button>
+                ) : (
+                  <Link href="/auth" style={{ color: '#c41e3a', fontSize: '13px', fontWeight: '700', textDecoration: 'none' }}>Login to comment →</Link>
+                )}
+              </div>
+            </div>
+
+            {discussion.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                <p style={{ fontSize: '14px', color: isDarkMode ? '#888' : '#999', margin: 0 }}>No comments yet — start the conversation!</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {discussion.map((c) => (
+                  <div key={c.$id} style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', display: 'flex', gap: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>{getInitials(c.authorName || 'User')}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#fff' : '#1a1a1a' }}>{c.authorName || 'User'}</span>
+                        <span style={{ fontSize: '11px', color: isDarkMode ? '#777' : '#999' }}>{timeAgo(c.$createdAt)}</span>
+                        {user && c.userId === user.$id && (
+                          <button onClick={() => handleDeleteDiscussion(c.$id)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: isDarkMode ? '#666' : '#bbb', cursor: 'pointer', fontSize: '11px' }}>Delete</button>
+                        )}
+                      </div>
+                      <p style={{ margin: 0, fontSize: '14px', color: isDarkMode ? '#ccc' : '#333', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.commentText}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
