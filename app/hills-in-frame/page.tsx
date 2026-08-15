@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';
@@ -69,16 +69,18 @@ export default async function HillsInFramePage() {
 
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '30px 20px' }}>
         {photos.length === 0 ? (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '60px', textAlign: 'center', color: '#9ca3af' }}>
-            No photos yet - check back soon.
+          <div style={{ background: 'white', borderRadius: '12px', padding: '70px 20px', textAlign: 'center', color: '#9ca3af', border: '1px dashed #e5e7eb' }}>
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>📷</div>
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#6b7280' }}>No photos yet</p>
+            <p style={{ margin: '4px 0 0', fontSize: '13px' }}>Check back soon for fresh shots from the hills.</p>
           </div>
         ) : (
           <>
-          <style>{'.hif-card { transition: transform 0.25s ease, box-shadow 0.25s ease; } .hif-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(0,0,0,0.16) !important; } .hif-card img { transition: transform 0.5s ease; } .hif-card:hover img { transform: scale(1.06); }'}</style>
+          <style>{'@keyframes hifFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } .hif-card { transition: transform 0.25s ease, box-shadow 0.25s ease; animation: hifFadeIn 0.4s ease both; } .hif-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(0,0,0,0.16) !important; } .hif-card img { transition: transform 0.5s ease; } .hif-card:hover img { transform: scale(1.06); }'}</style>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '26px' }}>
-            {photos.map((photo: any) => (
+            {photos.map((photo: any, i: number) => (
               <Link key={photo.$id} href={'/hills-in-frame/' + photo.$id} style={{ textDecoration: 'none' }}>
-                <div className='hif-card' style={{ borderRadius: '4px', overflow: 'hidden', background: 'white', padding: '10px 10px 0', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #eee' }}>
+                <div className='hif-card' style={{ borderRadius: '4px', overflow: 'hidden', background: 'white', padding: '10px 10px 0', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #eee', animationDelay: Math.min(i * 0.05, 0.5) + 's' }}>
                   <div style={{ position: 'relative', height: '200px', background: '#e5e7eb', borderRadius: '2px', overflow: 'hidden' }}>
                     {photo.imageFileId && (
                       <Image src={getImageUrl(photo.imageFileId)} alt={photo.title} fill sizes='(max-width: 768px) 50vw, 300px' style={{ objectFit: 'cover' }} />

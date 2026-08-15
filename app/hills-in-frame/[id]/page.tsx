@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import HillsInFrameSwipeClient from '@/components/HillsInFrameSwipeClient';
 
-const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';

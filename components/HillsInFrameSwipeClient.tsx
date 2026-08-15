@@ -22,7 +22,7 @@ const COMMENT_COLORS = [
   { bg: '#fff7ed', border: '#fed7aa', avatar: '#ea580c' },
 ];
 function getImageUrl(fileId: string): string {
-  return 'https://nyc.cloud.appwrite.io/v1/storage/buckets/' + BUCKET + '/files/' + fileId + '/view?project=' + PROJECT;
+  return ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + fileId + '/view?project=' + PROJECT;
 }
 
 interface Photo {
