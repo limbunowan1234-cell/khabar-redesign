@@ -14,6 +14,27 @@ function getImageUrl(fileId: string) {
   return endpoint + '/storage/buckets/' + bucketId + '/files/' + fileId + '/view?project=' + projectId;
 }
 
+async function uploadFileToStorage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('fileId', 'unique()');
+  formData.append('file', file);
+  const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
+  if (!res.ok) throw new Error('Upload failed');
+  const data = await res.json();
+  return data.$id;
+}
+
+interface BatchItem {
+  localId: string;
+  previewUrl: string;
+  imageFileId: string | null;
+  status: 'uploading' | 'ready' | 'error';
+  title: string;
+  caption: string;
+  location: string;
+  publishError: string;
+}
+
 export default function HillsInFramePostPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +43,7 @@ export default function HillsInFramePostPage() {
   const [myPhotos, setMyPhotos] = useState<any[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
 
+  // Single-photo edit form (used only when editing an existing photo).
   const [title, setTitle] = useState('');
   const [caption, setCaption] = useState('');
   const [location, setLocation] = useState('');
@@ -31,8 +53,13 @@ export default function HillsInFramePostPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
-
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Batch upload (used for publishing new photos, multiple at once).
+  const [batch, setBatch] = useState<BatchItem[]>([]);
+  const [publishingBatch, setPublishingBatch] = useState(false);
+  const [batchSummary, setBatchSummary] = useState('');
+
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -76,24 +103,7 @@ export default function HillsInFramePostPage() {
     setLoadingPhotos(false);
   }
 
-  async function handleImageUpload(e: any) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('fileId', 'unique()');
-      formData.append('file', file);
-      const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
-      setImageFileId(data.$id);
-      setImagePreview(getImageUrl(data.$id));
-    } catch {
-      setSubmitError('Photo upload failed.');
-    }
-    setUploading(false);
-  }
+  // ---- Single-photo edit form ----
 
   function resetForm() {
     setTitle('');
@@ -116,6 +126,20 @@ export default function HillsInFramePostPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  async function handleEditImageChange(e: any) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fileId = await uploadFileToStorage(file);
+      setImageFileId(fileId);
+      setImagePreview(getImageUrl(fileId));
+    } catch {
+      setSubmitError('Photo upload failed.');
+    }
+    setUploading(false);
+  }
+
   async function handleSubmit(e: any) {
     e.preventDefault();
     setSubmitError(''); setSubmitSuccess('');
@@ -126,25 +150,132 @@ export default function HillsInFramePostPage() {
     if (!user) return;
     setSubmitting(true);
     try {
-      const routeUrl = editingId ? '/api/hills-in-frame/update' : '/api/hills-in-frame/create';
       const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
       const jwtData = await jwtRes.json();
-      const body: any = { title: title.trim(), caption: caption.trim(), location: location.trim() || null, imageFileId, jwt: jwtData.jwt };
-      if (editingId) body.id = editingId;
-      const res = await fetch(routeUrl, {
+      const body: any = { title: title.trim(), caption: caption.trim(), location: location.trim() || null, imageFileId, jwt: jwtData.jwt, id: editingId };
+      const res = await fetch('/api/hills-in-frame/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(body)
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Save failed'); }
-      setSubmitSuccess(editingId ? 'Photo updated!' : 'Photo published!');
+      setSubmitSuccess('Photo updated!');
       resetForm();
       loadMyPhotos(user.$id);
     } catch (err: any) {
       setSubmitError(err.message || 'Save failed');
     }
     setSubmitting(false);
+  }
+
+  // ---- Batch upload (new photos) ----
+
+  function handleFilesSelected(e: any) {
+    const files: File[] = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    setBatchSummary('');
+
+    const newItems: BatchItem[] = files.map((file) => ({
+      localId: Math.random().toString(36).slice(2) + Date.now(),
+      previewUrl: URL.createObjectURL(file),
+      imageFileId: null,
+      status: 'uploading',
+      title: '',
+      caption: '',
+      location: '',
+      publishError: '',
+    }));
+    setBatch((prev) => [...prev, ...newItems]);
+
+    files.forEach((file, i) => {
+      const localId = newItems[i].localId;
+      uploadFileToStorage(file)
+        .then((fileId) => {
+          setBatch((prev) => prev.map((b) => b.localId === localId ? { ...b, imageFileId: fileId, status: 'ready' } : b));
+        })
+        .catch(() => {
+          setBatch((prev) => prev.map((b) => b.localId === localId ? { ...b, status: 'error' } : b));
+        });
+    });
+  }
+
+  function updateBatchItem(localId: string, patch: Partial<BatchItem>) {
+    setBatch((prev) => prev.map((b) => b.localId === localId ? { ...b, ...patch } : b));
+  }
+
+  function removeBatchItem(localId: string) {
+    setBatch((prev) => {
+      const item = prev.find((b) => b.localId === localId);
+      if (item) URL.revokeObjectURL(item.previewUrl);
+      return prev.filter((b) => b.localId !== localId);
+    });
+  }
+
+  async function handlePublishBatch() {
+    if (!user) return;
+    const readyItems = batch.filter((b) => b.status === 'ready');
+    if (readyItems.length === 0) return;
+
+    const missingInfo = readyItems.filter((b) => !b.title.trim() || !b.caption.trim());
+    if (missingInfo.length > 0) {
+      setBatchSummary('Every photo needs a title and caption before publishing.');
+      return;
+    }
+
+    setPublishingBatch(true);
+    setBatchSummary('');
+    try {
+      const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
+      const jwtData = await jwtRes.json();
+
+      const results = await Promise.all(readyItems.map(async (item) => {
+        try {
+          const res = await fetch('/api/hills-in-frame/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              title: item.title.trim(),
+              caption: item.caption.trim(),
+              location: item.location.trim() || null,
+              imageFileId: item.imageFileId,
+              jwt: jwtData.jwt,
+            }),
+          });
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}));
+            return { localId: item.localId, ok: false, error: d.error || 'Save failed' };
+          }
+          return { localId: item.localId, ok: true, error: '' };
+        } catch {
+          return { localId: item.localId, ok: false, error: 'Network error' };
+        }
+      }));
+
+      const succeededIds = new Set(results.filter((r) => r.ok).map((r) => r.localId));
+      const failed = results.filter((r) => !r.ok);
+
+      setBatch((prev) => {
+        const remaining = prev.filter((b) => !succeededIds.has(b.localId));
+        for (const item of remaining) {
+          const failure = failed.find((f) => f.localId === item.localId);
+          if (failure) item.publishError = failure.error;
+        }
+        return remaining;
+      });
+
+      if (failed.length === 0) {
+        setBatchSummary(succeededIds.size === 1 ? 'Photo published!' : succeededIds.size + ' photos published!');
+      } else {
+        setBatchSummary(succeededIds.size + ' published, ' + failed.length + ' failed — see below.');
+      }
+      loadMyPhotos(user.$id);
+    } catch {
+      setBatchSummary('Could not publish. Try again.');
+    }
+    setPublishingBatch(false);
   }
 
   async function handleDelete(photoId: string) {
@@ -170,6 +301,9 @@ export default function HillsInFramePostPage() {
     setDeletingId(null);
   }
 
+  const readyCount = batch.filter((b) => b.status === 'ready').length;
+  const uploadingCount = batch.filter((b) => b.status === 'uploading').length;
+
   if (loading) return <div style={{ textAlign: 'center', padding: '80px' }}>Loading...</div>;
   if (error) return (
     <div style={{ textAlign: 'center', padding: '80px' }}>
@@ -190,43 +324,116 @@ export default function HillsInFramePostPage() {
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '30px 20px' }}>
 
-        <form onSubmit={handleSubmit} style={{ background: 'white', borderRadius: '12px', padding: '28px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
-          <h2 style={{ margin: '0 0 20px', fontSize: '17px', fontWeight: 800, color: '#1a1a1a' }}>{editingId ? 'Edit Photo' : 'Upload New Photo'}</h2>
+        {editingId ? (
+          <form onSubmit={handleSubmit} style={{ background: 'white', borderRadius: '12px', padding: '28px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
+            <h2 style={{ margin: '0 0 20px', fontSize: '17px', fontWeight: 800, color: '#1a1a1a' }}>Edit Photo</h2>
 
-          <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Photo</label>
-          <div style={{ border: '2px dashed #ccc', borderRadius: '8px', padding: '16px', textAlign: 'center', marginBottom: '18px' }}>
-            {imagePreview ? (
-              <img src={imagePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: '8px', marginBottom: '10px' }} />
-            ) : (
-              <p style={{ color: '#9ca3af', marginBottom: '10px' }}>No photo selected</p>
-            )}
-            <input id="photoInput" type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} style={{ display: 'none' }} />
-            <label htmlFor="photoInput" style={{ display: 'inline-block', background: '#374151', color: 'white', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
-              {uploading ? 'Uploading...' : imageFileId ? 'Change Photo' : 'Choose Photo'}
-            </label>
-          </div>
+            <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Photo</label>
+            <div style={{ border: '2px dashed #ccc', borderRadius: '8px', padding: '16px', textAlign: 'center', marginBottom: '18px' }}>
+              {imagePreview ? (
+                <img src={imagePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: '8px', marginBottom: '10px' }} />
+              ) : (
+                <p style={{ color: '#9ca3af', marginBottom: '10px' }}>No photo selected</p>
+              )}
+              <input id="photoInput" type="file" accept="image/*" onChange={handleEditImageChange} disabled={uploading} style={{ display: 'none' }} />
+              <label htmlFor="photoInput" style={{ display: 'inline-block', background: '#374151', color: 'white', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+                {uploading ? 'Uploading...' : 'Change Photo'}
+              </label>
+            </div>
 
-          <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Title *</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Morning mist over Tiger Hill" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '18px', fontSize: '15px', boxSizing: 'border-box' }} />
+            <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Title *</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Morning mist over Tiger Hill" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '18px', fontSize: '15px', boxSizing: 'border-box' }} />
 
-          <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Location</label>
-          <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Tiger Hill, Ghum" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '18px', fontSize: '14px', boxSizing: 'border-box' }} />
+            <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Location</label>
+            <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Tiger Hill, Ghum" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '18px', fontSize: '14px', boxSizing: 'border-box' }} />
 
-          <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Caption *</label>
-          <textarea value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Tell the story behind this photo..." rows={4} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '18px', fontSize: '14px', lineHeight: 1.6, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
+            <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Caption *</label>
+            <textarea value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Tell the story behind this photo..." rows={4} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '18px', fontSize: '14px', lineHeight: 1.6, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
 
-          {submitError && <div style={{ padding: '12px', background: '#fee2e2', color: '#c41e3a', borderRadius: '8px', marginBottom: '14px', fontSize: '13px' }}>{submitError}</div>}
-          {submitSuccess && <div style={{ padding: '12px', background: '#dcfce7', color: '#15803d', borderRadius: '8px', marginBottom: '14px', fontSize: '13px' }}>{submitSuccess}</div>}
+            {submitError && <div style={{ padding: '12px', background: '#fee2e2', color: '#c41e3a', borderRadius: '8px', marginBottom: '14px', fontSize: '13px' }}>{submitError}</div>}
+            {submitSuccess && <div style={{ padding: '12px', background: '#dcfce7', color: '#15803d', borderRadius: '8px', marginBottom: '14px', fontSize: '13px' }}>{submitSuccess}</div>}
 
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button type="submit" disabled={submitting} style={{ flex: 1, padding: '13px', background: submitting ? '#999' : '#1f2937', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: submitting ? 'default' : 'pointer' }}>
-              {submitting ? 'Saving...' : editingId ? 'Update Photo' : 'Publish Photo'}
-            </button>
-            {editingId && (
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" disabled={submitting} style={{ flex: 1, padding: '13px', background: submitting ? '#999' : '#1f2937', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: submitting ? 'default' : 'pointer' }}>
+                {submitting ? 'Saving...' : 'Update Photo'}
+              </button>
               <button type="button" onClick={resetForm} style={{ padding: '13px 20px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>Cancel</button>
+            </div>
+          </form>
+        ) : (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '28px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '17px', fontWeight: 800, color: '#1a1a1a' }}>Upload New Photos</h2>
+            <p style={{ margin: '0 0 18px', fontSize: '13px', color: '#6b7280' }}>Select as many as you like — add a title and caption for each, then publish them all together.</p>
+
+            <div style={{ border: '2px dashed #ccc', borderRadius: '8px', padding: '20px', textAlign: 'center', marginBottom: batch.length ? '20px' : 0 }}>
+              <input id="batchPhotoInput" type="file" accept="image/*" multiple onChange={handleFilesSelected} style={{ display: 'none' }} />
+              <label htmlFor="batchPhotoInput" style={{ display: 'inline-block', background: '#374151', color: 'white', padding: '10px 24px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+                📷 Choose Photos
+              </label>
+              <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af' }}>{batch.length > 0 ? 'Add more, or fill in the details below.' : 'You can select multiple files at once.'}</p>
+            </div>
+
+            {batch.length > 0 && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {batch.map((item) => (
+                    <div key={item.localId} style={{ display: 'flex', gap: '14px', padding: '14px', border: '1px solid ' + (item.status === 'error' || item.publishError ? '#fecaca' : '#eee'), borderRadius: '10px', background: item.status === 'error' || item.publishError ? '#fef2f2' : '#fafafa' }}>
+                      <div style={{ position: 'relative', width: '90px', height: '90px', flexShrink: 0, borderRadius: '8px', overflow: 'hidden', background: '#e5e7eb' }}>
+                        <img src={item.previewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: item.status === 'uploading' ? 0.5 : 1 }} />
+                        {item.status === 'uploading' && (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#374151' }}>Uploading…</div>
+                        )}
+                        {item.status === 'error' && (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#c41e3a', background: 'rgba(255,255,255,0.85)' }}>Failed</div>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <input
+                          value={item.title}
+                          onChange={(e) => updateBatchItem(item.localId, { title: e.target.value })}
+                          placeholder="Title *"
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }}
+                        />
+                        <input
+                          value={item.location}
+                          onChange={(e) => updateBatchItem(item.localId, { location: e.target.value })}
+                          placeholder="Location (optional)"
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }}
+                        />
+                        <textarea
+                          value={item.caption}
+                          onChange={(e) => updateBatchItem(item.localId, { caption: e.target.value })}
+                          placeholder="Caption *"
+                          rows={2}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }}
+                        />
+                        {item.publishError && <div style={{ fontSize: '12px', color: '#c41e3a', fontWeight: 600 }}>{item.publishError}</div>}
+                      </div>
+                      <button type="button" onClick={() => removeBatchItem(item.localId)} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '18px', padding: '2px 6px', flexShrink: 0 }} aria-label="Remove">×</button>
+                    </div>
+                  ))}
+                </div>
+
+                {batchSummary && (
+                  <div style={{ marginTop: '16px', padding: '12px', background: readyCount === 0 && batch.every(b => !b.publishError) ? '#dcfce7' : '#fee2e2', color: readyCount === 0 && batch.every(b => !b.publishError) ? '#15803d' : '#c41e3a', borderRadius: '8px', fontSize: '13px' }}>{batchSummary}</div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handlePublishBatch}
+                  disabled={publishingBatch || readyCount === 0}
+                  style={{ marginTop: '16px', width: '100%', padding: '13px', background: (publishingBatch || readyCount === 0) ? '#999' : '#1f2937', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: (publishingBatch || readyCount === 0) ? 'default' : 'pointer' }}
+                >
+                  {publishingBatch
+                    ? 'Publishing...'
+                    : uploadingCount > 0
+                      ? readyCount + ' Ready — ' + uploadingCount + ' still uploading'
+                      : 'Publish ' + readyCount + (readyCount === 1 ? ' Photo' : ' Photos')}
+                </button>
+              </>
             )}
           </div>
-        </form>
+        )}
 
         <h2 style={{ fontSize: '17px', fontWeight: 800, color: '#1a1a1a', marginBottom: '16px' }}>My Photos ({myPhotos.length})</h2>
 
