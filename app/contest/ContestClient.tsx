@@ -362,22 +362,13 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
       </header>
 
       {/* HERO BANNER */}
-      <div style={{ position: "relative", width: "100%", backgroundColor: "#a01830", overflow: "hidden" }}>
-        <img
-          src="/assets/contest-hero.jpg"
-          alt="Khabar Darjeeling Story Contest 2026"
-          style={{ width: "100%", maxHeight: "500px", objectFit: "cover", display: "block" }}
-          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-        />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 40%, rgba(0,0,0,0.75) 100%)" }} />
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "30px 20px", textAlign: "center", color: "white" }}>
-          <div style={{ fontSize: "36px", fontWeight: "800", color: "#f5c518" }}>Results Are In!</div>
-          <p style={{ margin: "8px 0 20px", fontSize: "16px", opacity: 0.95 }}>Theme: <strong>Life After Election</strong> • ₹10,000 Prize Pool</p>
-          <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="#results" style={{ textDecoration: "none" }}>
-              <button style={{ backgroundColor: "#f5c518", color: "#1a1a1a", border: "none", padding: "12px 28px", borderRadius: "30px", fontWeight: "800", fontSize: "15px", cursor: "pointer" }}>🏆 View Final Results</button>
-            </a>
-          </div>
+      <div style={{ width: "100%", background: "linear-gradient(135deg, #c41e3a, #a01830)", padding: "40px 20px", textAlign: "center", color: "white" }}>
+        <div style={{ fontSize: "36px", fontWeight: "800", color: "#f5c518" }}>Results Are In!</div>
+        <p style={{ margin: "8px 0 20px", fontSize: "16px", opacity: 0.95 }}>Theme: <strong>Life After Election</strong> • ₹10,000 Prize Pool</p>
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+          <a href="#results" style={{ textDecoration: "none" }}>
+            <button style={{ backgroundColor: "#f5c518", color: "#1a1a1a", border: "none", padding: "12px 28px", borderRadius: "30px", fontWeight: "800", fontSize: "15px", cursor: "pointer" }}>🏆 View Final Results</button>
+          </a>
         </div>
       </div>
 
