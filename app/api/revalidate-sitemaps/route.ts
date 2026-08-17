@@ -1,5 +1,6 @@
 ﻿import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
+import { deleteEventsOlderThan } from '@/lib/analyticsEvents';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -39,8 +40,21 @@ export async function GET(req: Request) {
 
     const weekly = await publishWeeklyIfSunday();
 
+    // Vercel's Hobby plan caps cron jobs at 2 (already used by this route
+    // and publish-weekly), so daily analytics_events retention rides along
+    // on this existing daily cron instead of registering a third one.
+    let analyticsCleanup: { deleted: number } | { error: string };
+    try {
+      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const deleted = await deleteEventsOlderThan(cutoff);
+      analyticsCleanup = { deleted };
+    } catch (e) {
+      console.error('analytics cleanup (via revalidate-sitemaps) error:', e);
+      analyticsCleanup = { error: 'failed' };
+    }
+
     console.log('Sitemaps revalidated at', new Date().toISOString());
-    return NextResponse.json({ success: true, timestamp: new Date().toISOString(), weekly });
+    return NextResponse.json({ success: true, timestamp: new Date().toISOString(), weekly, analyticsCleanup });
   } catch (error) {
     console.error('Revalidation error:', error);
     return NextResponse.json({ error: 'Revalidation failed' }, { status: 500 });

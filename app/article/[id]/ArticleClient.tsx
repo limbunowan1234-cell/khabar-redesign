@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike, incrementViews } from '@/lib/appwrite';
 import { useAuthStore } from '@/lib/authStore';
+import { trackPageView } from '@/lib/analyticsTracker';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -302,6 +303,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
     if (!id) return;
     async function load() {
       incrementViews(id);
+      trackPageView(id, user?.$id);
         const data = await getArticle(id);
       if (data) setArticle(data);
         if (data?.genre) {
