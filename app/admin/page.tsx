@@ -152,20 +152,6 @@ export default function AdminPage() {
     } catch {}
   }
 
-  async function trackApkDownload() {
-    try {
-      const newCount = apkDownloads + 1;
-      await fetch(endpoint + '/databases/' + dbId + '/collections/analytics/documents/apk_downloads', {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { count: newCount } })
-      });
-      setApkDownloads(newCount);
-      window.open('https://github.com/limbunowan1234-cell/Khabar-darjeeling/releases/download/v1.0.0/KhabarDarjeeling-v1.0.0.2.apk', '_blank');
-    } catch {
-      window.open('https://github.com/limbunowan1234-cell/Khabar-darjeeling/releases/download/v1.0.0/KhabarDarjeeling-v1.0.0.2.apk', '_blank');
-    }
-  }
-
   async function loadPhotos() {
     try {
       const res = await fetch(endpoint + '/databases/' + dbId + '/collections/photos/documents?queries[]=' +
@@ -286,39 +272,6 @@ export default function AdminPage() {
       setSuccess('Image uploaded!');
     } catch (err: any) { setError('Upload failed: ' + err.message); setImagePreview(''); }
     setUploadingImage(false);
-  }
-
-  async function handleBackfillSlugs() {
-    if (!confirm('Generate slugs for all articles missing one? This may take a moment.')) return;
-    setError(''); setSuccess('');
-    try {
-      let updated = 0;
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [500] })), { headers: H, credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        const all = data.documents || [];
-        for (const a of all) {
-          if (a.slug) continue;
-          const base = (a.title || '')
-            .toLowerCase()
-        .normalize('NFC')
-        .replace(/[^\p{L}\p{M}\p{N}\s-]/gu, '')
-            .trim()
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
-            .slice(0, 60)
-            .replace(/^-+|-+$/g, '');
-          const slug = (base ? base + '-' : 'news-') + Date.now().toString(36) + Math.floor(Math.random() * 1000);
-          await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + a.$id, {
-            method: 'PATCH', headers: HJ, credentials: 'include',
-            body: JSON.stringify({ data: { slug } })
-          });
-          updated++;
-        }
-      }
-      setSuccess('Generated slugs for ' + updated + ' articles!');
-      await loadArticles();
-    } catch (err: any) { setError(err.message || 'Backfill failed'); }
   }
 
   function getTimeUntilSunday(): string {
@@ -594,26 +547,26 @@ function generateSlug(text: string): string {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      <div style={{ backgroundColor: '#0F4C5C', color: 'white', padding: '16px 20px', borderBottom: '4px solid #D4AF37', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1300px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0F4C5C, #0a3540)', color: 'white', padding: '18px 20px', borderBottom: '4px solid #D4AF37', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}>
+        <div style={{ maxWidth: '1300px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <Link href="/"><button style={{ backgroundColor: 'transparent', color: 'white', border: 'none', cursor: 'pointer', fontSize: '13px', marginBottom: '4px', display: 'block' }}>Back to Site</button></Link>
-            <h1 style={{ margin: 0, fontSize: '20px' }}>KhabarDarjeeling Admin</h1>
+            <Link href="/"><button style={{ backgroundColor: 'transparent', color: 'rgba(255,255,255,0.75)', border: 'none', cursor: 'pointer', fontSize: '12px', marginBottom: '4px', display: 'block', padding: 0 }}>← Back to Site</button></Link>
+            <h1 style={{ margin: 0, fontSize: '21px', fontWeight: 800, letterSpacing: '-0.3px' }}>Khabar Darjeeling Admin</h1>
           </div>
-          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', maxWidth: '100%', paddingBottom: '2px' }}>
-            <button onClick={() => setView('manage')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'manage' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'manage' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>Manage</button>
-            <button onClick={() => setView('publish')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'publish' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'publish' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>+ Publish</button>
-              <button onClick={() => setView('photos')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'photos' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'photos' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>+ Photos</button>
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', maxWidth: '100%', paddingBottom: '2px' }}>
+            <button onClick={() => setView('manage')} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: view === 'manage' ? '#D4AF37' : 'rgba(255,255,255,0.12)', color: view === 'manage' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0, transition: 'background-color 0.15s' }}>📋 Manage</button>
+            <button onClick={() => setView('publish')} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: view === 'publish' ? '#D4AF37' : 'rgba(255,255,255,0.12)', color: view === 'publish' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0, transition: 'background-color 0.15s' }}>✍️ Publish</button>
+              <button onClick={() => setView('photos')} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: view === 'photos' ? '#D4AF37' : 'rgba(255,255,255,0.12)', color: view === 'photos' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0, transition: 'background-color 0.15s' }}>📷 Photos</button>
               {isAdminUser && (
                 <>
-              <button onClick={() => { setView('weekly'); loadWeeklyPicks(); }} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'weekly' ? '#D4AF37' : 'rgba(255,255,255,0.2)', color: view === 'weekly' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0 }}>Weekly</button>
-                <button onClick={() => { setView('certificates'); loadCertRankings(); }} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: view === 'certificates' ? '#D4AF37' : 'rgba(255,255,255,0.15)', color: view === 'certificates' ? '#0F4C5C' : 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Certificates</button>
+              <button onClick={() => { setView('weekly'); loadWeeklyPicks(); }} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: view === 'weekly' ? '#D4AF37' : 'rgba(255,255,255,0.12)', color: view === 'weekly' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0, transition: 'background-color 0.15s' }}>🗓️ Weekly</button>
+                <button onClick={() => { setView('certificates'); loadCertRankings(); }} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: view === 'certificates' ? '#D4AF37' : 'rgba(255,255,255,0.12)', color: view === 'certificates' ? '#0F4C5C' : 'white', whiteSpace: 'nowrap', flexShrink: 0, transition: 'background-color 0.15s' }}>🎓 Certificates</button>
                 </>
               )}
-                <Link href="/admin/bhasa-diwas"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#b91c1c', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Bhasa Diwas</button></Link>
-                <Link href="/admin/curate"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#0F4C5C', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Curate</button></Link>
-                <Link href="/admin/news-digest"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#c41e3a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>News Digest</button></Link>
-                <Link href="/admin/analytics"><button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', backgroundColor: '#1a1a1a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>Analytics</button></Link>
+                <Link href="/admin/bhasa-diwas"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: '#b91c1c', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>🎭 Bhasa Diwas</button></Link>
+                <Link href="/admin/curate"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.12)', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>🧭 Curate</button></Link>
+                <Link href="/admin/news-digest"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: '#c41e3a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>📰 News Digest</button></Link>
+                <Link href="/admin/analytics"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: '#1a1a1a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>📊 Analytics</button></Link>
           </div>
         </div>
       </div>
@@ -624,24 +577,27 @@ function generateSlug(text: string): string {
 
         {view === 'manage' && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '28px' }}>
               {[
-                { label: 'Total Articles', value: totalArticleCount, color: '#0F4C5C' },
-                { label: 'Total Views', value: totalViews.toLocaleString(), color: '#0F4C5C' },
-                { label: 'APK Downloads', value: apkDownloads.toLocaleString(), color: '#27ae60' },
-                { label: 'Breaking News', value: articles.filter(a => a.isBreaking).length, color: '#c41e3a' },
-                { label: 'Featured', value: articles.filter(a => a.isFeatured).length, color: '#e65100' },
-                { label: 'Contest Entries', value: articles.filter(a => a.isContestEntry).length, color: '#b8860b' },
+                { label: 'Total Articles', value: totalArticleCount, color: '#0F4C5C', icon: '📰' },
+                { label: 'Total Views', value: totalViews.toLocaleString(), color: '#0F4C5C', icon: '👁️' },
+                { label: 'APK Downloads', value: apkDownloads.toLocaleString(), color: '#27ae60', icon: '📱' },
+                { label: 'Breaking News', value: articles.filter(a => a.isBreaking).length, color: '#c41e3a', icon: '🔴' },
+                { label: 'Featured', value: articles.filter(a => a.isFeatured).length, color: '#e65100', icon: '⭐' },
+                { label: 'Contest Entries', value: articles.filter(a => a.isContestEntry).length, color: '#b8860b', icon: '🏆' },
               ].map((stat) => (
-                <div key={stat.label} style={{ backgroundColor: 'white', borderRadius: '8px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderLeft: '4px solid ' + stat.color }}>
-                  <div style={{ fontSize: '28px', fontWeight: '700', color: stat.color }}>{stat.value}</div>
-                  <div style={{ fontSize: '13px', color: '#666', marginTop: '4px' }}>{stat.label}</div>
+                <div
+                  key={stat.label}
+                  style={{ backgroundColor: 'white', borderRadius: '14px', padding: '18px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0', transition: 'transform 0.18s ease, box-shadow 0.18s ease' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.06)'; }}
+                >
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: stat.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', marginBottom: '12px' }}>{stat.icon}</div>
+                  <div style={{ fontSize: '25px', fontWeight: '800', color: '#1a1a1a', letterSpacing: '-0.3px' }}>{stat.value}</div>
+                  <div style={{ fontSize: '11px', color: '#888', marginTop: '3px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{stat.label}</div>
                 </div>
               ))}
             </div>
-
-            <button onClick={trackApkDownload} style={{ width: '100%', padding: '14px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '16px', marginBottom: '24px' }}>Download APK</button>
-              <button onClick={handleBackfillSlugs} style={{ width: '100%', padding: '12px', backgroundColor: '#0F4C5C', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '14px', marginBottom: '24px' }}>Generate Slugs for All Articles</button>
 
             <div style={{ display: 'flex', gap: '0', marginBottom: '16px', borderBottom: '2px solid #ddd' }}>
               {['all', 'breaking', 'featured', 'contest'].map((tab) => (
