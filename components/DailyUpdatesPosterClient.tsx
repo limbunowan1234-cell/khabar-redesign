@@ -3,15 +3,17 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const BUCKET = 'article-image';
-
+// Routed through /api/image-proxy (same-origin) rather than Appwrite's
+// storage URL directly. html2canvas needs to read the image's pixels to
+// draw it into the export canvas, which requires either a same-origin
+// image or a CORS-clean cross-origin load — a same-origin proxy sidesteps
+// the whole question instead of depending on Appwrite's CORS config
+// matching whatever origin the page happens to be served from.
 function getImageUrl(a: any): string {
   const id = a?.imageFileId;
   if (!id || ['Text', 'null', 'undefined', ''].includes(String(id))) return '';
   if (String(id).startsWith('http')) return id;
-  return ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + id + '/view?project=' + PROJECT;
+  return '/api/image-proxy?id=' + id + '&bucket=article-image';
 }
 
 function shortDescription(article: any): string {
@@ -141,7 +143,7 @@ export default function DailyUpdatesPosterClient({ darjeelingArticles, otherDist
                   <>
                     <div style={{ width: '100%', aspectRatio: '16/9', backgroundColor: '#d1d5db', overflow: 'hidden' }}>
                       {headlineImg ? (
-                        <img src={headlineImg} alt={topHeadline.title} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        <img src={headlineImg} alt={topHeadline.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                       ) : (
                         <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #c41e3a, #a01830)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <span style={{ fontSize: '48px', opacity: 0.4 }}>📰</span>

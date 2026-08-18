@@ -543,6 +543,35 @@ function BreakingNewsSidebar({ articles, isDarkMode }: any) {
   );
 }
 
+// Header nav dropdown: opens on hover (mouseenter/mouseleave), used to group
+// related nav links behind a single button instead of listing them all
+// individually in the header.
+function NavDropdown({ label, color, isDarkMode, children }: { label: string; color?: string; isDarkMode: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} style={{ position: 'relative' }}>
+      <button style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: color || 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>
+        {label} <span style={{ fontSize: '9px' }}>▾</span>
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', paddingTop: '8px' }}>
+          <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', boxShadow: '0 10px 28px rgba(0,0,0,0.25)', minWidth: '190px', overflow: 'hidden' }}>
+            {children}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NavDropdownItem({ href, onClick, isDarkMode, danger, children }: { href?: string; onClick?: () => void; isDarkMode: boolean; danger?: boolean; children: React.ReactNode }) {
+  const itemStyle: React.CSSProperties = { display: 'block', padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: danger ? '#c41e3a' : (isDarkMode ? '#eee' : '#1a1a1a'), borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), cursor: 'pointer', whiteSpace: 'nowrap' };
+  if (href) {
+    return <Link href={href} style={{ textDecoration: 'none' }}><div style={itemStyle}>{children}</div></Link>;
+  }
+  return <div onClick={onClick} style={itemStyle}>{children}</div>;
+}
+
 export default function HomeClient({ initialArticles = [], initialIsMobile = false }: { initialArticles?: any[]; initialIsMobile?: boolean }) {
   const { initAuth, user, logOut } = useAuthStore();
   const [articles, setArticles] = useState<any[]>(initialArticles);
@@ -846,19 +875,29 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
           {!isMobile && (
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Link href="/post" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Post</button></Link>
-              <Link href="/contest" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Contest</button></Link>
-              <Link href="/nepali-bhasa-diwas" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#b91c1c', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Bhasa Diwas</button></Link>
+
+              <NavDropdown label="Contest & Culture" isDarkMode={isDarkMode}>
+                <NavDropdownItem href="/contest" isDarkMode={isDarkMode}>🏆 Story Contest</NavDropdownItem>
+                <NavDropdownItem href="/nepali-bhasa-diwas" isDarkMode={isDarkMode}>🎭 Bhasa Diwas</NavDropdownItem>
+              </NavDropdown>
+
+              <NavDropdown label="Updates" isDarkMode={isDarkMode}>
+                <NavDropdownItem href="/daily-updates" isDarkMode={isDarkMode}>📰 Daily Updates</NavDropdownItem>
+                <NavDropdownItem href="/weekly" isDarkMode={isDarkMode}>🗞️ Weekly Edition</NavDropdownItem>
+              </NavDropdown>
+
               <Link href="/hills-in-frame" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Photos</button></Link>
-              <Link href="/weekly" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Weekly</button></Link>
-              <Link href="/daily-updates" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Daily Updates</button></Link>
+
               {user ? (
                 <>
                   <NotificationBell light={true} />
-                  <Link href="/profile" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Profile</button></Link>
-                  {isAdmin && <Link href="/admin" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Admin</button></Link>}
-                  {isReporter && <Link href="/reporter" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#0F4C5C', color: 'white', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Reporter</button></Link>}
-                  {isPhotographer && <Link href="/hills-in-frame/post" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#374151', color: 'white', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Photographer</button></Link>}
-                  <button onClick={() => logOut()} style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Logout</button>
+                  <NavDropdown label={(user.name || 'Profile').split(' ')[0]} isDarkMode={isDarkMode}>
+                    <NavDropdownItem href="/profile" isDarkMode={isDarkMode}>👤 My Profile</NavDropdownItem>
+                    {isAdmin && <NavDropdownItem href="/admin" isDarkMode={isDarkMode}>⚙️ Admin Panel</NavDropdownItem>}
+                    {isReporter && <NavDropdownItem href="/reporter" isDarkMode={isDarkMode}>✍️ Reporter Panel</NavDropdownItem>}
+                    {isPhotographer && <NavDropdownItem href="/hills-in-frame/post" isDarkMode={isDarkMode}>📷 Photographer Panel</NavDropdownItem>}
+                    <NavDropdownItem onClick={() => logOut()} isDarkMode={isDarkMode} danger>🚪 Logout</NavDropdownItem>
+                  </NavDropdown>
                 </>
               ) : (
                 <Link href="/auth" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Login</button></Link>
