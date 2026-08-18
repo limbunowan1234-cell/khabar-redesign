@@ -41,6 +41,14 @@ export default function DailyUpdatesPosterClient({ darjeelingArticles, otherDist
     setDownloadFormat(format);
     setStatus('Generating…');
     try {
+      // html2canvas snapshots whatever is currently painted — if the
+      // headline image hasn't finished loading yet, it captures blank.
+      const imgs = Array.from(posterRef.current.querySelectorAll('img'));
+      await Promise.all(imgs.map((img) => (img.complete && img.naturalWidth > 0) ? Promise.resolve() : new Promise((resolve) => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+      })));
+
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(posterRef.current, {
         backgroundColor: '#ffffff',
@@ -133,7 +141,7 @@ export default function DailyUpdatesPosterClient({ darjeelingArticles, otherDist
                   <>
                     <div style={{ width: '100%', aspectRatio: '16/9', backgroundColor: '#d1d5db', overflow: 'hidden' }}>
                       {headlineImg ? (
-                        <img src={headlineImg} alt={topHeadline.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        <img src={headlineImg} alt={topHeadline.title} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                       ) : (
                         <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #c41e3a, #a01830)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <span style={{ fontSize: '48px', opacity: 0.4 }}>📰</span>

@@ -799,6 +799,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
                 { href: '/hills-in-frame', label: 'Hills in Frame' },
                 { href: '/', label: 'Home' },
                 { href: '/weekly', label: 'Weekly Edition' },
+                { href: '/daily-updates', label: 'Daily Updates' },
                 { href: '/post', label: 'Create Post' },
                 { href: '/contest', label: 'Story Contest 2026' },
                 { href: '/profile', label: 'My Profile' },
@@ -849,6 +850,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
               <Link href="/nepali-bhasa-diwas" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#b91c1c', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Bhasa Diwas</button></Link>
               <Link href="/hills-in-frame" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Photos</button></Link>
               <Link href="/weekly" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Weekly</button></Link>
+              <Link href="/daily-updates" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Daily Updates</button></Link>
               {user ? (
                 <>
                   <NotificationBell light={true} />
