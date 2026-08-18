@@ -89,21 +89,69 @@ export default function DailyUpdatesPosterClient({ darjeelingArticles, otherDist
   const headlineImg = getImageUrl(topHeadline);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '32px 16px' }}>
+    <div className="du-page">
+      <style>{`
+        .du-page { min-height: 100vh; background-color: #f3f4f6; padding: 32px 16px; }
+        .du-controls { max-width: 900px; margin: 0 auto 24px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; background-color: white; padding: 16px; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .du-controls-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+        .du-btn { display: flex; align-items: center; gap: 8px; padding: 10px 18px; color: white; font-weight: 700; font-size: 14px; border: none; border-radius: 8px; }
+        .du-poster-wrap { max-width: 900px; margin: 0 auto; }
+        .du-header { background-color: white; border-bottom: 4px solid #f59e0b; padding: 44px 32px; text-align: center; }
+        .du-title { font-size: 46px; font-weight: 900; letter-spacing: -1px; color: #1f2937; margin: 0 0 12px; }
+        .du-subtitle { color: #4b5563; font-size: 17px; margin: 0 0 18px; }
+        .du-meta { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 15px; color: #4b5563; }
+        .du-date { font-weight: 700; font-size: 18px; }
+        .du-content { padding: 28px 32px; }
+        .du-news-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+        .du-col-header { background-color: #fcd34d; color: #1f2937; padding: 14px 18px; font-weight: 900; font-size: 16px; letter-spacing: 0.4px; }
+        .du-col-body { background-color: #fffbeb; border: 2px solid #fcd34d; padding: 20px; min-height: 280px; }
+        .du-headline-tag { background-color: #dc2626; color: white; padding: 14px 20px; font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 10px; letter-spacing: 0.4px; }
+        .du-headline-body { padding: 26px; }
+        .du-headline-title { font-size: 26px; font-weight: 900; color: #1f2937; margin: 0 0 10px; line-height: 1.25; }
+        .du-headline-desc { font-size: 15px; line-height: 1.6; color: #374151; margin: 0; }
+        .du-other { border: 4px solid #1f2937; padding: 26px; background-color: white; }
+        .du-other h3 { font-size: 20px; font-weight: 900; color: #1f2937; margin: 0 0 16px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .du-footer { background-color: #f3f4f6; border-top: 1px solid #e5e7eb; padding: 20px 32px; text-align: center; color: #4b5563; font-size: 13px; }
+
+        @media (max-width: 640px) {
+          .du-page { padding: 16px 10px; }
+          .du-controls { padding: 12px; gap: 10px; margin-bottom: 16px; }
+          .du-btn { padding: 9px 14px; font-size: 12px; }
+          .du-header { padding: 24px 16px; }
+          .du-title { font-size: 27px; letter-spacing: -0.5px; margin-bottom: 8px; }
+          .du-subtitle { font-size: 13px; margin-bottom: 12px; }
+          .du-meta { font-size: 12px; gap: 8px; }
+          .du-date { font-size: 14px; }
+          .du-content { padding: 16px 14px; }
+          .du-news-grid { grid-template-columns: 1fr; gap: 14px; margin-bottom: 18px; }
+          .du-col-header { padding: 10px 14px; font-size: 13px; }
+          .du-col-body { padding: 14px; min-height: 0; }
+          .du-headline-tag { padding: 10px 14px; font-size: 14px; }
+          .du-headline-body { padding: 16px; }
+          .du-headline-title { font-size: 19px; margin-bottom: 6px; }
+          .du-headline-desc { font-size: 13px; }
+          .du-other { padding: 16px; border-width: 3px; }
+          .du-other h3 { font-size: 15px; margin-bottom: 10px; }
+          .du-footer { padding: 14px 16px; font-size: 11px; }
+        }
+      `}</style>
+
       {/* Download controls */}
-      <div style={{ maxWidth: '900px', margin: '0 auto 24px', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'white', padding: '16px', borderRadius: '10px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <div className="du-controls">
+        <div className="du-controls-btns">
           <button
             onClick={() => downloadPoster('image')}
             disabled={downloading}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', backgroundColor: downloading ? '#9ca3af' : '#d97706', color: 'white', fontWeight: 700, fontSize: '14px', border: 'none', borderRadius: '8px', cursor: downloading ? 'default' : 'pointer' }}
+            className="du-btn"
+            style={{ backgroundColor: downloading ? '#9ca3af' : '#d97706', cursor: downloading ? 'default' : 'pointer' }}
           >
             {downloading && downloadFormat === 'image' ? '⏳' : '⬇️'} Download as PNG
           </button>
           <button
             onClick={() => downloadPoster('pdf')}
             disabled={downloading}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', backgroundColor: downloading ? '#9ca3af' : '#dc2626', color: 'white', fontWeight: 700, fontSize: '14px', border: 'none', borderRadius: '8px', cursor: downloading ? 'default' : 'pointer' }}
+            className="du-btn"
+            style={{ backgroundColor: downloading ? '#9ca3af' : '#dc2626', cursor: downloading ? 'default' : 'pointer' }}
           >
             {downloading && downloadFormat === 'pdf' ? '⏳' : '⬇️'} Download as PDF
           </button>
@@ -112,32 +160,30 @@ export default function DailyUpdatesPosterClient({ darjeelingArticles, otherDist
       </div>
 
       {/* Poster */}
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div className="du-poster-wrap">
         <div ref={posterRef} style={{ backgroundColor: '#f9fafb' }}>
-          <div style={{ backgroundColor: 'white', borderBottom: '4px solid #f59e0b', padding: '44px 32px', textAlign: 'center' }}>
-            <h1 style={{ fontSize: '46px', fontWeight: 900, letterSpacing: '-1px', color: '#1f2937', margin: '0 0 12px' }}>DAILY UPDATES</h1>
-            <p style={{ color: '#4b5563', fontSize: '17px', margin: '0 0 18px' }}>
+          <div className="du-header">
+            <h1 className="du-title">DAILY UPDATES</h1>
+            <p className="du-subtitle">
               In Association with <strong style={{ color: '#b45309' }}>Khabar Darjeeling</strong>
             </p>
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '15px', color: '#4b5563' }}>
-              <span style={{ fontWeight: 700, fontSize: '18px' }}>📅 {selectedDate}</span>
+            <div className="du-meta">
+              <span className="du-date">📅 {selectedDate}</span>
               <span>•</span>
               <span style={{ color: '#6b7280' }}>To help you stay informed…</span>
             </div>
           </div>
 
-          <div style={{ padding: '28px 32px' }}>
+          <div className="du-content">
             {/* Two-column news */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '28px' }}>
+            <div className="du-news-grid">
               <NewsColumn title="• DARJEELING •" articles={darjeelingArticles} />
               <NewsColumn title="• KALIMPONG, KURSEONG & BEYOND •" articles={otherDistrictArticles} />
             </div>
 
             {/* Top headline */}
             <div style={{ marginBottom: '28px' }}>
-              <div style={{ backgroundColor: '#dc2626', color: 'white', padding: '14px 20px', fontWeight: 900, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '0.4px' }}>
-                📈 TOP HEADLINE OF THE DAY
-              </div>
+              <div className="du-headline-tag">📈 TOP HEADLINE OF THE DAY</div>
               <div style={{ backgroundColor: 'white', border: '2px solid #dc2626' }}>
                 {topHeadline ? (
                   <>
@@ -150,10 +196,10 @@ export default function DailyUpdatesPosterClient({ darjeelingArticles, otherDist
                         </div>
                       )}
                     </div>
-                    <div style={{ padding: '26px' }}>
-                      <h2 style={{ fontSize: '26px', fontWeight: 900, color: '#1f2937', margin: '0 0 10px', lineHeight: 1.25 }}>{topHeadline.title}</h2>
+                    <div className="du-headline-body">
+                      <h2 className="du-headline-title">{topHeadline.title}</h2>
                       {shortDescription(topHeadline) && (
-                        <p style={{ fontSize: '15px', lineHeight: 1.6, color: '#374151', margin: 0 }}>{shortDescription(topHeadline)}</p>
+                        <p className="du-headline-desc">{shortDescription(topHeadline)}</p>
                       )}
                     </div>
                   </>
@@ -164,8 +210,8 @@ export default function DailyUpdatesPosterClient({ darjeelingArticles, otherDist
             </div>
 
             {/* Other news */}
-            <div style={{ border: '4px solid #1f2937', padding: '26px', backgroundColor: 'white' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1f2937', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>In Other News…</h3>
+            <div className="du-other">
+              <h3>In Other News…</h3>
               {otherNews.length === 0 ? (
                 <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>No additional stories right now.</p>
               ) : (
@@ -181,7 +227,7 @@ export default function DailyUpdatesPosterClient({ darjeelingArticles, otherDist
             </div>
           </div>
 
-          <div style={{ backgroundColor: '#f3f4f6', borderTop: '1px solid #e5e7eb', padding: '20px 32px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>
+          <div className="du-footer">
             <p style={{ margin: 0 }}>© {year} Khabar Darjeeling | Bringing you daily updates from Darjeeling and beyond</p>
           </div>
         </div>
@@ -201,8 +247,8 @@ export default function DailyUpdatesPosterClient({ darjeelingArticles, otherDist
 function NewsColumn({ title, articles }: { title: string; articles: any[] }) {
   return (
     <div>
-      <div style={{ backgroundColor: '#fcd34d', color: '#1f2937', padding: '14px 18px', fontWeight: 900, fontSize: '16px', letterSpacing: '0.4px' }}>{title}</div>
-      <div style={{ backgroundColor: '#fffbeb', border: '2px solid #fcd34d', padding: '20px', minHeight: '280px' }}>
+      <div className="du-col-header">{title}</div>
+      <div className="du-col-body">
         {articles.length === 0 ? (
           <p style={{ color: '#a3824a', fontSize: '13px', margin: 0 }}>No recent stories yet.</p>
         ) : (
