@@ -72,23 +72,28 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
         const arts = articlesData.documents || [];
         if (arts.length > 0) setArticles(arts);
 
-        // Count total likes across their articles
+        // Count total likes across their articles. The likes collection
+        // also holds comment-likes (same articleId, but with a commentId
+        // set) — those must be excluded or this overcounts.
         let likesSum = 0;
         for (const a of arts) {
           const likesRes = await fetch(
             ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' +
             encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })),
+            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [2000] })),
             { headers: H, credentials: 'include' }
           );
           if (likesRes.ok) {
             const ld = await likesRes.json();
-            likesSum += ld.total || 0;
+            likesSum += (ld.documents || []).filter((l: any) => !l.commentId).length;
           }
         }
         setTotalLikes(likesSum);
 
-        // Follower count
+        // Follower count and following count/list — independent fetches.
+        // These used to have the following-fetch nested inside the
+        // followers .ok check, so a failed followers request silently
+        // skipped loading who this user follows too.
         const followersRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
           encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })) +
@@ -99,7 +104,8 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
           const fd = await followersRes.json();
           setFollowerCount(fd.total || 0);
           setFollowersList(fd.documents || []);
-        // Following count and list (who this user follows)
+        }
+
         const followingRes = await fetch(
           ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
           encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [userId] })) +
@@ -110,7 +116,6 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
           const fgd = await followingRes.json();
           setFollowingCount(fgd.total || 0);
           setFollowingList(fgd.documents || []);
-        }
         }
 
         if (authData?.$id) {
@@ -155,11 +160,16 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
         setIsFollowing(false);
         setFollowerCount((c) => Math.max(0, c - existingDocs.length));
       } else {
+        // followingName is stored alongside followerName so the "Following"
+        // list can render this person's name without an extra lookup — it
+        // was never being set before, so that list always fell back to
+        // a generic "User" placeholder.
+        const followingName = profile?.displayName || articles[0]?.submitterName || 'User';
         await fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents', {
           method: 'POST',
           headers: { ...H, 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ documentId: 'unique()', data: { followerId: currentUser.$id, followingId: userId, followerName: currentUser.name, createdAt: new Date().toISOString() } }),
+          body: JSON.stringify({ documentId: 'unique()', data: { followerId: currentUser.$id, followingId: userId, followerName: currentUser.name, followingName, createdAt: new Date().toISOString() } }),
         });
         setIsFollowing(true);
         setFollowerCount((c) => c + 1);

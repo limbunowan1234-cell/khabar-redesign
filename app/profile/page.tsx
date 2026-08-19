@@ -222,7 +222,11 @@ export default function ProfilePage() {
               { headers: H, credentials: 'include' });
             if (likesRes.ok) {
               const ld = await likesRes.json();
-              const ids = (ld.documents || []).map((x: any) => x.articleId).filter(Boolean);
+              // The likes collection also holds comment-likes (same
+              // articleId, but with commentId set) — excluding those so
+              // Favorites doesn't include articles the user never
+              // actually liked, only commented-liked on.
+              const ids = (ld.documents || []).filter((x: any) => !x.commentId).map((x: any) => x.articleId).filter(Boolean);
         const arts = ids.length ? await (async () => { const bq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: '$id', values: ids.slice(0, 100) })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','title','genre','category','imageFileId','youtube_id','views','publishedAt','slug','submitterName','authorName'] })); const br = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + bq, { headers: H, credentials: 'include' }); if (!br.ok) return []; const bd2 = await br.json(); return bd2.documents || []; })() : [];
               setFavorites(arts.filter(Boolean));
             }
