@@ -1,0 +1,19 @@
+name = "khabar-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# Filled in after running `npm run db:create` — it prints a database_id,
+# paste it below. Nothing here works until that's real.
+[[d1_databases]]
+binding = "DB"
+database_name = "khabar-d1"
+database_id = "REPLACE_ME_AFTER_WRANGLER_D1_CREATE"
+
+# Phase 2 — uncomment once the R2 bucket exists (`wrangler r2 bucket create khabar-article-images`).
+# [[r2_buckets]]
+# binding = "IMAGES"
+# bucket_name = "khabar-article-images"
+
+# Secrets (set via `wrangler secret put NAME`, never committed here):
+#   APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID  — used to verify sessions against
+#     Appwrite's /account endpoint, since auth stays there (see migration plan).

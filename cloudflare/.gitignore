@@ -1,0 +1,5 @@
+node_modules/
+.wrangler/
+package-lock.json
+db/seed-*.sql
+.dev.vars
