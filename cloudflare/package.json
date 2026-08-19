@@ -6,8 +6,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:create": "wrangler d1 create khabar-d1",
-    "db:schema": "wrangler d1 execute khabar-d1 --file=./db/schema.sql",
     "db:schema:local": "wrangler d1 execute khabar-d1 --local --file=./db/schema.sql",
+    "db:schema:remote": "wrangler d1 execute khabar-d1 --remote --file=./db/schema.sql",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

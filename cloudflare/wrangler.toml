@@ -7,7 +7,7 @@ compatibility_date = "2024-09-23"
 [[d1_databases]]
 binding = "DB"
 database_name = "khabar-d1"
-database_id = "REPLACE_ME_AFTER_WRANGLER_D1_CREATE"
+database_id = "991e6a3d-1aca-4c2a-bbdf-5b8d374d45b8"
 
 # Phase 2 — uncomment once the R2 bucket exists (`wrangler r2 bucket create khabar-article-images`).
 # [[r2_buckets]]
