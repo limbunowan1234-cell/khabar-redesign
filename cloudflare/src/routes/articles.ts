@@ -54,6 +54,10 @@ articles.get('/', async (c) => {
   const q = c.req.query();
   const limit = Math.min(parseInt(q.limit || '20', 10) || 20, MAX_LIMIT);
 
+  // Filters that define the matching set (used for both the page query and
+  // the total count). Cursor is pagination-only, so it's applied separately
+  // to the page query — total reflects the whole filtered set, matching how
+  // Appwrite's listDocuments().total behaves regardless of pagination.
   const where: string[] = [];
   const params: unknown[] = [];
 
@@ -66,16 +70,23 @@ articles.get('/', async (c) => {
   if (q.featured) { where.push('is_featured = 1'); }
   if (q.contest) { where.push('is_contest_entry = 1'); }
   if (q.submitterId) { where.push('submitter_id = ?'); params.push(q.submitterId); }
-  if (q.cursor) { where.push('created_at < ?'); params.push(q.cursor); }
 
-  const sql = `SELECT * FROM articles WHERE ${where.join(' AND ')} ORDER BY created_at DESC LIMIT ?`;
-  params.push(limit);
+  const whereSql = where.join(' AND ');
 
-  const { results } = await c.env.DB.prepare(sql).bind(...params).all();
+  const pageWhere = q.cursor ? `${whereSql} AND created_at < ?` : whereSql;
+  const pageParams = q.cursor ? [...params, q.cursor] : params;
+
+  const sql = `SELECT * FROM articles WHERE ${pageWhere} ORDER BY created_at DESC LIMIT ?`;
+  const { results } = await c.env.DB.prepare(sql).bind(...pageParams, limit).all();
   const docs = (results || []).map(toArticleJson);
   const nextCursor = docs.length === limit ? (results![results!.length - 1] as any).created_at : null;
 
-  return c.json({ documents: docs, total: docs.length, nextCursor });
+  const countRow = await c.env.DB
+    .prepare(`SELECT COUNT(*) as total FROM articles WHERE ${whereSql}`)
+    .bind(...params)
+    .first();
+
+  return c.json({ documents: docs, total: (countRow as any)?.total ?? 0, nextCursor });
 });
 
 // GET /articles/:idOrSlug — matches Appwrite's getArticle() fallback

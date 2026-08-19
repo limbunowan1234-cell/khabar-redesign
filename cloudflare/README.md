@@ -5,12 +5,13 @@ actually needs to move first (view counting, since it fires on every
 article page load). Everything else still lives on Appwrite until later
 phases.
 
-**Status:** real remote D1 database is live (`khabar-d1`,
+**Status: Week 1 complete.** Real remote D1 database is live (`khabar-d1`,
 `991e6a3d-1aca-4c2a-bbdf-5b8d374d45b8`) with the full schema applied — 18
-tables, confirmed against the actual database, not the local simulator.
+tables. All 190 articles (+ 22 supporting images) imported from Appwrite.
 The Worker is deployed and public at
-`https://khabar-worker.limbunowan1234.workers.dev` (confirmed responding).
-No article data imported yet — that's the only thing left for Week 1.
+`https://khabar-worker.limbunowan1234.workers.dev`, confirmed serving real
+data with correct pagination totals. Nothing in the Next.js app reads from
+it yet — that's Week 2.
 
 ## One-time setup
 
@@ -40,9 +41,9 @@ Should list all 18 tables from `db/schema.sql`. (Confirmed working — 43 querie
 
 ## Importing real article data
 
-Requires the same `APPWRITE_API_KEY` already set in Vercel's environment
-variables for this project (used by `lib/newsDigest.ts` etc.) — grab it
-from Vercel's dashboard, don't create a new one unless you want to.
+Done for Week 1 — all 190 articles + 22 supporting images are in the real
+D1 database. To re-run (e.g. to refresh with newer Appwrite data before
+Week 2's read cutover):
 
 ```bash
 APPWRITE_API_KEY=xxx node scripts/export-appwrite.mjs
