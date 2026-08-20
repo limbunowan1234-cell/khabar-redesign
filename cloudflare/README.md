@@ -1,7 +1,7 @@
 # khabar-worker — Phase 1 + 2
 
 Read-only D1-backed API for `articles` (Phase 1), plus an R2-backed CDN
-route for images and the APK (Phase 2). Everything else still lives on
+route for article images (Phase 2). Everything else still lives on
 Appwrite until later phases.
 
 **Status: Week 1 (Phase 1) complete.** Real remote D1 database is live
@@ -11,24 +11,22 @@ from Appwrite. The Worker is deployed and public at
 `https://khabar-worker.limbunowan1234.workers.dev`, confirmed serving real
 data with correct pagination totals.
 
-**Status: Phase 2 in progress.** Both R2 buckets exist
-(`khabar-article-images`, `khabar-downloads`), bound into the Worker, with
-a working CDN route (`/cdn/articles/:key`, `/cdn/apk/:key`) — tested
-end-to-end on a real file. The bulk copy of all 287 files from Appwrite
-Storage is **partway through** (paused, not failed) — resume with:
+**Status: Phase 2 (images) complete.** The `khabar-article-images` R2
+bucket exists, bound into the Worker, with a working CDN route
+(`/cdn/articles/:key`) — tested end-to-end on a real file, then all 285
+article images copied over and confirmed reachable through it.
 
-```bash
-APPWRITE_API_KEY=xxx node scripts/copy-storage-to-r2.mjs
-```
-
-It's idempotent (R2 keys = Appwrite file `$id`), so re-running just
-re-uploads whatever's already there and continues past it — safe to run
-from the top every time rather than tracking a resume point. Once it
-finishes: re-verify the AVIF image case that broke Appwrite's `/preview`
-endpoint earlier this year still resolves cleanly through `/cdn/articles/`.
+**Permanent exclusion: the APK.** `app-downloads` (2 files) is staying on
+Appwrite for good — explicit decision, not a deferral. No bandwidth
+pressure from 2 files, not worth the extra bucket/route/script surface.
+`khabar-downloads` R2 bucket was created, then deleted once this was
+decided; nothing in the app changes — `HomeClient.tsx`'s `APK_URL` keeps
+pointing at Appwrite permanently.
 
 Nothing in the Next.js app reads from either the D1 API or the R2 CDN
-yet — that's Week 2.
+yet — that's Week 2. Before that starts: re-verify the AVIF image case
+that broke Appwrite's `/preview` endpoint earlier this year still
+resolves cleanly through `/cdn/articles/`.
 
 ## One-time setup
 
@@ -108,6 +106,6 @@ explicitly points a fetch call here instead of Appwrite.
   get built — deliberately deferred until a write path actually needs it,
   rather than building it speculatively.
 - **Nothing in the Next.js app points here yet.** All 73 files still call
-  Appwrite directly (both for D1-backed data and for images/APK). Swapping
-  even one read call site over is the next concrete step, once Phase 2's
-  file copy is confirmed complete.
+  Appwrite directly (D1-backed data and article images alike; the APK
+  stays on Appwrite permanently regardless). Swapping even one read call
+  site over is the next concrete step.

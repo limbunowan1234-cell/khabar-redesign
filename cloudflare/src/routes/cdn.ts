@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-type Bindings = { IMAGES: R2Bucket; DOWNLOADS: R2Bucket };
+type Bindings = { IMAGES: R2Bucket };
 
 export const cdn = new Hono<{ Bindings: Bindings }>();
 
@@ -22,6 +22,3 @@ async function serve(c: any, bucket: R2Bucket, key: string) {
 
 // GET /cdn/articles/{fileId}.{ext} — maps to Appwrite bucket `article-image`.
 cdn.get('/articles/:key', (c) => serve(c, c.env.IMAGES, c.req.param('key')));
-
-// GET /cdn/apk/{version}.apk — maps to Appwrite bucket `app-downloads`.
-cdn.get('/apk/:key', (c) => serve(c, c.env.DOWNLOADS, c.req.param('key')));

@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { articles } from './routes/articles';
 import { cdn } from './routes/cdn';
 
-type Bindings = { DB: D1Database; IMAGES: R2Bucket; DOWNLOADS: R2Bucket };
+type Bindings = { DB: D1Database; IMAGES: R2Bucket };
 
 const app = new Hono<{ Bindings: Bindings }>();
 

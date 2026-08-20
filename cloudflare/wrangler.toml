@@ -13,9 +13,9 @@ database_id = "991e6a3d-1aca-4c2a-bbdf-5b8d374d45b8"
 binding = "IMAGES"
 bucket_name = "khabar-article-images"
 
-[[r2_buckets]]
-binding = "DOWNLOADS"
-bucket_name = "khabar-downloads"
+# APK downloads are staying on Appwrite permanently (explicit decision —
+# not a deferral). Only 2 files, no bandwidth pressure, not worth the
+# extra bucket/route/script surface.
 
 # Secrets (set via `wrangler secret put NAME`, never committed here):
 #   APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID  — used to verify sessions against

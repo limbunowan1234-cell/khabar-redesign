@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// Copies every file from Appwrite Storage (article-image, app-downloads)
-// into the matching R2 bucket, keyed by the original Appwrite file $id —
-// same convention the Next.js app already uses in image URLs
-// (`imageFileId`), so swapping call sites later is just a URL change, not
-// a lookup change.
+// Copies every file from Appwrite Storage's `article-image` bucket into
+// the matching R2 bucket, keyed by the original Appwrite file $id — same
+// convention the Next.js app already uses in image URLs (`imageFileId`),
+// so swapping call sites later is just a URL change, not a lookup change.
+//
+// app-downloads (the APK) is a permanent exclusion, not deferred — only
+// 2 files, no bandwidth pressure, staying on Appwrite for good.
 //
 // Usage: APPWRITE_API_KEY=xxx node scripts/copy-storage-to-r2.mjs
 
@@ -18,7 +20,6 @@ const PROJECT = 'khabardarjeeling';
 
 const BUCKET_MAP = {
   'article-image': 'khabar-article-images',
-  'app-downloads': 'khabar-downloads',
 };
 
 const apiKey = process.env.APPWRITE_API_KEY;
@@ -45,12 +46,13 @@ async function listAll(bucketId) {
 }
 
 async function withRetries(fn, label) {
-  for (let attempt = 1; attempt <= 4; attempt++) {
+  const MAX_ATTEMPTS = 8;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       return await fn();
     } catch (err) {
-      if (attempt === 4) throw err;
-      const delayMs = attempt * 2000;
+      if (attempt === MAX_ATTEMPTS) throw err;
+      const delayMs = Math.min(attempt * 5000, 30000);
       console.warn(`  retrying ${label} (attempt ${attempt} failed: ${err.message}), waiting ${delayMs}ms`);
       await new Promise((r) => setTimeout(r, delayMs));
     }
