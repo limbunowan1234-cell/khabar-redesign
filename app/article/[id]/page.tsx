@@ -1,17 +1,16 @@
 import type { Metadata } from 'next';
 import ArticleClient from './ArticleClient';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';
+// Week 3 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function imgUrl(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';
   const id = a?.imageFileId;
   if (!id || ['Text', 'null', 'undefined', ''].includes(String(id))) return SITE + '/assets/logo.png';
   if (String(id).startsWith('http')) return id;
-  return ENDPOINT + '/storage/buckets/article-image/files/' + id + '/view?project=' + PROJECT;
+  return WORKER_URL + '/cdn/articles/' + id;
 }
 
 function clean(text: string, max = 120): string {
@@ -22,19 +21,7 @@ function clean(text: string, max = 120): string {
 
 async function fetchArticle(idOrSlug: string): Promise<any> {
   try {
-    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'slug', values: [idOrSlug] }));
-    const slugRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q, {
-      headers: { 'X-Appwrite-Project': PROJECT },
-      next: { revalidate: 300 },
-    });
-    if (slugRes.ok) {
-      const slugData = await slugRes.json();
-      if (slugData.documents && slugData.documents.length > 0) return slugData.documents[0];
-    }
-  } catch {}
-  try {
-    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents/' + idOrSlug, {
-      headers: { 'X-Appwrite-Project': PROJECT },
+    const res = await fetch(WORKER_URL + '/articles/' + encodeURIComponent(idOrSlug), {
       next: { revalidate: 300 },
     });
     if (!res.ok) return null;

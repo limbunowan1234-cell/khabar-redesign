@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import StoryCard from '@/components/StoryCard';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getArticle, getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike, incrementViews } from '@/lib/appwrite';
+import { getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike } from '@/lib/appwrite';
 import { useAuthStore } from '@/lib/authStore';
 import { trackPageView } from '@/lib/analyticsTracker';
 
@@ -14,12 +14,18 @@ const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 const DB = 'Khabar_db';
+// Week 3 of the Cloudflare migration (see cloudflare/README.md): article
+// data, related/author article lists, view counting and images all read
+// from the Worker/R2 now. Likes, bookmarks, follows and comments are
+// still Appwrite -- those are writes gated by auth, out of scope until
+// the auth-bridging phase.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(article: any): string {
   const id = article.imageFileId;
   if (!id || ['Text','null','undefined',''].includes(String(id))) return '';
   if (String(id).startsWith('http')) return id;
-  return ENDPOINT + '/storage/buckets/article-image/files/' + id + '/view?project=' + PROJECT;
+  return WORKER_URL + '/cdn/articles/' + id;
 }
 
 function getInitials(name: string): string {
@@ -302,35 +308,36 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
   useEffect(() => {
     if (!id) return;
     async function load() {
-      incrementViews(id);
       trackPageView(id, user?.$id);
-        const data = await getArticle(id);
-      if (data) setArticle(data);
-        if (data?.genre) {
+      let data: any = null;
+      try {
+        const res = await fetch(WORKER_URL + '/articles/' + encodeURIComponent(id));
+        if (res.ok) data = await res.json();
+      } catch {}
+      if (data) {
+        setArticle(data);
+        // Fire-and-forget, using the resolved doc id (the route param can
+        // be a slug, and the view-count endpoint only matches on id).
+        fetch(WORKER_URL + '/articles/' + data.$id + '/views', { method: 'PATCH' }).catch(() => {});
+        if (data.genre) {
           try {
-            const rq1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'genre', values: [data.genre] }));
-            const rq2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }));
-            const rq3 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-            const rq4 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [5] }));
-            const rRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + rq1 + '&queries[]=' + rq2 + '&queries[]=' + rq3 + '&queries[]=' + rq4, { headers: H });
+            const rRes = await fetch(WORKER_URL + '/articles?genre=' + encodeURIComponent(data.genre) + '&limit=5');
             if (rRes.ok) {
               const rData = await rRes.json();
-              setRelatedArticles((rData.documents || []).filter((a: any) => a.$id !== id).slice(0, 4));
+              setRelatedArticles((rData.documents || []).filter((a: any) => a.$id !== data.$id).slice(0, 4));
             }
           } catch {}
         }
-        if (data?.submitterId) {
+        if (data.submitterId) {
           try {
-            const aq1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [data.submitterId] }));
-            const aq2 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-            const aq3 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [5] }));
-            const aRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + aq1 + '&queries[]=' + aq2 + '&queries[]=' + aq3, { headers: H });
+            const aRes = await fetch(WORKER_URL + '/articles?submitterId=' + encodeURIComponent(data.submitterId) + '&limit=5');
             if (aRes.ok) {
               const aData = await aRes.json();
-              setAuthorArticles((aData.documents || []).filter((a: any) => a.$id !== id).slice(0, 4));
+              setAuthorArticles((aData.documents || []).filter((a: any) => a.$id !== data.$id).slice(0, 4));
             }
           } catch {}
         }
+      }
       setLoading(false);
       const cms = await fetchComments(id);
       setComments(cms);

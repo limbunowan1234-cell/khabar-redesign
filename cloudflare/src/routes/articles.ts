@@ -108,7 +108,15 @@ articles.get('/:idOrSlug', async (c) => {
     .bind((row as any).id)
     .all();
 
-  return c.json({ ...toArticleJson(row), supportingImages: supporting.results || [] });
+  // Appwrite stored these as an array of JSON strings (`{"fileId":...,
+  // "caption":...}`), not parsed objects — app/article/[id]/ArticleClient.tsx's
+  // renderContent() does its own JSON.parse() on each entry, so this
+  // mirrors that shape exactly rather than pre-parsing it.
+  const supportingImages = (supporting.results || []).map((r: any) =>
+    JSON.stringify({ fileId: r.file_id, caption: r.caption })
+  );
+
+  return c.json({ ...toArticleJson(row), supportingImages });
 });
 
 // PATCH /articles/:id/views — the one write endpoint Phase 1 needs, since
