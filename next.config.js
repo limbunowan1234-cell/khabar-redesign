@@ -22,6 +22,13 @@ const nextConfig = {
         hostname: 'img.youtube.com',
         pathname: '/**',
       },
+      {
+        // Cloudflare migration, Week 2 (see cloudflare/README.md): article
+        // images now served from the Worker's R2-backed CDN route.
+        protocol: 'https',
+        hostname: 'khabar-worker.limbunowan1234.workers.dev',
+        pathname: '/cdn/**',
+      },
     ],
   },
 };

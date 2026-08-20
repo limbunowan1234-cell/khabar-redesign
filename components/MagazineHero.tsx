@@ -3,13 +3,14 @@
 import StoryCard from './StoryCard';
 import { selectHeroPool } from '@/lib/homepageSelection';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
+// Week 2 of the Cloudflare migration (see cloudflare/README.md): images
+// read from the R2 CDN route instead of Appwrite.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function imgOf(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';
   if (!a?.imageFileId) return '';
-  return ENDPOINT + '/storage/buckets/article-image/files/' + a.imageFileId + '/view?project=' + PROJECT;
+  return WORKER_URL + '/cdn/articles/' + a.imageFileId;
 }
 
 function genreOf(a: any): string {

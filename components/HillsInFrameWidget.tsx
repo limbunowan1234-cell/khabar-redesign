@@ -7,11 +7,15 @@ import Link from 'next/link';
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
-const BUCKET = 'article-image';
 const H = { 'X-Appwrite-Project': PROJECT };
+// Week 2 of the Cloudflare migration (see cloudflare/README.md): these
+// photos live in the same article-image bucket already fully copied to
+// R2, even though `photography` itself (the data/collection) hasn't
+// moved to D1 yet — only the image source changes here.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(fileId: string): string {
-  return ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + fileId + '/view?project=' + PROJECT;
+  return WORKER_URL + '/cdn/articles/' + fileId;
 }
 
 export default function HillsInFrameWidget() {

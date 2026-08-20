@@ -25,6 +25,10 @@ const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const DB = 'Khabar_db';
 const APK_URL = 'https://api.khabardarjeeling.in/v1/storage/buckets/app-downloads/files/khabar-app-v1/download?project=khabardarjeeling';
+// Week 2 of the Cloudflare migration (see cloudflare/README.md): article
+// list + images now read from the Worker/R2 instead of Appwrite. Writes
+// (view counting, comments, etc.) are untouched, still on Appwrite.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const categories = ['All', 'Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Politics', 'Sports', 'Culture', 'Education', 'Health', 'Entertainment', 'Technology', 'Tea Gardens', 'Tourism', 'Crime', 'Opinion'];
 
@@ -40,15 +44,15 @@ function getCategoryColor(cat: string): string {
 
 function getImageUrl(article: any): string {
   if (!article.imageFileId) return '';
-  return ENDPOINT + '/storage/buckets/article-image/files/' + article.imageFileId + '/view?project=' + projectId;
+  return WORKER_URL + '/cdn/articles/' + article.imageFileId;
 }
 
 function getThumbUrl(article: any, _width: number): string {
-  // Appwrite's own preview/transform can't decode AVIF/HEIC sources and
-  // silently returns a generic placeholder icon, so serve the original
-  // and let next/image's optimizer (which handles AVIF fine) resize it.
+  // No transform layer on the R2 CDN route either (by design — see
+  // cloudflare/README.md), so this still serves the original and lets
+  // next/image's optimizer (which handles AVIF fine) resize it.
   if (!article.imageFileId) return '';
-  return ENDPOINT + '/storage/buckets/article-image/files/' + article.imageFileId + '/view?project=' + projectId;
+  return WORKER_URL + '/cdn/articles/' + article.imageFileId;
 }
 
 function truncateText(text: string, words: number): string {
@@ -607,13 +611,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
     async function load() {
       await initAuth();
       try {
-        const res = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [300] })),
-          { headers: H }
-        );
+        const res = await fetch(WORKER_URL + '/articles?limit=300');
         if (res.ok) {
           const data = await res.json();
           setArticles(data.documents || []); setTotalSiteArticles(data.total || 0);
