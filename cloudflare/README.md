@@ -34,10 +34,18 @@ unaffected. `HillsInFrameWidget`'s own data (`photography` collection)
 is still Appwrite — only its images moved, since they live in the same
 bucket already copied to R2.
 
-Still fully on Appwrite: article detail pages, all writes (publishing,
-comments, likes, view counting still needs wiring up beyond the one
-endpoint that exists), admin panel, everything outside the homepage's
-default view.
+**Status: Week 3 (article detail pages) done.** `app/article/[id]/page.tsx`
+and `ArticleClient.tsx` read the article body, related articles (by
+genre), the author's other articles (by submitterId), and every image on
+the page from the Worker/R2. View counting is live for real —
+`PATCH /articles/:id/views` fires on every article page load, the first
+write endpoint actually in production use. Likes, bookmarks, follows and
+comments stay on Appwrite (writes gated by auth, waiting on the
+auth-bridging phase).
+
+Still fully on Appwrite: everything gated by auth, search/filter results,
+weekly digest, admin panel, profile, contest — each is its own future
+increment.
 
 ## One-time setup
 
