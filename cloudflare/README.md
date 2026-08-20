@@ -23,10 +23,21 @@ pressure from 2 files, not worth the extra bucket/route/script surface.
 decided; nothing in the app changes — `HomeClient.tsx`'s `APK_URL` keeps
 pointing at Appwrite permanently.
 
-Nothing in the Next.js app reads from either the D1 API or the R2 CDN
-yet — that's Week 2. Before that starts: re-verify the AVIF image case
-that broke Appwrite's `/preview` endpoint earlier this year still
-resolves cleanly through `/cdn/articles/`.
+**Status: Week 2 (homepage cutover) done.** The homepage
+(`app/HomeClient.tsx` and everything it renders by default —
+`MagazineHero`, `LatestSection`, `DistrictSection`, `GenreColumns`,
+`HillsInFrameWidget`) now reads articles from the Worker and images from
+the R2 CDN instead of Appwrite. Verified in a real browser: correct
+article count and content, all images loading through `/cdn/articles/`
+with zero broken images, article detail pages (still Appwrite, untouched)
+unaffected. `HillsInFrameWidget`'s own data (`photography` collection)
+is still Appwrite — only its images moved, since they live in the same
+bucket already copied to R2.
+
+Still fully on Appwrite: article detail pages, all writes (publishing,
+comments, likes, view counting still needs wiring up beyond the one
+endpoint that exists), admin panel, everything outside the homepage's
+default view.
 
 ## One-time setup
 
@@ -105,7 +116,7 @@ explicitly points a fetch call here instead of Appwrite.
   Appwrite session-check bridge described in the migration plan needs to
   get built — deliberately deferred until a write path actually needs it,
   rather than building it speculatively.
-- **Nothing in the Next.js app points here yet.** All 73 files still call
-  Appwrite directly (D1-backed data and article images alike; the APK
-  stays on Appwrite permanently regardless). Swapping even one read call
-  site over is the next concrete step.
+- **Only the homepage's default view has been swapped.** The other ~70
+  Appwrite call sites (article detail pages, search/filter results,
+  weekly digest, admin, profile, contest, etc.) are untouched. Each is
+  its own future increment, same pattern as this one.
