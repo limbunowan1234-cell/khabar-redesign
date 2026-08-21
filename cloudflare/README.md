@@ -53,8 +53,18 @@ existed. Also fixed a pre-existing bug in both pages' image-URL
 functions (missing the `'Text'` sentinel-value guard other components
 already have) while already in there.
 
+**Status: Week 5 (weekly digest + shared image-proxy) done.**
+`app/api/image-proxy/route.ts` — shared by the Daily Updates poster,
+weekly digest, and Bhasa Diwas gallery for canvas-safe cross-origin image
+loading — now proxies `article-image` bucket requests through R2. A
+second Appwrite bucket (Bhasa Diwas submissions) shares this same route
+via `?bucket=`; that one correctly stays on Appwrite, not migrated yet.
+`app/weekly/page.tsx` + `WeeklyClient.tsx` fetch from the Worker,
+filtering client-side for `weeklyLive`/`isWeeklyPick`. Admin-preview auth
+check stays on Appwrite.
+
 Still fully on Appwrite: everything gated by auth, search/filter results,
-weekly digest, admin panel, profile, contest — each is its own future
+admin panel, profile, contest, Bhasa Diwas — each is its own future
 increment.
 
 ## One-time setup
