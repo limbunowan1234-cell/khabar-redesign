@@ -134,13 +134,14 @@ submissions feed, leaderboard, discussion comments (which reuse the
 existing `comments` table, no new work needed), and the SSR detail page —
 migrated. Voting/commenting/submitting stay on Appwrite.
 
-**Known gap:** this feature's own image bucket (separate Appwrite bucket
-id, 3 files) is still on Appwrite — R2 bucket *creation* started failing
-account-side ("Please enable R2 through the Cloudflare Dashboard") even
-though existing R2 buckets kept working fine. Decided with the user to
-proceed without it rather than get stuck; check the Cloudflare dashboard
-for an R2 plan/terms issue when convenient, since this blocks creating
-*any* new R2 bucket going forward, not just this one.
+**Permanent exclusion: this feature's images.** Its own bucket (separate
+Appwrite bucket id, 3 files, 5.1MB) stays on Appwrite for good — same
+kind of call as the APK exclusion, not a deferral. R2 bucket *creation*
+was failing account-side at the time ("Please enable R2 through the
+Cloudflare Dashboard", even though existing R2 buckets kept working
+fine), and with only 3 files there's no real bandwidth case for chasing
+it down. The existing image-proxy fallback already handles this bucket
+correctly since it only special-cases `article-image`.
 
 Still fully on Appwrite: every write, admin panel, search/filter.
 
