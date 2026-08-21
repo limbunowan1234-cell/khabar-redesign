@@ -2,10 +2,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT };
+// Week 7 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const TIERS = [
   { name: 'New Writer', min: 0, max: 50, color: '#888' },
@@ -37,18 +35,14 @@ export default function TopCreators() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'limit', values: [500] })),
-          { headers: H, credentials: 'include' }
-        );
+        const res = await fetch(WORKER_URL + '/articles?limit=500');
         if (!res.ok) return;
         const data = await res.json();
         const articles = data.documents || [];
 
         const creatorMap = new Map();
         for (const a of articles) {
-          if (!a.submitterId || a.status !== 'published') continue;
+          if (!a.submitterId) continue;
           const key = a.submitterId;
           const existing = creatorMap.get(key) || { submitterId: a.submitterId, submitterName: a.submitterName, submitterAvatar: a.submitterAvatar, views: 0, articles: 0 };
           existing.views += a.views || 0;

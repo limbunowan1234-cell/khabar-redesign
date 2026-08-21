@@ -5,6 +5,10 @@ const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
+// Week 7 of the Cloudflare migration (see cloudflare/README.md): the
+// article read below comes from the Worker. Likes/comments stay on
+// Appwrite -- those collections haven't been exported to D1 yet.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const TIERS = [
   { name: '✍️ New Writer', min: 0, max: 50, color: '#888' },
@@ -21,9 +25,7 @@ export default function TierProgress({ userId }: { userId: string }) {
     let alive = true;
     (async () => {
       try {
-        const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userId] }));
-        const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1000] }));
-        const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' });
+        const res = await fetch(WORKER_URL + '/articles?submitterId=' + encodeURIComponent(userId) + '&limit=1000');
         if (!res.ok) throw new Error('articles');
         const articlesData = await res.json();
         const articleIds = (articlesData.documents || []).map((a: any) => a.$id);

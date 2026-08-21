@@ -5,6 +5,10 @@ const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
+// Week 7 of the Cloudflare migration (see cloudflare/README.md): the
+// article read below comes from the Worker. Likes/comments stay on
+// Appwrite -- those collections haven't been exported to D1 yet.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 // ---- Badge tier logic (combined score = views + likes + comments) ----
 function getTier(score: number) {
@@ -21,12 +25,10 @@ export async function getAuthorStats(submitterId: string) {
   if (!submitterId) return empty;
   try {
     // 1) Author's articles (views live here, reliably)
-    const qa1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [submitterId] }));
-    const qa2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [500] }));
-    const aRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + qa1 + '&queries[]=' + qa2, { headers: H, credentials: 'include' });
+    const aRes = await fetch(WORKER_URL + '/articles?submitterId=' + encodeURIComponent(submitterId) + '&limit=500');
     if (!aRes.ok) return empty;
     const aData = await aRes.json();
-    const articles = (aData.documents || []).filter((a: any) => a.status === 'published' || !a.status);
+    const articles = aData.documents || [];
     const articleIds = articles.map((a: any) => a.$id).slice(0, 100); // cap for query-length safety
     const totalViews = articles.reduce((s: number, a: any) => s + (a.views || 0), 0);
     if (articleIds.length === 0) return { ...empty, articleCount: articles.length, totalViews, score: totalViews };

@@ -7,6 +7,10 @@ const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
+// Week 7 of the Cloudflare migration (see cloudflare/README.md): the
+// contest-entry article read below comes from the Worker. Likes/comments
+// stay on Appwrite -- those collections haven't been exported to D1 yet.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 export interface RankedEntry {
   articleId: string;
@@ -24,9 +28,7 @@ export interface RankedEntry {
 export const CONTEST_VOTE_CUTOFF_MS = new Date('2026-08-14T19:15:57Z').getTime();
 
 export async function computeContestRankings(): Promise<RankedEntry[]> {
-  const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'isContestEntry', values: [true] }));
-  const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [200] }));
-  const res = await fetch(`${ENDPOINT}/databases/${DB}/collections/articles/documents?queries[]=${q1}&queries[]=${q2}`, { headers: H });
+  const res = await fetch(`${WORKER_URL}/articles?contest=1&limit=200`);
   if (!res.ok) return [];
   const data = await res.json();
   const articles: any[] = data.documents || [];
