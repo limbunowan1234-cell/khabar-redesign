@@ -1,39 +1,22 @@
 ﻿import type { Metadata } from 'next';
 import ProfileClient from './ProfileClient';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
+// Week 8 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 async function fetchProfileData(userId: string): Promise<{ profile: any; articles: any[]; writerRank: number | null; contestRank: number | null }> {
   try {
-    const profileRes = await fetch(
-      ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' +
-      encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] })),
-      { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 300 } }
-    );
-    const profileData = profileRes.ok ? await profileRes.json() : { documents: [] };
-    const profile = profileData.documents?.[0] || null;
+    const profileRes = await fetch(WORKER_URL + '/profiles/' + encodeURIComponent(userId), { next: { revalidate: 300 } });
+    const profile = profileRes.ok ? await profileRes.json() : null;
 
-    const articlesRes = await fetch(
-      ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-      encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userId] })) +
-      '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
-      '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','title','genre','category','locationDistrict','imageFileId','youtube_id','views','isContestEntry','isFeatured','isBreaking','publishedAt','slug','submitterName','authorName'] })),
-      { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 300 } }
-    );
+    const articlesRes = await fetch(WORKER_URL + '/articles?submitterId=' + encodeURIComponent(userId) + '&limit=50', { next: { revalidate: 300 } });
     const articlesData = articlesRes.ok ? await articlesRes.json() : { documents: [] };
     const articles = articlesData.documents || [];
 
     let writerRank: number | null = null;
     let contestRank: number | null = null;
     try {
-      const allRes = await fetch(
-        ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-        encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
-        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1000] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','submitterId','views','isContestEntry'] })),
-        { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 600 } }
-      );
+      const allRes = await fetch(WORKER_URL + '/articles?limit=1000', { next: { revalidate: 600 } });
       if (allRes.ok) {
         const allData = await allRes.json();
         const allArticles = allData.documents || [];

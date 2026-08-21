@@ -1,13 +1,8 @@
 ﻿'use client';
 import { useState, useEffect } from 'react';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT };
-// Week 7 of the Cloudflare migration (see cloudflare/README.md): the
-// article read below comes from the Worker. Likes/comments stay on
-// Appwrite -- those collections haven't been exported to D1 yet.
+// Week 8 of the Cloudflare migration (see cloudflare/README.md): articles,
+// likes, and comments all read from the Worker now.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 // ---- Badge tier logic (combined score = views + likes + comments) ----
@@ -33,21 +28,19 @@ export async function getAuthorStats(submitterId: string) {
     const totalViews = articles.reduce((s: number, a: any) => s + (a.views || 0), 0);
     if (articleIds.length === 0) return { ...empty, articleCount: articles.length, totalViews, score: totalViews };
 
-    // 2) Likes across those articles (one IN query), exclude comment likes in JS
+    // 2) Likes across those articles (one IN query) -- the Worker already
+    // excludes comment likes for this shape (articleIds implies article-
+    // level only, matching getArticleLikes() elsewhere).
     let totalLikes = 0;
-    const ql1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: articleIds }));
-    const ql2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [5000] }));
-    const lRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' + ql1 + '&queries[]=' + ql2, { headers: H, credentials: 'include' });
+    const lRes = await fetch(WORKER_URL + '/likes?articleIds=' + articleIds.map(encodeURIComponent).join(','));
     if (lRes.ok) {
       const lData = await lRes.json();
-      totalLikes = (lData.documents || []).filter((l: any) => !l.commentId).length;
+      totalLikes = (lData.documents || []).length;
     }
 
     // 3) Comments across those articles (one IN query)
     let totalComments = 0;
-    const qc1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: articleIds }));
-    const qc2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [5000] }));
-    const cRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents?queries[]=' + qc1 + '&queries[]=' + qc2, { headers: H, credentials: 'include' });
+    const cRes = await fetch(WORKER_URL + '/comments?articleIds=' + articleIds.map(encodeURIComponent).join(','));
     if (cRes.ok) {
       const cData = await cRes.json();
       totalComments = (cData.documents || []).length;

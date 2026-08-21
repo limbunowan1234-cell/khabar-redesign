@@ -6,12 +6,16 @@ const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
+// Week 8 of the Cloudflare migration (see cloudflare/README.md): profile,
+// articles, likes, and follows reads below come from the Worker. Auth and
+// the follow/unfollow write stay on Appwrite for now.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(article: any): string {
   const id = article.imageFileId;
   if (!id || ['Text', 'null', 'undefined', ''].includes(String(id))) return '';
   if (String(id).startsWith('http')) return id;
-  return ENDPOINT + '/storage/buckets/article-image/files/' + id + '/view?project=' + PROJECT;
+  return WORKER_URL + '/cdn/articles/' + id;
 }
 
 const TIERS = [
@@ -53,39 +57,22 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
           return;
         }
 
-        const profileRes = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] })),
-          { headers: H, credentials: 'include' }
-        );
-        const profileData = profileRes.ok ? await profileRes.json() : { documents: [] };
-        if (profileData.documents?.[0]) setProfile(profileData.documents[0]);
+        const profileRes = await fetch(WORKER_URL + '/profiles/' + encodeURIComponent(userId));
+        if (profileRes.ok) setProfile(await profileRes.json());
 
-        const articlesRes = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userId] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] })),
-          { headers: H, credentials: 'include' }
-        );
+        const articlesRes = await fetch(WORKER_URL + '/articles?submitterId=' + encodeURIComponent(userId) + '&limit=50');
         const articlesData = articlesRes.ok ? await articlesRes.json() : { documents: [] };
         const arts = articlesData.documents || [];
         if (arts.length > 0) setArticles(arts);
 
-        // Count total likes across their articles. The likes collection
-        // also holds comment-likes (same articleId, but with a commentId
-        // set) — those must be excluded or this overcounts.
+        // Count total likes across their articles in one bulk call
+        // (the Worker's articleIds= form already excludes comment-likes).
         let likesSum = 0;
-        for (const a of arts) {
-          const likesRes = await fetch(
-            ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' +
-            encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [2000] })),
-            { headers: H, credentials: 'include' }
-          );
+        if (arts.length > 0) {
+          const likesRes = await fetch(WORKER_URL + '/likes?articleIds=' + arts.map((a: any) => encodeURIComponent(a.$id)).join(','));
           if (likesRes.ok) {
             const ld = await likesRes.json();
-            likesSum += (ld.documents || []).filter((l: any) => !l.commentId).length;
+            likesSum = (ld.documents || []).length;
           }
         }
         setTotalLikes(likesSum);
@@ -94,24 +81,14 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
         // These used to have the following-fetch nested inside the
         // followers .ok check, so a failed followers request silently
         // skipped loading who this user follows too.
-        const followersRes = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-          { headers: H, credentials: 'include' }
-        );
+        const followersRes = await fetch(WORKER_URL + '/follows?followingId=' + encodeURIComponent(userId));
         if (followersRes.ok) {
           const fd = await followersRes.json();
           setFollowerCount(fd.total || 0);
           setFollowersList(fd.documents || []);
         }
 
-        const followingRes = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [userId] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-          { headers: H, credentials: 'include' }
-        );
+        const followingRes = await fetch(WORKER_URL + '/follows?followerId=' + encodeURIComponent(userId));
         if (followingRes.ok) {
           const fgd = await followingRes.json();
           setFollowingCount(fgd.total || 0);
@@ -119,12 +96,7 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
         }
 
         if (authData?.$id) {
-          const followRes = await fetch(
-            ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
-            encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [authData.$id] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })),
-            { headers: H, credentials: 'include' }
-          );
+          const followRes = await fetch(WORKER_URL + '/follows?followerId=' + encodeURIComponent(authData.$id) + '&followingId=' + encodeURIComponent(userId));
           const followData = followRes.ok ? await followRes.json() : { documents: [] };
           setIsFollowing(followData.documents.length > 0);
         }

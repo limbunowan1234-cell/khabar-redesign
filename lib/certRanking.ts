@@ -3,13 +3,8 @@
 // score = views*0.5 + likes*1 + comments*3, using real counts from the
 // likes/comments collections (not the article document's own fields).
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT };
-// Week 7 of the Cloudflare migration (see cloudflare/README.md): the
-// contest-entry article read below comes from the Worker. Likes/comments
-// stay on Appwrite -- those collections haven't been exported to D1 yet.
+// Week 8 of the Cloudflare migration (see cloudflare/README.md): contest
+// entries, likes, and comments all read from the Worker now.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 export interface RankedEntry {
@@ -37,17 +32,14 @@ export async function computeContestRankings(): Promise<RankedEntry[]> {
     let votes = 0;
     let comments = 0;
     try {
-      const lq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] }));
-      const llq = encodeURIComponent(JSON.stringify({ method: 'limit', values: [2000] }));
-      const lRes = await fetch(`${ENDPOINT}/databases/${DB}/collections/likes/documents?queries[]=${lq}&queries[]=${llq}`, { headers: H });
+      const lRes = await fetch(`${WORKER_URL}/likes?articleId=${encodeURIComponent(a.$id)}`);
       if (lRes.ok) {
         const lData = await lRes.json();
-        votes = (lData.documents || []).filter((l: any) => !l.commentId && new Date(l.$createdAt).getTime() < CONTEST_VOTE_CUTOFF_MS).length;
+        votes = (lData.documents || []).filter((l: any) => new Date(l.$createdAt).getTime() < CONTEST_VOTE_CUTOFF_MS).length;
       }
     } catch {}
     try {
-      const cq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] }));
-      const cRes = await fetch(`${ENDPOINT}/databases/${DB}/collections/comments/documents?queries[]=${cq}`, { headers: H });
+      const cRes = await fetch(`${WORKER_URL}/comments?articleId=${encodeURIComponent(a.$id)}`);
       if (cRes.ok) {
         const cData = await cRes.json();
         comments = cData.total || 0;

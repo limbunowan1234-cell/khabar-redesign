@@ -14,6 +14,12 @@ const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 const DB = 'Khabar_db';
+// Week 8 of the Cloudflare migration (see cloudflare/README.md): articles,
+// likes, comments, follows, bookmarks, and profile reads below come from
+// the Worker. Auth, contest_settings, certificate_state, and
+// notifications stay on Appwrite -- not exported to D1 yet (or, for
+// certificate downloads, a write).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getInitials(name: string): string {
   if (!name) return 'KD';
@@ -29,28 +35,7 @@ function getImageUrl(a: any): string {
   const id = a?.imageFileId;
   if (!id || ['Text', 'null', 'undefined', ''].includes(String(id))) return '';
   if (String(id).startsWith('http')) return id;
-  return ENDPOINT + '/storage/buckets/article-image/files/' + id + '/view?project=' + PROJECT;
-}
-
-
-
-async function fetchArticleByIdOrSlug(aid: string, endpoint: string, db: string, headers: any): Promise<any> {
-  const looksLikeSlug = /-/.test(aid) || aid.length > 36;
-  if (!looksLikeSlug) {
-    try {
-      const r = await fetch(endpoint + '/databases/' + db + '/collections/articles/documents/' + aid, { headers, credentials: 'include' });
-      if (r.ok) return await r.json();
-    } catch {}
-  }
-  try {
-    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'slug', values: [aid] }));
-    const r2 = await fetch(endpoint + '/databases/' + db + '/collections/articles/documents?queries[]=' + q, { headers, credentials: 'include' });
-    if (r2.ok) {
-      const d = await r2.json();
-      return d.documents?.[0] || null;
-    }
-  } catch {}
-  return null;
+  return WORKER_URL + '/cdn/articles/' + id;
 }
 
 
@@ -66,10 +51,7 @@ export default function ProfilePage() {
 
   async function loadMyContestEntries(uid: string) {
     try {
-      const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'isContestEntry', values: [true] }));
-      const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [uid] }));
-      const q3 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] }));
-      const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q1 + '&queries[]=' + q2 + '&queries[]=' + q3, { headers: H, credentials: 'include' });
+      const res = await fetch(WORKER_URL + '/articles?contest=1&submitterId=' + encodeURIComponent(uid) + '&limit=50');
       if (!res.ok) { setContestEntriesLoaded(true); return; }
       const data = await res.json();
       const myArticles = data.documents || [];
@@ -78,13 +60,11 @@ export default function ProfilePage() {
       const scored = await Promise.all(myArticles.map(async (a: any) => {
         let votes = 0; let comments = 0;
         try {
-          const lq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] }));
-          const lRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' + lq, { headers: H });
-          if (lRes.ok) { const lData = await lRes.json(); votes = (lData.documents || []).filter((l: any) => !l.commentId && new Date(l.$createdAt).getTime() < CONTEST_VOTE_CUTOFF_MS).length; }
+          const lRes = await fetch(WORKER_URL + '/likes?articleId=' + encodeURIComponent(a.$id));
+          if (lRes.ok) { const lData = await lRes.json(); votes = (lData.documents || []).filter((l: any) => new Date(l.$createdAt).getTime() < CONTEST_VOTE_CUTOFF_MS).length; }
         } catch {}
         try {
-          const cq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] }));
-          const cRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents?queries[]=' + cq, { headers: H });
+          const cRes = await fetch(WORKER_URL + '/comments?articleId=' + encodeURIComponent(a.$id));
           if (cRes.ok) { const cData = await cRes.json(); comments = cData.total || 0; }
         } catch {}
         const score = (a.views || 0) * 0.5 + votes * 1 + comments * 3;
@@ -171,29 +151,25 @@ export default function ProfilePage() {
         setUser(userData); loadCertificateStatus(userData.$id); loadMyContestEntries(userData.$id);
 
         try {
-          const pq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] }));
-          const profRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + pq, { headers: H, credentials: 'include' });
-          if (profRes.ok) { const pd = await profRes.json(); setProfileDoc(pd.documents?.[0] || null); }
+          const profRes = await fetch(WORKER_URL + '/profiles/' + encodeURIComponent(userData.$id));
+          setProfileDoc(profRes.ok ? await profRes.json() : null);
         } catch {}
 
+        // "My articles" must include this user's own pending/rejected/draft
+        // work, not just what's public -- that needs Appwrite's real
+        // permission check (owner-only visibility), which the Worker
+        // can't enforce yet (no auth-bridging built). Stays on Appwrite
+        // until that exists; a public status=all here would leak every
+        // user's unpublished articles to anyone who asked.
         const [articlesRes, followersRes, followingRes, bookmarksRes] = await Promise.all([
           fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
             encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userData.$id] })) +
             '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
             '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [20] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','title','genre','category','locationDistrict','imageFileId','youtube_id','views','isContestEntry','isFeatured','isBreaking','publishedAt','slug','status','submitterName','authorName'] })),
             { headers: H, credentials: 'include' }),
-          fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
-            encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userData.$id] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-            { headers: H, credentials: 'include' }),
-          fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
-            encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [userData.$id] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-            { headers: H, credentials: 'include' }),
-          fetch(ENDPOINT + '/databases/' + DB + '/collections/bookmarks/documents?queries[]=' +
-            encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })),
-            { headers: H, credentials: 'include' }),
+          fetch(WORKER_URL + '/follows?followingId=' + encodeURIComponent(userData.$id)),
+          fetch(WORKER_URL + '/follows?followerId=' + encodeURIComponent(userData.$id)),
+          fetch(WORKER_URL + '/bookmarks?userId=' + encodeURIComponent(userData.$id)),
         ]);
 
         if (articlesRes.ok) { const d = await articlesRes.json(); setMyArticles(d.documents || []); }
@@ -216,32 +192,26 @@ export default function ProfilePage() {
 
           // Load FAVORITES (liked articles)
           try {
-            const likesRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' +
-              encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] })) +
-              '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-              { headers: H, credentials: 'include' });
+            const likesRes = await fetch(WORKER_URL + '/likes?userId=' + encodeURIComponent(userData.$id));
             if (likesRes.ok) {
               const ld = await likesRes.json();
-              // The likes collection also holds comment-likes (same
-              // articleId, but with commentId set) — excluding those so
-              // Favorites doesn't include articles the user never
-              // actually liked, only commented-liked on.
-              const ids = (ld.documents || []).filter((x: any) => !x.commentId).map((x: any) => x.articleId).filter(Boolean);
-        const arts = ids.length ? await (async () => { const bq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: '$id', values: ids.slice(0, 100) })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','title','genre','category','imageFileId','youtube_id','views','publishedAt','slug','submitterName','authorName'] })); const br = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + bq, { headers: H, credentials: 'include' }); if (!br.ok) return []; const bd2 = await br.json(); return bd2.documents || []; })() : [];
+              // The Worker's userId= form still includes comment-likes
+              // (unlike articleId=), so exclude those here -- Favorites
+              // shouldn't include articles the user never actually liked,
+              // only commented-liked on.
+              const ids = (ld.documents || []).filter((x: any) => !x.commentId).map((x: any) => x.articleId).filter(Boolean).slice(0, 100);
+              const arts = ids.length ? await fetch(WORKER_URL + '/articles?ids=' + ids.map(encodeURIComponent).join(',') + '&limit=100').then(r => r.ok ? r.json() : { documents: [] }).then(d => d.documents || []) : [];
               setFavorites(arts.filter(Boolean));
             }
           } catch {}
 
           // Load BOOKMARKS (saved articles)
           try {
-            const bmRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/bookmarks/documents?queries[]=' +
-              encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] })) +
-              '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-              { headers: H, credentials: 'include' });
+            const bmRes = await fetch(WORKER_URL + '/bookmarks?userId=' + encodeURIComponent(userData.$id));
             if (bmRes.ok) {
               const bd = await bmRes.json();
-              const ids = (bd.documents || []).map((x: any) => x.articleId).filter(Boolean);
-        const arts = ids.length ? await (async () => { const bq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: '$id', values: ids.slice(0, 100) })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','title','genre','category','imageFileId','youtube_id','views','publishedAt','slug','submitterName','authorName'] })); const br = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + bq, { headers: H, credentials: 'include' }); if (!br.ok) return []; const bd2 = await br.json(); return bd2.documents || []; })() : [];
+              const ids = (bd.documents || []).map((x: any) => x.articleId).filter(Boolean).slice(0, 100);
+              const arts = ids.length ? await fetch(WORKER_URL + '/articles?ids=' + ids.map(encodeURIComponent).join(',') + '&limit=100').then(r => r.ok ? r.json() : { documents: [] }).then(d => d.documents || []) : [];
               setBookmarks(arts.filter(Boolean));
             }
           } catch {}

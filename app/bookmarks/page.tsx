@@ -6,12 +6,16 @@ const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 const DB = 'Khabar_db';
+// Week 8 of the Cloudflare migration (see cloudflare/README.md): the
+// bookmarks list and article reads below come from the Worker. Auth and
+// the remove-bookmark write stay on Appwrite for now.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(a: any): string {
   const id = a.imageFileId;
   if (!id || ['Text','null','undefined',''].includes(String(id))) return '';
   if (String(id).startsWith('http')) return id;
-  return ENDPOINT + '/storage/buckets/article-image/files/' + id + '/view?project=' + PROJECT;
+  return WORKER_URL + '/cdn/articles/' + id;
 }
 
 function fmtDate(s: string): string {
@@ -34,20 +38,14 @@ export default function BookmarksPage() {
         const userData = await userRes.json();
         setUser(userData);
 
-        const bkRes = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/bookmarks/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] })),
-          { headers: H, credentials: 'include' }
-        );
+        const bkRes = await fetch(WORKER_URL + '/bookmarks?userId=' + encodeURIComponent(userData.$id));
         if (bkRes.ok) {
           const bkData = await bkRes.json();
-          const bks = bkData.documents || [];
+          const bks = (bkData.documents || []).slice(0, 50);
           setBookmarks(bks);
 
           const articlePromises = bks.map((b: any) =>
-            fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents/' + b.articleId, { headers: H, credentials: 'include' })
+            fetch(WORKER_URL + '/articles/' + encodeURIComponent(b.articleId))
               .then(r => r.ok ? r.json() : null)
               .catch(() => null)
           );

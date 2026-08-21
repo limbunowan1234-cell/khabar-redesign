@@ -77,6 +77,12 @@ articles.get('/', async (c) => {
   if (q.featured) { where.push('is_featured = 1'); }
   if (q.contest) { where.push('is_contest_entry = 1'); }
   if (q.submitterId) { where.push('submitter_id = ?'); params.push(q.submitterId); }
+  if (q.ids) {
+    const ids = q.ids.split(',').filter(Boolean);
+    if (ids.length === 0) return c.json({ documents: [], total: 0, nextCursor: null });
+    where.push(`id IN (${ids.map(() => '?').join(',')})`);
+    params.push(...ids);
+  }
 
   const whereSql = where.join(' AND ');
 

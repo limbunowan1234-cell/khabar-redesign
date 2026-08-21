@@ -1,13 +1,8 @@
 ﻿'use client';
 import { useState, useEffect } from 'react';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT };
-// Week 7 of the Cloudflare migration (see cloudflare/README.md): the
-// article read below comes from the Worker. Likes/comments stay on
-// Appwrite -- those collections haven't been exported to D1 yet.
+// Week 8 of the Cloudflare migration (see cloudflare/README.md): articles,
+// likes, and comments all read from the Worker now.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const TIERS = [
@@ -31,13 +26,11 @@ export default function TierProgress({ userId }: { userId: string }) {
         const articleIds = (articlesData.documents || []).map((a: any) => a.$id);
         if (articleIds.length === 0) { if (alive) { setScore(0); setLoading(false); } return; }
 
-        const q3 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
-        const q4 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1000] }));
-        const likesRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' + q3 + '&queries[]=' + q4, { headers: H, credentials: 'include' });
+        const likesRes = await fetch(WORKER_URL + '/likes?userId=' + encodeURIComponent(userId));
         const likesData = likesRes.ok ? await likesRes.json() : { documents: [] };
         const userLikes = likesData.documents.filter((l: any) => articleIds.includes(l.articleId)).length;
 
-        const commentsRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents?queries[]=' + q3 + '&queries[]=' + q4, { headers: H, credentials: 'include' });
+        const commentsRes = await fetch(WORKER_URL + '/comments?userId=' + encodeURIComponent(userId));
         const commentsData = commentsRes.ok ? await commentsRes.json() : { documents: [] };
         const userComments = commentsData.documents.filter((c: any) => articleIds.includes(c.articleId)).length;
 
