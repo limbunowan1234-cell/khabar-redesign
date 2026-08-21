@@ -17,12 +17,7 @@ async function getArticles(): Promise<any[]> {
 }
 async function getBhasaDiwasSubmissions(): Promise<any[]> {
   try {
-    const q1 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-    const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [500] }));
-    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/bhasa_diwas_submissions/documents?queries[]=' + q1 + '&queries[]=' + q2, {
-      headers: { 'X-Appwrite-Project': PROJECT },
-      next: { revalidate: 3600 },
-    });
+    const res = await fetch(WORKER_URL + '/bhasa-diwas/submissions?limit=200', { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data = await res.json();
     return data.documents || [];

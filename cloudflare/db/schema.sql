@@ -161,14 +161,27 @@ CREATE TABLE certificate_state (
 CREATE TABLE bhasa_diwas_submissions (
   id             TEXT PRIMARY KEY,
   title          TEXT NOT NULL,
-  category       TEXT,               -- 'poetry' | 'essay'
+  category       TEXT,               -- 'poetry' | 'essay' | 'photo'
   description    TEXT,               -- the actual submitted text
   image_file_id  TEXT,
   submitter_id   TEXT,
   submitter_name TEXT,
+  votes          INTEGER NOT NULL DEFAULT 0,  -- denormalized counter, see bhasa_diwas_votes
   created_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX idx_bhasa_submitter ON bhasa_diwas_submissions(submitter_id);
+
+-- One row per vote cast, so a voter can't vote the same submission twice
+-- (Appwrite enforced this with a listDocuments-then-check, not a real
+-- constraint -- see the export script for what that let through).
+CREATE TABLE bhasa_diwas_votes (
+  id             TEXT PRIMARY KEY,
+  submission_id  TEXT NOT NULL,
+  voter_id       TEXT NOT NULL,
+  created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(submission_id, voter_id)
+);
+CREATE INDEX idx_bhasa_votes_voter ON bhasa_diwas_votes(voter_id);
 
 -- ─── Media ──────────────────────────────────────────────────────────────
 

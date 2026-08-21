@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, Databases, Query, ID } from 'node-appwrite';
+import { Client, Databases, ID } from 'node-appwrite';
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,6 +46,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// Week 11 of the Cloudflare migration (see cloudflare/README.md). These
+// comments reuse the same `comments` table as articles/contest, scoped
+// by articleId = submissionId, same pseudo-id trick as the contest
+// discussion -- already covered by the existing /comments Worker route.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
@@ -55,24 +61,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'submissionId आवश्यक छ' }, { status: 400 });
     }
 
-    const client = new Client()
-      .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
-      .setKey(process.env.APPWRITE_API_KEY || '');
+    const res = await fetch(WORKER_URL + '/comments?articleId=' + encodeURIComponent(submissionId));
+    const data = res.ok ? await res.json() : { documents: [] };
 
-    const databases = new Databases(client);
-
-    const response = await databases.listDocuments(
-      'Khabar_db',
-      'comments',
-      [
-        Query.equal('articleId', submissionId),
-        Query.orderDesc('$createdAt'),
-        Query.limit(100)
-      ]
-    );
-
-    const mapped = response.documents.map((doc: any) => ({
+    const mapped = (data.documents || []).slice(0, 100).map((doc: any) => ({
       $id: doc.$id,
       $createdAt: doc.$createdAt,
       userName: doc.authorName,

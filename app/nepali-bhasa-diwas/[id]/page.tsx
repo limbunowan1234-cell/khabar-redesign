@@ -1,10 +1,9 @@
 ﻿import type { Metadata } from 'next';
 import BhasaDiwasSubmissionDetail from '@/components/bhasa-diwas/BhasaDiwasSubmissionDetail';
 
-const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';
+// Week 11 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const CATEGORY_LABELS: Record<string, string> = {
   poetry: 'Poetry',
@@ -20,10 +19,7 @@ function clean(text: string, max = 150): string {
 
 async function fetchSubmission(id: string): Promise<any> {
   try {
-    const res = await fetch(
-      ENDPOINT + '/databases/' + DB + '/collections/bhasa_diwas_submissions/documents/' + id,
-      { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 300 } }
-    );
+    const res = await fetch(WORKER_URL + '/bhasa-diwas/submissions/' + encodeURIComponent(id), { next: { revalidate: 300 } });
     if (!res.ok) return null;
     return await res.json();
   } catch {
