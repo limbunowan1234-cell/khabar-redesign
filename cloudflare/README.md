@@ -63,6 +63,14 @@ via `?bucket=`; that one correctly stays on Appwrite, not migrated yet.
 filtering client-side for `weeklyLive`/`isWeeklyPick`. Admin-preview auth
 check stays on Appwrite.
 
+**Status: Week 6 (SEO infrastructure) done.** `app/page.tsx`'s SSR fetch
+(hidden SEO block + JSON-LD, rendered before `HomeClient` hydrates) now
+reads from the Worker — this was a gap left over from Week 2, where only
+the client-side fetch got swapped. `sitemap.ts`, `rss.xml`,
+`news-sitemap.xml`, `image-sitemap.xml` all read from the Worker too;
+`image-sitemap.xml`'s image URLs point at the R2 CDN. List limit bumped
+500 → 1000 for the two sitemap routes that want everything in one call.
+
 Still fully on Appwrite: everything gated by auth, search/filter results,
 admin panel, profile, contest, Bhasa Diwas — each is its own future
 increment.
