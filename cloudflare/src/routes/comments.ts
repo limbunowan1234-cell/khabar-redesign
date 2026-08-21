@@ -42,7 +42,8 @@ comments.get('/', async (c) => {
     return c.json({ error: 'articleId, articleIds, or userId is required' }, 400);
   }
 
-  const sql = `SELECT * FROM comments WHERE ${where.join(' AND ')} ORDER BY created_at ASC LIMIT 5000`;
+  // Newest-first, matching every existing caller's orderDesc($createdAt).
+  const sql = `SELECT * FROM comments WHERE ${where.join(' AND ')} ORDER BY created_at DESC LIMIT 5000`;
   const { results } = await c.env.DB.prepare(sql).bind(...params).all();
   const docs = (results || []).map(toCommentJson);
   return c.json({ documents: docs, total: docs.length });

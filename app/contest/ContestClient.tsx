@@ -11,6 +11,11 @@ const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 const DB = 'Khabar_db';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
+// Week 10 of the Cloudflare migration (see cloudflare/README.md): the
+// entries list, likes, and discussion comments below come from the
+// Worker. Posting/deleting/pinning, and contest_settings (not exported
+// to D1), stay on Appwrite.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 // Contest-wide discussion reuses the same comments collection articles use,
 // scoped under this fixed pseudo-article id instead of a real article.
@@ -23,13 +28,7 @@ function getInitials(name: string): string {
 }
 
 async function fetchDiscussion() {
-  const res = await fetch(
-    ENDPOINT + '/databases/' + DB + '/collections/comments/documents?queries[]=' +
-    encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [DISCUSSION_ID] })) +
-    '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
-    '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [200] })),
-    { headers: H, credentials: 'include' }
-  );
+  const res = await fetch(WORKER_URL + '/comments?articleId=' + encodeURIComponent(DISCUSSION_ID));
   if (!res.ok) return [];
   const data = await res.json();
   return data.documents || [];
@@ -109,40 +108,24 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
       } catch {}
 
       try {
-        const res = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'isContestEntry', values: [true] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-          { headers: H, credentials: 'include' }
-        );
+        const res = await fetch(WORKER_URL + '/articles?contest=1&limit=100');
         if (res.ok) {
           const data = await res.json();
           const docs = data.documents || [];
           const withVotes = await Promise.all(docs.map(async (a: any) => {
             try {
-              const likesRes = await fetch(
-                ENDPOINT + '/databases/' + DB + '/collections/likes/documents?queries[]=' +
-                encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [a.$id] })) +
-                '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [2000] })),
-                { headers: H, credentials: 'include' }
-              );
+              const likesRes = await fetch(WORKER_URL + '/likes?articleId=' + encodeURIComponent(a.$id));
               if (likesRes.ok) {
                 const likesData = await likesRes.json();
                 let commentCount = 0;
               try {
-                const commentsRes = await fetch(
-                  ENDPOINT + "/databases/" + DB + "/collections/comments/documents?queries[]=" +
-                  encodeURIComponent(JSON.stringify({ method: "equal", attribute: "articleId", values: [a.$id] })) +
-                  "&queries[]=" + encodeURIComponent(JSON.stringify({ method: "limit", values: [1] })),
-                  { headers: H, credentials: "include" }
-                );
+                const commentsRes = await fetch(WORKER_URL + '/comments?articleId=' + encodeURIComponent(a.$id));
                 if (commentsRes.ok) {
                   const commentsData = await commentsRes.json();
                   commentCount = commentsData.total || 0;
                 }
               } catch {}
-              const articleLikes = (likesData.documents || []).filter((l: any) => !l.commentId && new Date(l.$createdAt).getTime() < CONTEST_VOTE_CUTOFF_MS).length;
+              const articleLikes = (likesData.documents || []).filter((l: any) => new Date(l.$createdAt).getTime() < CONTEST_VOTE_CUTOFF_MS).length;
               return { ...a, _votes: articleLikes, _comments: commentCount };
               }
             } catch {}

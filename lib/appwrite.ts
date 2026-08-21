@@ -4,6 +4,10 @@ const dbId = 'Khabar_db';
 
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
+// Week 10 of the Cloudflare migration (see cloudflare/README.md): the
+// read-only helpers below (likes, bookmarks) come from the Worker now.
+// Writes and auth stay on Appwrite.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 // Mints a short-lived (15 min) Appwrite JWT for the currently logged-in
 // session, for handing to the Cloudflare Worker so it can verify identity
@@ -16,31 +20,6 @@ export async function getWorkerAuthToken(): Promise<string | null> {
     if (!res.ok) return null;
     const data = await res.json();
     return data.jwt || null;
-  } catch {
-    return null;
-  }
-}
-
-export async function getArticles() {
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents`, { headers: H, credentials: 'include' });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.documents || [];
-}
-
-export async function getArticle(idOrSlug: string) {
-  try {
-    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'slug', values: [idOrSlug] }));
-    const slugRes = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents?queries[]=${q}`, { headers: H, credentials: 'include' });
-    if (slugRes.ok) {
-      const slugData = await slugRes.json();
-      if (slugData.documents && slugData.documents.length > 0) return slugData.documents[0];
-    }
-  } catch {}
-  try {
-    const res = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${idOrSlug}`, { headers: H, credentials: 'include' });
-    if (!res.ok) return null;
-    return res.json();
   } catch {
     return null;
   }
@@ -93,13 +72,6 @@ export async function logout() {
   await fetch(`${endpoint}/account/sessions/current`, { method: 'DELETE', headers: H, credentials: 'include' });
 }
 
-export async function getArticleComments(articleId: string) {
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/comments/documents`, { headers: H, credentials: 'include' });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.documents.filter((c: any) => c.articleId === articleId) || [];
-}
-
 export async function postComment(articleId: string, userId: string, commentText: string, authorName: string, avatarUrl: string) {
   const res = await fetch(`${endpoint}/databases/${dbId}/collections/comments/documents`, {
     method: 'POST', headers: HJ, credentials: 'include',
@@ -110,12 +82,10 @@ export async function postComment(articleId: string, userId: string, commentText
 }
 
 export async function getArticleLikes(articleId: string) {
-  const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [articleId] }));
-  const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [2000] }));
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents?queries[]=${q1}&queries[]=${q2}`, { headers: H, credentials: 'include' });
+  const res = await fetch(`${WORKER_URL}/likes?articleId=${encodeURIComponent(articleId)}`);
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.documents || []).filter((l: any) => !l.commentId);
+  return data.documents || [];
 }
 
 export async function toggleArticleLike(articleId: string, userId: string) {
@@ -138,10 +108,10 @@ export async function toggleArticleLike(articleId: string, userId: string) {
 }
 
 export async function getUserBookmarks(userId: string) {
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/bookmarks/documents`, { headers: H, credentials: 'include' });
+  const res = await fetch(`${WORKER_URL}/bookmarks?userId=${encodeURIComponent(userId)}`);
   if (!res.ok) return [];
   const data = await res.json();
-  return data.documents.filter((b: any) => b.userId === userId) || [];
+  return data.documents || [];
 }
 
 export async function toggleBookmark(articleId: string, userId: string) {
@@ -178,24 +148,8 @@ export async function toggleFollow(followerId: string, followingId: string, foll
   }
 }
 
-export async function getUserFollows(userId: string) {
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/follows/documents`, { headers: H, credentials: 'include' });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.documents.filter((f: any) => f.followingId === userId) || [];
-}
-
-export async function checkIfFollowing(followerId: string, followingId: string) {
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/follows/documents`, { headers: H, credentials: 'include' });
-  if (!res.ok) return false;
-  const data = await res.json();
-  return data.documents.some((f: any) => f.followerId === followerId && f.followingId === followingId);
-}
-
 export async function getCommentLikes(commentId: string) {
-  const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'commentId', values: [commentId] }));
-  const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [500] }));
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents?queries[]=${q1}&queries[]=${q2}`, { headers: H, credentials: 'include' });
+  const res = await fetch(`${WORKER_URL}/likes?commentId=${encodeURIComponent(commentId)}`);
   if (!res.ok) return [];
   const data = await res.json();
   return data.documents || [];
@@ -220,19 +174,6 @@ export async function toggleCommentLike(commentId: string, userId: string, artic
   }
 }
 
-
-export async function incrementViews(idOrSlug: string) {
-  try {
-    const a = await getArticle(idOrSlug);
-    if (!a) return false;
-    const realId = a.$id;
-    const newViews = (a.views || 0) + 1;
-    const upd = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents/${realId}`, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { views: newViews } }) });
-    return upd.ok;
-  } catch {
-    return false;
-  }
-}
 
 export async function trackApkDownload() {
   try {

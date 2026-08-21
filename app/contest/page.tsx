@@ -1,19 +1,12 @@
 ﻿import type { Metadata } from 'next';
 import ContestClient from './ContestClient';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
+// Week 10 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 async function fetchContestEntries(): Promise<any[]> {
   try {
-    const res = await fetch(
-      ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-      encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'isContestEntry', values: [true] })) +
-      '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] })) +
-      '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-      { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 300 } }
-    );
+    const res = await fetch(WORKER_URL + '/articles?contest=1&limit=100', { next: { revalidate: 300 } });
     if (!res.ok) return [];
     const data = await res.json();
     return data.documents || [];
