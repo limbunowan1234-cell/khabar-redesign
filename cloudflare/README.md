@@ -43,6 +43,16 @@ write endpoint actually in production use. Likes, bookmarks, follows and
 comments stay on Appwrite (writes gated by auth, waiting on the
 auth-bridging phase).
 
+**Status: Week 4 (genre/region pages) done.** `app/genre/[name]/page.tsx`
+and `app/region/[name]/page.tsx` read from `GET /articles` (`?genre=` /
+`?district=`) plus the R2 CDN for images. Added
+`isGenreFeatured`/`isGenrePinned`/`isRegionFeatured`/`isRegionPinned` to
+the Worker's article JSON — both pages need them for hero/pinned
+curation and they weren't exposed yet, even though the D1 columns
+existed. Also fixed a pre-existing bug in both pages' image-URL
+functions (missing the `'Text'` sentinel-value guard other components
+already have) while already in there.
+
 Still fully on Appwrite: everything gated by auth, search/filter results,
 weekly digest, admin panel, profile, contest — each is its own future
 increment.
