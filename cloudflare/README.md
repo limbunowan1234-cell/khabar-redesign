@@ -96,9 +96,28 @@ override was drafted, then reverted before shipping once it was clear
 that meant *any* caller could read *any* user's unpublished articles.
 Stays on Appwrite until auth-bridging exists.
 
-Still fully on Appwrite: every write (likes, comments, follows,
-bookmarks, publishing, certificate downloads), admin panel, contest,
-Bhasa Diwas, search/filter.
+**Status: Week 9 (auth-bridging, read-only) done.** The Worker can now
+verify who's asking. `cloudflare/src/lib/auth.ts`'s `verifyUser()` takes
+an `Authorization: Bearer <jwt>` header, hands it to Appwrite
+server-to-server (`X-Appwrite-JWT`) to confirm it's real. The client side
+(`lib/appwrite.ts`'s `getWorkerAuthToken()`) mints that JWT via Appwrite's
+own `POST /account/jwts`, using the session cookie that already exists —
+no session cookie or password ever touches the Worker's domain.
+
+`GET /articles?status=all` now requires a verified JWT matching the exact
+`submitterId` requested; anyone else silently gets published-only.
+`app/profile/page.tsx`'s "my articles" (deferred in Week 8 for this exact
+reason) uses it now. Verified the negative path directly (no auth header,
+fake JWT — both correctly blocked); the positive path needs a real login
+to confirm end-to-end, still untested live.
+
+**Still deliberately read-only.** Writes (likes, comments, follows,
+bookmarks, publishing) all stay on Appwrite — moving those needs the
+shadow-write validation phase from the migration plan first, so a
+permission bug shows up in a diff, not in production data.
+
+Still fully on Appwrite: every write, admin panel, contest, Bhasa Diwas,
+search/filter.
 
 ## One-time setup
 
