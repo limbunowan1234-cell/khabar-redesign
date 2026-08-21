@@ -116,7 +116,17 @@ bookmarks, publishing) all stay on Appwrite — moving those needs the
 shadow-write validation phase from the migration plan first, so a
 permission bug shows up in a diff, not in production data.
 
-Still fully on Appwrite: every write, admin panel, contest, Bhasa Diwas,
+**Status: Week 10 (contest page, shared read helpers) done.**
+`app/contest/page.tsx` + `ContestClient.tsx` (results with vote/comment
+scoring, discussion thread) read from the Worker. Fixed `/comments`
+ordering (was oldest-first, every caller expects newest-first) at the
+Worker level rather than in each caller. `lib/appwrite.ts`'s shared
+`getArticleLikes`/`getUserBookmarks`/`getCommentLikes` now read from the
+Worker too — used by `ArticleClient.tsx`, `HillsInFrameSwipeClient.tsx`,
+and `ContestClient.tsx`, so this benefits several call sites at once.
+Removed six confirmed-unused exports from the same file while there.
+
+Still fully on Appwrite: every write, admin panel, Bhasa Diwas,
 search/filter.
 
 ## One-time setup
