@@ -88,6 +88,29 @@ export async function getArticleLikes(articleId: string) {
   return data.documents || [];
 }
 
+// Shadow-writes the same like/unlike outcome into D1, alongside the real
+// Appwrite write above (which stays authoritative). Fire-and-forget: a
+// D1 failure here must never surface to the user or block their like --
+// this exists purely so the two can be diffed before anything actually
+// depends on D1 for likes. See cloudflare/README.md.
+async function shadowWriteLike(articleId: string, commentId: string | null, userId: string, created: boolean) {
+  try {
+    const token = await getWorkerAuthToken();
+    if (!token) return;
+    const headers = { Authorization: 'Bearer ' + token };
+    if (created) {
+      await fetch(`${WORKER_URL}/likes`, {
+        method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId, commentId, userId }),
+      });
+    } else {
+      const params = new URLSearchParams({ articleId, userId });
+      if (commentId) params.set('commentId', commentId);
+      await fetch(`${WORKER_URL}/likes?${params}`, { method: 'DELETE', headers });
+    }
+  } catch {}
+}
+
 export async function toggleArticleLike(articleId: string, userId: string) {
   const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [articleId] }));
   const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
@@ -97,12 +120,14 @@ export async function toggleArticleLike(articleId: string, userId: string) {
   const existing = (documents || []).find((l: any) => !l.commentId);
   if (existing) {
     await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents/${existing.$id}`, { method: 'DELETE', headers: H, credentials: 'include' });
+    shadowWriteLike(articleId, null, userId, false);
     return false;
   } else {
     await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, {
       method: 'POST', headers: HJ, credentials: 'include',
       body: JSON.stringify({ documentId: 'unique()', data: { articleId, userId, commentId: null } })
     });
+    shadowWriteLike(articleId, null, userId, true);
     return true;
   }
 }
@@ -164,12 +189,14 @@ export async function toggleCommentLike(commentId: string, userId: string, artic
   const existing = (documents || [])[0];
   if (existing) {
     await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents/${existing.$id}`, { method: 'DELETE', headers: H, credentials: 'include' });
+    shadowWriteLike(articleId, commentId, userId, false);
     return false;
   } else {
     await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, {
       method: 'POST', headers: HJ, credentials: 'include',
       body: JSON.stringify({ documentId: 'unique()', data: { articleId, commentId, userId } })
     });
+    shadowWriteLike(articleId, commentId, userId, true);
     return true;
   }
 }

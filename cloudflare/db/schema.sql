@@ -85,11 +85,20 @@ CREATE TABLE likes (
   comment_id  TEXT,
   user_id     TEXT NOT NULL,
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE(article_id, comment_id, user_id)
+  UNIQUE(article_id, comment_id, user_id)  -- table-level only; see the
+  -- partial indexes below for what actually enforces one-like-per-user.
+  -- SQL treats every NULL comment_id as distinct from every other NULL,
+  -- so this constraint alone does NOT stop a user racking up more than
+  -- one article-level like on the same article. Found this while wiring
+  -- up the first real write path (see cloudflare/src/routes/likes.ts) --
+  -- worth calling out since it's exactly the class of gap that produced
+  -- the ~18.5% duplicate rate the initial data export had to dedupe.
 );
 CREATE INDEX idx_likes_article ON likes(article_id) WHERE comment_id IS NULL;
 CREATE INDEX idx_likes_comment ON likes(comment_id) WHERE comment_id IS NOT NULL;
 CREATE INDEX idx_likes_user ON likes(user_id);
+CREATE UNIQUE INDEX idx_likes_article_unique ON likes(article_id, user_id) WHERE comment_id IS NULL;
+CREATE UNIQUE INDEX idx_likes_comment_unique ON likes(comment_id, user_id) WHERE comment_id IS NOT NULL;
 
 CREATE TABLE comments (
   id                TEXT PRIMARY KEY,
