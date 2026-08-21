@@ -71,9 +71,17 @@ the client-side fetch got swapped. `sitemap.ts`, `rss.xml`,
 `image-sitemap.xml`'s image URLs point at the R2 CDN. List limit bumped
 500 → 1000 for the two sitemap routes that want everything in one call.
 
-Still fully on Appwrite: everything gated by auth, search/filter results,
-admin panel, profile, contest, Bhasa Diwas — each is its own future
-increment.
+**Status: Week 7 (shared components) done.** `TopCreators.tsx` fully
+migrated. `AuthorBadge.tsx`, `TierProgress.tsx`, `lib/certRanking.ts`
+partially — the articles read (via `?submitterId=`/`?contest=`) comes
+from the Worker; likes/comments stay on Appwrite since those collections
+aren't in D1 yet. These are shared across many pages, so this benefits
+several call sites (every article page, profile pages, contest results)
+from one change.
+
+Still fully on Appwrite: everything gated by auth, likes/comments
+collections entirely, admin panel, profile, contest, Bhasa Diwas — each
+remaining piece is its own future increment.
 
 ## One-time setup
 
