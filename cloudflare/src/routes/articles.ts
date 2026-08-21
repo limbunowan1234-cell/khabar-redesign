@@ -42,6 +42,10 @@ function toArticleJson(row: any) {
     weeklySection: row.weekly_section,
     weeklyOrder: row.weekly_order,
     isWeeklyLead: !!row.is_weekly_lead,
+    isGenreFeatured: !!row.is_genre_featured,
+    isGenrePinned: !!row.is_genre_pinned,
+    isRegionFeatured: !!row.is_region_featured,
+    isRegionPinned: !!row.is_region_pinned,
     publishedAt: row.published_at,
     submittedAt: row.submitted_at,
   };

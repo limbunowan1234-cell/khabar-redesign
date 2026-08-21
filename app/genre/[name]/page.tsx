@@ -3,12 +3,9 @@ import Link from 'next/link';
 import StoryCard from '@/components/StoryCard';
 import SiteFooter from '@/components/SiteFooter';
 
-const ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
-const IMAGE_ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';
-const BUCKET = 'article-image';
+// Week 4 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const GENRES = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 
@@ -36,8 +33,8 @@ function unslugify(slug: string): string | null {
 
 function imgOf(a: any): string {
   if (a?.youtube_id) return 'https://img.youtube.com/vi/' + a.youtube_id + '/maxresdefault.jpg';
-  if (!a?.imageFileId) return '';
-  return IMAGE_ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + a.imageFileId + '/view?project=' + PROJECT;
+  if (!a?.imageFileId || ['Text', 'null', 'undefined', ''].includes(String(a.imageFileId))) return '';
+  return WORKER_URL + '/cdn/articles/' + a.imageFileId;
 }
 
 function toStory(a: any) {
@@ -56,12 +53,7 @@ function toStory(a: any) {
 
 async function fetchGenreArticles(genre: string): Promise<any[]> {
   try {
-    const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'genre', values: [genre] }));
-    const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }));
-    const q3 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-    const q4 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] }));
-    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q1 + '&queries[]=' + q2 + '&queries[]=' + q3 + '&queries[]=' + q4, {
-      headers: { 'X-Appwrite-Project': PROJECT },
+    const res = await fetch(WORKER_URL + '/articles?genre=' + encodeURIComponent(genre) + '&limit=50', {
       next: { revalidate: 300 },
     });
     if (!res.ok) return [];
