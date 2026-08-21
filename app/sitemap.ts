@@ -3,15 +3,11 @@ const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';
+// Week 6 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 async function getArticles(): Promise<any[]> {
   try {
-    const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }));
-    const q2 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-    const q3 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1000] }));
-    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q1 + '&queries[]=' + q2 + '&queries[]=' + q3, {
-      headers: { 'X-Appwrite-Project': PROJECT },
-      next: { revalidate: 3600 },
-    });
+    const res = await fetch(WORKER_URL + '/articles?limit=1000', { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data = await res.json();
     return data.documents || [];

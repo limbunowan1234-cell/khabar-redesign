@@ -51,10 +51,10 @@ function toArticleJson(row: any) {
   };
 }
 
-// Homepage requests up to 300 in one call (see app/HomeClient.tsx) —
-// no pagination UI there, it just wants "everything published, recent
-// first" in a single round trip.
-const MAX_LIMIT = 500;
+// Homepage requests up to 300 (app/HomeClient.tsx), sitemaps up to 1000
+// (app/sitemap.ts, app/image-sitemap.xml/route.ts) — none of these have
+// pagination UI, they just want everything published in one round trip.
+const MAX_LIMIT = 1000;
 
 // GET /articles?status=published&district=Darjeeling&genre=...&breaking=1&featured=1&contest=1&limit=20&cursor=<createdAt>
 articles.get('/', async (c) => {
