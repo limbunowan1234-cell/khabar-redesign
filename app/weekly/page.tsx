@@ -2,21 +2,16 @@
 import { Suspense } from 'react';
 import WeeklyClient from './WeeklyClient';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';
+// Week 5 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 async function fetchWeeklyData(): Promise<{ articles: any[]; allIssues: number[]; currentIssue: number | null }> {
   try {
-    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'weeklyLive', values: [true] }));
-    const res = await fetch(
-      ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [200] })),
-      { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 300 } }
-    );
+    const res = await fetch(WORKER_URL + '/articles?limit=500', { next: { revalidate: 300 } });
     if (!res.ok) return { articles: [], allIssues: [], currentIssue: null };
     const data = await res.json();
-    const docs = data.documents || [];
+    const docs = (data.documents || []).filter((d: any) => d.weeklyLive);
 
     const issueNumbers = Array.from(new Set(docs.map((d: any) => d.weeklyIssue).filter(Boolean))).sort((a: any, b: any) => b - a) as number[];
     const currentIssue = issueNumbers[0] || null;

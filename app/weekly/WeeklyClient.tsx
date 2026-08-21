@@ -5,8 +5,9 @@ import { useSearchParams } from 'next/navigation';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
+// Week 5 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const DOT_COLORS = ['#c41e3a', '#2e7d32', '#7b1fa2', '#e65100', '#1565c0', '#00838f'];
 
@@ -105,11 +106,10 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
         const liveField = (wantsPreview && adminCheck) ? 'isWeeklyPick' : 'weeklyLive';
         setPreviewMode(wantsPreview && adminCheck);
 
-        const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: liveField, values: [true] }));
-        const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [200] })), { headers: H, credentials: 'include' });
+        const res = await fetch(WORKER_URL + '/articles?limit=500');
         if (!res.ok) { setLoading(false); return; }
         const data = await res.json();
-        const docs = data.documents || [];
+        const docs = (data.documents || []).filter((d: any) => d[liveField]);
 
         const issueNumbers = Array.from(new Set(docs.map((d: any) => d.weeklyIssue).filter(Boolean))).sort((a: any, b: any) => b - a) as number[];
         if (issueNumbers.length > 0) setAllIssues(issueNumbers);
