@@ -143,7 +143,31 @@ fine), and with only 3 files there's no real bandwidth case for chasing
 it down. The existing image-proxy fallback already handles this bucket
 correctly since it only special-cases `article-image`.
 
-Still fully on Appwrite: every write, admin panel, search/filter.
+**Status: Week 12 (shadow-write validation begins) done.** The first
+real write path off Appwrite: `toggleArticleLike`/`toggleCommentLike`
+(`lib/appwrite.ts`) now also mirror into D1 via `POST`/`DELETE /likes`
+on the Worker, fire-and-forget, after the real Appwrite write succeeds.
+Appwrite stays the sole source of truth — nothing reads from or depends
+on D1 for likes yet.
+
+Both write endpoints require a verified JWT for the exact `userId` being
+written, same boundary as the `status=all` read check. Found and fixed a
+real gap before shipping: the schema's table-level
+`UNIQUE(article_id, comment_id, user_id)` doesn't actually stop duplicate
+article-level likes (SQL treats every NULL `comment_id` as distinct) —
+added two partial unique indexes and verified the insert is idempotent
+directly against real D1.
+
+`cloudflare/scripts/diff-likes.mjs` compares Appwrite against D1 for the
+whole collection — run it periodically during the validation window.
+Baseline: 1137/1137 match, zero drift.
+
+**Not yet tested:** the actual toggle flow through a real logged-in
+browser session (needs live login). The auth-rejection paths and insert
+idempotency were both verified directly against real infrastructure.
+
+Still fully on Appwrite: comments/follows/bookmarks/publishing writes,
+admin panel, search/filter.
 
 ## One-time setup
 
