@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { verifyUser } from '../lib/auth';
 
 type Bindings = { DB: D1Database };
 
@@ -68,8 +69,27 @@ articles.get('/', async (c) => {
   const where: string[] = [];
   const params: unknown[] = [];
 
-  where.push('status = ?');
-  params.push(q.status || 'published');
+  // status=all opts out of the default published-only filter -- an
+  // author's own dashboard needs to see its own pending/rejected/draft
+  // articles too, not just what's public. This is the one filter that
+  // can expose non-public data, so it's the one that needs a verified
+  // identity: the caller must present a valid Appwrite JWT (see
+  // ../lib/auth.ts) for the exact user named in submitterId. Anyone
+  // asking for someone else's drafts, or with no/invalid JWT, gets
+  // published-only instead -- same as everyone else, silently, rather
+  // than a 401 that would leak "yes, that's a valid user id."
+  if (q.status === 'all' && q.submitterId) {
+    const user = await verifyUser(c.req.raw);
+    if (user && user.$id === q.submitterId) {
+      // no status filter at all -- every status for this one author
+    } else {
+      where.push('status = ?');
+      params.push('published');
+    }
+  } else {
+    where.push('status = ?');
+    params.push(q.status || 'published');
+  }
 
   if (q.district) { where.push('location_district = ?'); params.push(q.district); }
   if (q.genre) { where.push('genre = ?'); params.push(q.genre); }

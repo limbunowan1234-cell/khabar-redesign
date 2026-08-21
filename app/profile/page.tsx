@@ -4,6 +4,7 @@ import ProfileBio from '@/components/ProfileBio';
 import AuthorBadge from '@/components/AuthorBadge';
 import TierProgress from '@/components/TierProgress';
 import { computeContestRankings, rankToCertRank, CONTEST_VOTE_CUTOFF_MS } from '@/lib/certRanking';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 import { generateCertificateBlob, downloadBlob } from '@/lib/certGenerator';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -156,17 +157,16 @@ export default function ProfilePage() {
         } catch {}
 
         // "My articles" must include this user's own pending/rejected/draft
-        // work, not just what's public -- that needs Appwrite's real
-        // permission check (owner-only visibility), which the Worker
-        // can't enforce yet (no auth-bridging built). Stays on Appwrite
-        // until that exists; a public status=all here would leak every
-        // user's unpublished articles to anyone who asked.
+        // work, not just what's public. The Worker verifies that via a
+        // short-lived JWT (see cloudflare/src/lib/auth.ts) -- mint one now
+        // and send it as Authorization: Bearer. If minting fails for any
+        // reason, status=all without a matching JWT just falls back to
+        // published-only on the Worker side (safe default, not an error).
+        const workerToken = await getWorkerAuthToken();
+        const authFetchInit = workerToken ? { headers: { Authorization: 'Bearer ' + workerToken } } : undefined;
+
         const [articlesRes, followersRes, followingRes, bookmarksRes] = await Promise.all([
-          fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' +
-            encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userData.$id] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [20] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','title','genre','category','locationDistrict','imageFileId','youtube_id','views','isContestEntry','isFeatured','isBreaking','publishedAt','slug','status','submitterName','authorName'] })),
-            { headers: H, credentials: 'include' }),
+          fetch(WORKER_URL + '/articles?submitterId=' + encodeURIComponent(userData.$id) + '&status=all&limit=20', authFetchInit),
           fetch(WORKER_URL + '/follows?followingId=' + encodeURIComponent(userData.$id)),
           fetch(WORKER_URL + '/follows?followerId=' + encodeURIComponent(userData.$id)),
           fetch(WORKER_URL + '/bookmarks?userId=' + encodeURIComponent(userData.$id)),

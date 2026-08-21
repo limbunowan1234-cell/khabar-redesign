@@ -5,6 +5,22 @@ const dbId = 'Khabar_db';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
 
+// Mints a short-lived (15 min) Appwrite JWT for the currently logged-in
+// session, for handing to the Cloudflare Worker so it can verify identity
+// server-to-server -- the Worker's own domain never sees the actual
+// Appwrite session cookie (HttpOnly, scoped to this domain only). See
+// cloudflare/src/lib/auth.ts for the verification side.
+export async function getWorkerAuthToken(): Promise<string | null> {
+  try {
+    const res = await fetch(`${endpoint}/account/jwts`, { method: 'POST', headers: H, credentials: 'include' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.jwt || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getArticles() {
   const res = await fetch(`${endpoint}/databases/${dbId}/collections/articles/documents`, { headers: H, credentials: 'include' });
   if (!res.ok) return [];
