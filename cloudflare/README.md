@@ -126,8 +126,23 @@ Worker too — used by `ArticleClient.tsx`, `HillsInFrameSwipeClient.tsx`,
 and `ContestClient.tsx`, so this benefits several call sites at once.
 Removed six confirmed-unused exports from the same file while there.
 
-Still fully on Appwrite: every write, admin panel, Bhasa Diwas,
-search/filter.
+**Status: Week 11 (Nepali Bhasa Diwas) done.** New `votes` column on
+`bhasa_diwas_submissions` + new `bhasa_diwas_votes` table, real data
+exported (23 submissions, 131 votes). New Worker routes
+(`/bhasa-diwas/submissions`, `/bhasa-diwas/votes`). All four read paths —
+submissions feed, leaderboard, discussion comments (which reuse the
+existing `comments` table, no new work needed), and the SSR detail page —
+migrated. Voting/commenting/submitting stay on Appwrite.
+
+**Known gap:** this feature's own image bucket (separate Appwrite bucket
+id, 3 files) is still on Appwrite — R2 bucket *creation* started failing
+account-side ("Please enable R2 through the Cloudflare Dashboard") even
+though existing R2 buckets kept working fine. Decided with the user to
+proceed without it rather than get stuck; check the Cloudflare dashboard
+for an R2 plan/terms issue when convenient, since this blocks creating
+*any* new R2 bucket going forward, not just this one.
+
+Still fully on Appwrite: every write, admin panel, search/filter.
 
 ## One-time setup
 
