@@ -79,9 +79,26 @@ aren't in D1 yet. These are shared across many pages, so this benefits
 several call sites (every article page, profile pages, contest results)
 from one change.
 
-Still fully on Appwrite: everything gated by auth, likes/comments
-collections entirely, admin panel, profile, contest, Bhasa Diwas — each
-remaining piece is its own future increment.
+**Status: Week 8 (remaining collections, read-only) done.** Exported and
+imported `likes` (1,137), `comments` (382), `follows` (109), `bookmarks`
+(45), `profiles` (157) into D1 — real data had a meaningful duplicate
+rate (~18.5% on likes) from a pre-existing race condition in the app's
+toggle functions; the export script dedupes rather than corrupting the
+import. Five new read-only routes: `/likes`, `/comments`, `/follows`,
+`/bookmarks`, `/profiles/:userId`, plus `?ids=` on `/articles` for bulk
+lookup. Wired into `AuthorBadge`, `TierProgress`, `certRanking`,
+`app/bookmarks/page.tsx`, and both profile pages.
+
+**Explicitly not migrated: "my articles" on the own-profile page.** It
+needs to show the owner's own pending/rejected/draft work, which requires
+real per-user authorization — this Worker has none yet. A `status=all`
+override was drafted, then reverted before shipping once it was clear
+that meant *any* caller could read *any* user's unpublished articles.
+Stays on Appwrite until auth-bridging exists.
+
+Still fully on Appwrite: every write (likes, comments, follows,
+bookmarks, publishing, certificate downloads), admin panel, contest,
+Bhasa Diwas, search/filter.
 
 ## One-time setup
 
