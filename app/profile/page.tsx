@@ -15,11 +15,13 @@ const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 const DB = 'Khabar_db';
-// Week 8+16 of the Cloudflare migration (see cloudflare/README.md):
-// articles, likes, comments, follows, bookmarks, profile, and
-// contest_settings reads below all come from the Worker. Auth,
-// certificate_state, and notifications stay on Appwrite -- not exported
-// to D1 yet (or, for certificate downloads, a write).
+// Week 8+16+17 of the Cloudflare migration (see cloudflare/README.md):
+// articles, likes, comments, follows, bookmarks, profile,
+// contest_settings, and certificate_state's downloadCount all read from
+// the Worker. certificate_state's docId lookup and the download-count
+// write itself stay on Appwrite for now -- read-only migration this
+// week, per the phased plan (writes move over in a later pass).
+// Notifications still stay on Appwrite entirely -- not exported yet.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getInitials(name: string): string {
@@ -93,12 +95,19 @@ export default function ProfilePage() {
       if (!myEntry) { setCertState({ live: true, myEntry: null, rank: 0, downloadCount: 0, docId: null }); return; }
 
       let downloadCount = 0;
+      const cRes = await fetch(WORKER_URL + '/certificates?userId=' + encodeURIComponent(uid));
+      if (cRes.ok) {
+        const cData = await cRes.json();
+        downloadCount = cData.downloadCount || 0;
+      }
+      // docId is still looked up from Appwrite -- the write below (PATCH by
+      // docId, or POST to create) still targets Appwrite, unchanged.
       let docId: string | null = null;
       const dq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [uid] }));
       const dRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/certificate_state/documents?queries[]=' + dq, { headers: H, credentials: 'include' });
       if (dRes.ok) {
         const dData = await dRes.json();
-        if (dData.documents && dData.documents[0]) { downloadCount = dData.documents[0].downloadCount || 0; docId = dData.documents[0].$id; }
+        if (dData.documents && dData.documents[0]) { docId = dData.documents[0].$id; }
       }
       setCertState({ live: true, myEntry, rank: myEntry.rank, downloadCount, docId });
     } catch (e) { console.error(e); }
