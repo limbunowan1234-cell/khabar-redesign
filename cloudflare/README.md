@@ -166,8 +166,18 @@ Baseline: 1137/1137 match, zero drift.
 browser session (needs live login). The auth-rejection paths and insert
 idempotency were both verified directly against real infrastructure.
 
-Still fully on Appwrite: comments/follows/bookmarks/publishing writes,
-admin panel, search/filter.
+**Status: Week 13 (shadow-write validation, bookmarks) done.**
+`toggleBookmark` shadow-writes into D1 the same way, same auth boundary.
+Simpler than likes — `UNIQUE(user_id, article_id)` has no nullable
+column, so the plain constraint just works. Caught that
+`app/bookmarks/page.tsx` has its own separate remove-bookmark
+implementation that bypasses the shared helper — gave it its own
+shadow-write call so this write path wasn't silently missed.
+`cloudflare/scripts/diff-bookmarks.mjs`, same shape as likes'. Baseline:
+45/45, zero drift.
+
+Still fully on Appwrite: comments/follows/publishing writes, admin
+panel, search/filter.
 
 ## One-time setup
 
