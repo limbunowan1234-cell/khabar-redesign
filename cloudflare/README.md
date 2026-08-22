@@ -266,6 +266,38 @@ approve/reject/curate flows (needs a broader admin-role check extension
 than this one table), Bhasa Diwas voting/submitting, certificate
 downloads, notifications, profile editing.
 
+**Status: Week 17 (pivot to read-side-first) done.** Strategy change:
+finish exposing the remaining collections from D1 before moving more
+writes over, so every export gets validated before anything depends on
+it, rather than continuing write-path-by-write-path.
+
+Before starting new reads, checked something that had never been
+checked: `articles` is the one D1 table that's been "migrated" since
+Week 1 but nothing has ever kept in sync — every article write
+(publish, edit, approve/reject, curate flags, weekly picks) still lands
+on Appwrite only, with no shadow-write safety net like likes/comments/
+etc. have had since Week 12+. Added `cloudflare/scripts/diff-articles.mjs`
+and ran it against all 190 articles: zero drift on status, title, or any
+curation flag. The site turned out fine, but nothing was checking that
+until now, and this table still has no shadow-write, so it can drift
+again — worth re-running this periodically.
+
+New read path: `certificate_state` (download count + rank on the
+contest certificate page). New `GET /certificates?userId=` route on the
+Worker; `app/profile/page.tsx`'s downloadCount now reads from D1.
+Read-only, matching the new strategy — the docId lookup and the actual
+download-count write both stay on Appwrite for now, so D1 can lag by
+however many downloads happen before the next export. Low-stakes: worst
+case someone re-downloads their own certificate PNG past the 3-download
+cap.
+
+Exporting turned up the identical non-atomic get-or-create race already
+known from Week 8's likes/follows/bookmarks: some users had multiple
+`certificate_state` rows instead of one (13 raw documents, 9 unique
+users). Deduped by keeping the max `downloadCount` per user — the
+conservative choice, since undercounting would let someone exceed the
+cap.
+
 ## One-time setup
 
 ```bash
