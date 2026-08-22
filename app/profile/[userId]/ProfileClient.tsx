@@ -1,14 +1,19 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
 // Week 8 of the Cloudflare migration (see cloudflare/README.md): profile,
-// articles, likes, and follows reads below come from the Worker. Auth and
-// the follow/unfollow write stay on Appwrite for now.
+// articles, likes, and follows reads come from the Worker. Auth stays on
+// Appwrite. The follow/unfollow write (Week 14) shadow-writes into D1
+// too, fire-and-forget, after the real Appwrite write succeeds -- this
+// is the only real follow/unfollow call site in the app (the shared
+// toggleFollow in lib/appwrite.ts is unused dead code), so it gets its
+// own copy of the shadow-write logic rather than a shared helper.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(article: any): string {
@@ -16,6 +21,22 @@ function getImageUrl(article: any): string {
   if (!id || ['Text', 'null', 'undefined', ''].includes(String(id))) return '';
   if (String(id).startsWith('http')) return id;
   return WORKER_URL + '/cdn/articles/' + id;
+}
+
+async function shadowWriteFollow(followerId: string, followingId: string, followerName: string | null, followingName: string | null, created: boolean) {
+  try {
+    const token = await getWorkerAuthToken();
+    if (!token) return;
+    const headers = { Authorization: 'Bearer ' + token };
+    if (created) {
+      await fetch(`${WORKER_URL}/follows`, {
+        method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ followerId, followingId, followerName, followingName }),
+      });
+    } else {
+      await fetch(`${WORKER_URL}/follows?${new URLSearchParams({ followerId, followingId })}`, { method: 'DELETE', headers });
+    }
+  } catch {}
 }
 
 const TIERS = [
@@ -129,6 +150,7 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
             method: 'DELETE', headers: H, credentials: 'include',
           });
         }
+        shadowWriteFollow(currentUser.$id, userId, null, null, false);
         setIsFollowing(false);
         setFollowerCount((c) => Math.max(0, c - existingDocs.length));
       } else {
@@ -143,6 +165,7 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
           credentials: 'include',
           body: JSON.stringify({ documentId: 'unique()', data: { followerId: currentUser.$id, followingId: userId, followerName: currentUser.name, followingName, createdAt: new Date().toISOString() } }),
         });
+        shadowWriteFollow(currentUser.$id, userId, currentUser.name, followingName, true);
         setIsFollowing(true);
         setFollowerCount((c) => c + 1);
       }
