@@ -139,6 +139,24 @@ export async function getUserBookmarks(userId: string) {
   return data.documents || [];
 }
 
+// Shadow-writes the same bookmark/unbookmark outcome into D1, same
+// fire-and-forget pattern as shadowWriteLike -- see its comment above.
+async function shadowWriteBookmark(articleId: string, userId: string, created: boolean) {
+  try {
+    const token = await getWorkerAuthToken();
+    if (!token) return;
+    const headers = { Authorization: 'Bearer ' + token };
+    if (created) {
+      await fetch(`${WORKER_URL}/bookmarks`, {
+        method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, articleId }),
+      });
+    } else {
+      await fetch(`${WORKER_URL}/bookmarks?${new URLSearchParams({ userId, articleId })}`, { method: 'DELETE', headers });
+    }
+  } catch {}
+}
+
 export async function toggleBookmark(articleId: string, userId: string) {
   const listRes = await fetch(`${endpoint}/databases/${dbId}/collections/bookmarks/documents`, { headers: H, credentials: 'include' });
   if (!listRes.ok) return false;
@@ -146,12 +164,14 @@ export async function toggleBookmark(articleId: string, userId: string) {
   const existing = documents.find((b: any) => b.articleId === articleId && b.userId === userId);
   if (existing) {
     await fetch(`${endpoint}/databases/${dbId}/collections/bookmarks/documents/${existing.$id}`, { method: 'DELETE', headers: H, credentials: 'include' });
+    shadowWriteBookmark(articleId, userId, false);
     return false;
   } else {
     await fetch(`${endpoint}/databases/${dbId}/collections/bookmarks/documents`, {
       method: 'POST', headers: HJ, credentials: 'include',
       body: JSON.stringify({ documentId: 'unique()', data: { articleId, userId, savedAt: new Date().toISOString() } })
     });
+    shadowWriteBookmark(articleId, userId, true);
     return true;
   }
 }

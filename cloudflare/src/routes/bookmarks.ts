@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { verifyUser } from '../lib/auth';
 
 type Bindings = { DB: D1Database };
 
@@ -28,4 +29,34 @@ bookmarks.get('/', async (c) => {
   const { results } = await c.env.DB.prepare(sql).bind(...params).all();
   const docs = (results || []).map(toBookmarkJson);
   return c.json({ documents: docs, total: docs.length });
+});
+
+// --- Shadow-write only (see cloudflare/README.md) ---
+// Appwrite stays authoritative. Both require a JWT for the exact userId
+// being written, same boundary as /likes.
+
+// POST /bookmarks  { userId, articleId }
+bookmarks.post('/', async (c) => {
+  const user = await verifyUser(c.req.raw);
+  const body = await c.req.json().catch(() => null);
+  if (!body?.userId || !body?.articleId) return c.json({ error: 'userId and articleId are required' }, 400);
+  if (!user || user.$id !== body.userId) return c.json({ error: 'Unauthorized' }, 401);
+
+  const id = crypto.randomUUID();
+  await c.env.DB
+    .prepare('INSERT INTO bookmarks (id, user_id, article_id) VALUES (?, ?, ?) ON CONFLICT (user_id, article_id) DO NOTHING')
+    .bind(id, body.userId, body.articleId)
+    .run();
+  return c.json({ ok: true });
+});
+
+// DELETE /bookmarks?userId=X&articleId=Y
+bookmarks.delete('/', async (c) => {
+  const user = await verifyUser(c.req.raw);
+  const q = c.req.query();
+  if (!q.userId || !q.articleId) return c.json({ error: 'userId and articleId are required' }, 400);
+  if (!user || user.$id !== q.userId) return c.json({ error: 'Unauthorized' }, 401);
+
+  await c.env.DB.prepare('DELETE FROM bookmarks WHERE user_id = ? AND article_id = ?').bind(q.userId, q.articleId).run();
+  return c.json({ ok: true });
 });
