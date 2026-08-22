@@ -183,8 +183,47 @@ site is `ProfileClient.tsx`'s own local implementation, which never used
 it. Removed the unused export, gave the real one its own shadow-write.
 `cloudflare/scripts/diff-follows.mjs`. Baseline: 109/109, zero drift.
 
-Still fully on Appwrite: comments/publishing writes, admin panel,
-search/filter.
+**Status: Week 15 (shadow-write validation, comments) done.** Fourth
+write path, and the last of the "simple toggle" batch — except comments
+aren't a toggle. No `UNIQUE` constraint (a user can post the same text
+twice on purpose), so it's a plain idempotent create/delete rather than
+an `ON CONFLICT` toggle. D1's row `id` has to be Appwrite's real `$id`
+rather than a fresh UUID, since deleting later needs both systems to
+agree on the identifier — `POST /comments` takes `id` from the caller
+instead of generating one.
+
+Comments also have a real authorization nuance: article comments allow
+the author *or* an admin to delete; contest discussion comments only
+allow the author. Added an `isAdmin()` check to the Worker's
+`DELETE /comments/:id` that mirrors the client-side `ADMIN_EMAIL`/
+`labels.includes('admin')` check exactly, so both behaviors are enforced
+server-side regardless of which client calls it.
+
+No shared helper this time — `ArticleClient.tsx`, `ContestClient.tsx`,
+and `HillsInFrameSwipeClient.tsx` each have their own local post/delete
+logic, so all three needed separate shadow-write wiring. Also fixed two
+stale reads found along the way: `ArticleClient.tsx`'s `fetchComments`
+and `HillsInFrameSwipeClient.tsx`'s `loadComments` were still hitting
+Appwrite directly despite earlier notes suggesting they'd already moved.
+Removed the dead `postComment` export from `lib/appwrite.ts` (confirmed
+via grep — nothing imports it, every real caller has its own
+implementation).
+
+**Deliberately excluded:** the Bhasa Diwas comments API route posts
+server-side with the admin API key, not a per-user JWT — incompatible
+with the JWT-based shadow-write mechanism as built. Left out of scope
+for this pass, not silently worked around.
+
+`cloudflare/scripts/diff-comments.mjs` compares by `id` (Appwrite's real
+`$id`) rather than a natural key. Baseline: 383 Appwrite (with a
+`userId`) vs 382 D1, one row only in Appwrite — expected drift from real
+site activity between the Week 8 export and shadow-writes starting, not
+a bug.
+
+All four "simple toggle"/create-delete write paths now shadow-write
+(likes, bookmarks, follows, comments). Still fully on Appwrite:
+publishing/editing, admin panel, search/filter, Bhasa Diwas
+voting/submitting.
 
 ## One-time setup
 
