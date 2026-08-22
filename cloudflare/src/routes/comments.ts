@@ -1,16 +1,9 @@
 import { Hono } from 'hono';
-import { verifyUser, type AppwriteUser } from '../lib/auth';
+import { verifyUser, isAdmin } from '../lib/auth';
 
 type Bindings = { DB: D1Database };
 
 export const comments = new Hono<{ Bindings: Bindings }>();
-
-// Matches the ADMIN_EMAIL / labels.includes('admin') check every client
-// component already uses (ArticleClient.tsx, ContestClient.tsx, etc.).
-function isAdmin(user: AppwriteUser | null): boolean {
-  if (!user) return false;
-  return user.email?.toLowerCase() === 'nowanad@gmail.com' || (user.labels || []).includes('admin');
-}
 
 function toCommentJson(row: any) {
   return {

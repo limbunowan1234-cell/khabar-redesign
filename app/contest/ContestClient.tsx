@@ -11,10 +11,12 @@ const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 const DB = 'Khabar_db';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-// Week 10 of the Cloudflare migration (see cloudflare/README.md): the
-// entries list, likes, and discussion comments below come from the
-// Worker. Posting/deleting/pinning, and contest_settings (not exported
-// to D1), stay on Appwrite.
+// Week 10+16 of the Cloudflare migration (see cloudflare/README.md): the
+// entries list, likes, discussion comments, and contest_settings (pinned
+// comment) below all read from the Worker. Posting/deleting a comment and
+// pinning one both still write to Appwrite first (shadow-written into D1
+// after), since the admin pin action is a server-side route, not this
+// client component.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 // Contest-wide discussion reuses the same comments collection articles use,
@@ -80,7 +82,7 @@ async function deleteDiscussionComment(commentId: string) {
 
 async function fetchPinnedCommentId(): Promise<string | null> {
   try {
-    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/contest_settings/documents/main', { headers: H });
+    const res = await fetch(WORKER_URL + '/contest/settings');
     if (!res.ok) return null;
     const data = await res.json();
     return data.pinnedCommentId || null;

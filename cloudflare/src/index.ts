@@ -8,6 +8,7 @@ import { follows } from './routes/follows';
 import { bookmarks } from './routes/bookmarks';
 import { profiles } from './routes/profiles';
 import { bhasaDiwas } from './routes/bhasaDiwas';
+import { contest } from './routes/contest';
 
 type Bindings = { DB: D1Database; IMAGES: R2Bucket };
 
@@ -27,5 +28,6 @@ app.route('/follows', follows);
 app.route('/bookmarks', bookmarks);
 app.route('/profiles', profiles);
 app.route('/bhasa-diwas', bhasaDiwas);
+app.route('/contest', contest);
 
 export default app;

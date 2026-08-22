@@ -32,6 +32,22 @@ function getDatabases(): Databases {
   return new Databases(client);
 }
 
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+// Shadow-writes into D1, alongside the real Appwrite write above (which
+// stays authoritative). Fire-and-forget: a D1 failure here must never
+// surface to the admin or block the real action. Reuses the same admin
+// JWT already verified above -- the Worker checks it independently.
+async function shadowWriteContestSettings(jwt: string, body: { certificatesLive?: boolean; pinnedCommentId?: string | null }) {
+  try {
+    await fetch(`${WORKER_URL}/contest/settings`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {}
+}
+
 async function ensurePinnedCommentIdAttribute(databases: Databases): Promise<void> {
   try {
     await databases.createStringAttribute(DB_ID, COLLECTION_ID, 'pinnedCommentId', 255, false);
@@ -82,6 +98,7 @@ export async function POST(req: NextRequest) {
       await write();
     }
 
+    shadowWriteContestSettings(jwt!, { pinnedCommentId });
     return NextResponse.json({ success: true, pinnedCommentId });
   } catch (error) {
     console.error('pin-comment error:', error);

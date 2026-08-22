@@ -15,11 +15,11 @@ const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 const DB = 'Khabar_db';
-// Week 8 of the Cloudflare migration (see cloudflare/README.md): articles,
-// likes, comments, follows, bookmarks, and profile reads below come from
-// the Worker. Auth, contest_settings, certificate_state, and
-// notifications stay on Appwrite -- not exported to D1 yet (or, for
-// certificate downloads, a write).
+// Week 8+16 of the Cloudflare migration (see cloudflare/README.md):
+// articles, likes, comments, follows, bookmarks, profile, and
+// contest_settings reads below all come from the Worker. Auth,
+// certificate_state, and notifications stay on Appwrite -- not exported
+// to D1 yet (or, for certificate downloads, a write).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getInitials(name: string): string {
@@ -83,7 +83,7 @@ export default function ProfilePage() {
 
   async function loadCertificateStatus(uid: string) {
     try {
-      const sRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/contest_settings/documents/main', { headers: H });
+      const sRes = await fetch(WORKER_URL + '/contest/settings');
       if (!sRes.ok) return;
       const sData = await sRes.json();
       if (!sData.certificatesLive) { setCertState({ live: false, myEntry: null, rank: 0, downloadCount: 0, docId: null }); return; }

@@ -32,6 +32,22 @@ function getDatabases(): Databases {
   return new Databases(client);
 }
 
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+// Shadow-writes into D1, alongside the real Appwrite write above (which
+// stays authoritative). Fire-and-forget: a D1 failure here must never
+// surface to the admin or block the real action. Reuses the same admin
+// JWT already verified above -- the Worker checks it independently.
+async function shadowWriteContestSettings(jwt: string, body: { certificatesLive?: boolean; pinnedCommentId?: string | null }) {
+  try {
+    await fetch(`${WORKER_URL}/contest/settings`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {}
+}
+
 // The contest_settings/main document was created with empty $permissions,
 // so PATCHing it from the browser with just the admin's user session was
 // silently failing (Appwrite returned an error the old client code never
@@ -58,6 +74,7 @@ export async function POST(req: NextRequest) {
     } catch {
       await databases.createDocument(DB_ID, COLLECTION_ID, DOC_ID, { certificatesLive: live });
     }
+    shadowWriteContestSettings(jwt!, { certificatesLive: live });
     return NextResponse.json({ success: true, certificatesLive: live });
   } catch (error) {
     console.error('publish-certificates error:', error);

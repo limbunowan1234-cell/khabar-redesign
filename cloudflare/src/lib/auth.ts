@@ -41,3 +41,10 @@ export async function verifyUser(request: Request): Promise<AppwriteUser | null>
     return null;
   }
 }
+
+// Matches the ADMIN_EMAIL / labels.includes('admin') check every client
+// component and admin API route already uses.
+export function isAdmin(user: AppwriteUser | null): boolean {
+  if (!user) return false;
+  return user.email?.toLowerCase() === 'nowanad@gmail.com' || (user.labels || []).includes('admin');
+}

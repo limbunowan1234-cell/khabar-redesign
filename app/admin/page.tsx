@@ -11,6 +11,7 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
@@ -54,7 +55,7 @@ export default function AdminPage() {
     try {
       const rankings = await computeContestRankings();
       setCertRankings(rankings);
-      const sRes = await fetch(endpoint + '/databases/Khabar_db/collections/contest_settings/documents/main', { headers: H });
+      const sRes = await fetch(WORKER_URL + '/contest/settings');
       if (sRes.ok) { const sData = await sRes.json(); setCertificatesLive(!!sData.certificatesLive); }
     } catch (e) { console.error(e); }
     setCertLoading(false);
