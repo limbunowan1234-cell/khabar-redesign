@@ -225,6 +225,47 @@ All four "simple toggle"/create-delete write paths now shadow-write
 publishing/editing, admin panel, search/filter, Bhasa Diwas
 voting/submitting.
 
+**Status: Week 16 (contest_settings) done.** A different-shaped write
+path than the last four: `contest_settings` (`certificatesLive`,
+`pinnedCommentId`) is admin-only and single-row, and its two writers —
+`app/api/admin/contest/pin-comment` and `publish-certificates` — are
+Next.js API routes calling Appwrite with the service API key, not a
+browser session.
+
+Looked like the same architectural mismatch that excluded the Bhasa
+Diwas comments route, but wasn't: both admin routes already receive a
+real per-admin JWT (`x-admin-jwt` header) and verify it against Appwrite
+themselves before ever touching the API key — the key only sidesteps
+`contest_settings/main`'s empty `$permissions` on the Appwrite write
+itself. That JWT hands straight to the Worker's existing `verifyUser()`,
+so both routes now shadow-write into D1 through a new admin-gated
+`POST /contest/settings`, same fire-and-forget pattern as everywhere
+else. Extracted `isAdmin()` out of `comments.ts` into `lib/auth.ts` as a
+shared export rather than defining it a third time.
+
+**Real drift caught before wiring any reads.** D1's `contest_settings`
+row was still the Week 1 schema-seed default (`certificates_live=0`,
+`pinned_comment_id=NULL`) — this table predates Week 8's export and had
+never been synced. Real Appwrite had certificates live and a comment
+pinned. Reading the stale row first would have been a real regression
+(the site would report certificates as not yet published), not a
+no-op — corrected the D1 row to match before flipping any client read
+over.
+
+With D1 corrected and both writers shadow-writing, wired the three read
+call sites — `app/admin/page.tsx`, `ContestClient.tsx`,
+`app/profile/page.tsx` — from their own direct Appwrite fetches to
+`GET /contest/settings` on the Worker.
+
+Verified: auth boundary (no token / fake token, both 401 — admin-gated,
+not userId-matched). The single-row `UPDATE` is inherently idempotent —
+verified twice against real D1, then restored to the real value.
+
+Remaining scope, still none started: publishing/editing articles, admin
+approve/reject/curate flows (needs a broader admin-role check extension
+than this one table), Bhasa Diwas voting/submitting, certificate
+downloads, notifications, profile editing.
+
 ## One-time setup
 
 ```bash
