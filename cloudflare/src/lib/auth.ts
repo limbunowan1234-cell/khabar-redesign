@@ -4,9 +4,10 @@
 // reaches this Worker's domain automatically -- the client instead mints a
 // short-lived JWT (POST /account/jwts, using its existing Appwrite
 // session) and sends that to us. We hand the JWT back to Appwrite
-// server-to-server to confirm it's real and find out whose it is. See
-// cloudflare/README.md for the full flow and why writes still don't use
-// this yet (shadow-write validation hasn't happened).
+// server-to-server to confirm it's real and find out whose it is. Used by
+// GET /articles?status=all and by every shadow-write endpoint (likes,
+// bookmarks, follows, comments) to confirm the caller is who they claim.
+// See cloudflare/README.md for the full flow.
 
 const APPWRITE_ENDPOINT = 'https://nyc.cloud.appwrite.io/v1';
 const APPWRITE_PROJECT = 'khabardarjeeling';

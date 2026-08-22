@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CONTEST_VOTE_CUTOFF_MS } from '@/lib/certRanking';
 import { timeAgo } from '@/components/Byline';
-import { getCommentLikes, toggleCommentLike } from '@/lib/appwrite';
+import { getCommentLikes, toggleCommentLike, getWorkerAuthToken } from '@/lib/appwrite';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -34,6 +34,29 @@ async function fetchDiscussion() {
   return data.documents || [];
 }
 
+// Shadow-writes into D1 using Appwrite's real document id -- same
+// reasoning as ArticleClient.tsx's shadowWriteComment.
+async function shadowWriteDiscussionComment(id: string, parentCommentId: string | null, userId: string, authorName: string, commentText: string) {
+  try {
+    const token = await getWorkerAuthToken();
+    if (!token) return;
+    await fetch(`${WORKER_URL}/comments`, {
+      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, articleId: DISCUSSION_ID, parentCommentId, userId, authorName, commentText }),
+    });
+  } catch {}
+}
+
+async function shadowDeleteDiscussionComment(commentId: string) {
+  try {
+    const token = await getWorkerAuthToken();
+    if (!token) return;
+    await fetch(`${WORKER_URL}/comments/${encodeURIComponent(commentId)}`, {
+      method: 'DELETE', headers: { Authorization: 'Bearer ' + token },
+    });
+  } catch {}
+}
+
 async function postDiscussionComment(userId: string, authorName: string, commentText: string, parentCommentId: string | null = null) {
   const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents', {
     method: 'POST', headers: HJ, credentials: 'include',
@@ -43,13 +66,16 @@ async function postDiscussionComment(userId: string, authorName: string, comment
     })
   });
   if (!res.ok) throw new Error('Failed to post');
-  return res.json();
+  const doc = await res.json();
+  shadowWriteDiscussionComment(doc.$id, parentCommentId, userId, authorName, commentText);
+  return doc;
 }
 
 async function deleteDiscussionComment(commentId: string) {
   await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents/' + commentId, {
     method: 'DELETE', headers: H, credentials: 'include'
   });
+  shadowDeleteDiscussionComment(commentId);
 }
 
 async function fetchPinnedCommentId(): Promise<string | null> {

@@ -1,8 +1,16 @@
 import { Hono } from 'hono';
+import { verifyUser, type AppwriteUser } from '../lib/auth';
 
 type Bindings = { DB: D1Database };
 
 export const comments = new Hono<{ Bindings: Bindings }>();
+
+// Matches the ADMIN_EMAIL / labels.includes('admin') check every client
+// component already uses (ArticleClient.tsx, ContestClient.tsx, etc.).
+function isAdmin(user: AppwriteUser | null): boolean {
+  if (!user) return false;
+  return user.email?.toLowerCase() === 'nowanad@gmail.com' || (user.labels || []).includes('admin');
+}
 
 function toCommentJson(row: any) {
   return {
@@ -47,4 +55,42 @@ comments.get('/', async (c) => {
   const { results } = await c.env.DB.prepare(sql).bind(...params).all();
   const docs = (results || []).map(toCommentJson);
   return c.json({ documents: docs, total: docs.length });
+});
+
+// --- Shadow-write only (see cloudflare/README.md) ---
+// Appwrite stays authoritative. The JWT must match userId for creates.
+
+// POST /comments  { id, articleId, parentCommentId?, userId, authorName, commentText, avatarUrl? }
+// `id` is the real Appwrite document $id, passed through by the caller
+// (not generated here) -- comments/replies get deleted by that id later,
+// on both sides, so the two systems need to agree on it from the start.
+comments.post('/', async (c) => {
+  const user = await verifyUser(c.req.raw);
+  const body = await c.req.json().catch(() => null);
+  if (!body?.id || !body?.articleId || !body?.userId || !body?.commentText) {
+    return c.json({ error: 'id, articleId, userId, and commentText are required' }, 400);
+  }
+  if (!user || user.$id !== body.userId) return c.json({ error: 'Unauthorized' }, 401);
+
+  await c.env.DB
+    .prepare('INSERT INTO comments (id, article_id, parent_comment_id, user_id, author_name, comment_text, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING')
+    .bind(body.id, body.articleId, body.parentCommentId || null, body.userId, body.authorName || null, body.commentText, body.avatarUrl || null)
+    .run();
+  return c.json({ ok: true });
+});
+
+// DELETE /comments/:id -- own comment, or an admin deleting anyone's
+// (matches the canDelete = user.$id === c.userId || isAdmin check every
+// client component already applies before even showing the button).
+comments.delete('/:id', async (c) => {
+  const user = await verifyUser(c.req.raw);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare('SELECT user_id FROM comments WHERE id = ?').bind(id).first();
+  if (!row) return c.json({ ok: true }); // already gone -- deleting is idempotent
+  if ((row as any).user_id !== user.$id && !isAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
+
+  await c.env.DB.prepare('DELETE FROM comments WHERE id = ?').bind(id).run();
+  return c.json({ ok: true });
 });

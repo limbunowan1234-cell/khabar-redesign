@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { toggleCommentLike, getCommentLikes } from '@/lib/appwrite';
+import { toggleCommentLike, getCommentLikes, getWorkerAuthToken } from '@/lib/appwrite';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
 
@@ -12,6 +12,22 @@ const DB = 'Khabar_db';
 const BUCKET = 'article-image';
 const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
+// Week 15 of the Cloudflare migration (see cloudflare/README.md): these
+// comments reuse the shared `comments` table (articleId = the Hills in
+// Frame photo id), same as article/contest/Bhasa Diwas comments -- reads
+// come from the Worker, posts shadow-write into D1 alongside Appwrite.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+async function shadowWriteComment(id: string, articleId: string, parentCommentId: string | null, userId: string, authorName: string, commentText: string) {
+  try {
+    const token = await getWorkerAuthToken();
+    if (!token) return;
+    await fetch(`${WORKER_URL}/comments`, {
+      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, articleId, parentCommentId, userId, authorName, commentText }),
+    });
+  } catch {}
+}
 
 const COMMENT_COLORS = [
   { bg: '#fef2f2', border: '#fecaca', avatar: '#dc2626' },
@@ -78,9 +94,7 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
 
   async function loadComments() {
     try {
-      const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [photo.$id] }));
-      const q2 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-      const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H });
+      const res = await fetch(WORKER_URL + '/comments?articleId=' + encodeURIComponent(photo.$id));
       if (res.ok) {
         const data = await res.json();
         setComments(data.documents || []);
@@ -142,13 +156,17 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
     if (!commentText.trim()) return;
     setPostingComment(true);
     try {
-      await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents', {
+      const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents', {
         method: 'POST', headers: HJ, credentials: 'include',
         body: JSON.stringify({
           documentId: 'unique()',
           data: { articleId: photo.$id, userId: user.$id, authorName: user.name || 'User', commentText: commentText.trim(), parentCommentId: null, avatarUrl: '', createdAt: new Date().toISOString() }
         })
       });
+      if (res.ok) {
+        const doc = await res.json();
+        shadowWriteComment(doc.$id, photo.$id, null, user.$id, user.name || 'User', commentText.trim());
+      }
       setCommentText('');
       loadComments();
     } catch {}
@@ -162,13 +180,17 @@ export default function HillsInFrameSwipeClient({ photos, startIndex }: { photos
     if (!replyText.trim()) return;
     setPostingReply(true);
     try {
-      await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents', {
+      const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents', {
         method: 'POST', headers: HJ, credentials: 'include',
         body: JSON.stringify({
           documentId: 'unique()',
           data: { articleId: photo.$id, userId: user.$id, authorName: user.name || 'User', commentText: replyText.trim(), parentCommentId, avatarUrl: '', createdAt: new Date().toISOString() }
         })
       });
+      if (res.ok) {
+        const doc = await res.json();
+        shadowWriteComment(doc.$id, photo.$id, parentCommentId, user.$id, user.name || 'User', replyText.trim());
+      }
       setReplyText('');
       setReplyingTo(null);
       loadComments();

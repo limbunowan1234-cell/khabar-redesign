@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import StoryCard from '@/components/StoryCard';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike } from '@/lib/appwrite';
+import { getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike, getWorkerAuthToken } from '@/lib/appwrite';
 import { useAuthStore } from '@/lib/authStore';
 import { trackPageView } from '@/lib/analyticsTracker';
 
@@ -16,9 +16,9 @@ const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' }
 const DB = 'Khabar_db';
 // Week 3 of the Cloudflare migration (see cloudflare/README.md): article
 // data, related/author article lists, view counting and images all read
-// from the Worker/R2 now. Likes, bookmarks, follows and comments are
-// still Appwrite -- those are writes gated by auth, out of scope until
-// the auth-bridging phase.
+// from the Worker/R2. Comments (Week 15) now read from the Worker too
+// and shadow-write into D1 on post/delete -- Appwrite stays the real
+// write. Follows still write to Appwrite only.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(article: any): string {
@@ -138,16 +138,36 @@ function readingTime(content: string): string {
 }
 
 async function fetchComments(articleId: string) {
-  const res = await fetch(
-    ENDPOINT + '/databases/' + DB + '/collections/comments/documents?queries[]=' +
-    encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [articleId] })) +
-    '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
-    '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-    { headers: H, credentials: 'include' }
-  );
+  const res = await fetch(WORKER_URL + '/comments?articleId=' + encodeURIComponent(articleId));
   if (!res.ok) return [];
   const data = await res.json();
   return data.documents || [];
+}
+
+// Shadow-writes into D1 using the same document id Appwrite generated,
+// fire-and-forget -- see cloudflare/README.md. Comments (unlike likes/
+// bookmarks/follows) aren't a toggle, so D1's row id has to match
+// Appwrite's real $id for a later delete to find the right row on both
+// sides.
+async function shadowWriteComment(id: string, articleId: string, parentCommentId: string | null, userId: string, authorName: string, commentText: string) {
+  try {
+    const token = await getWorkerAuthToken();
+    if (!token) return;
+    await fetch(`${WORKER_URL}/comments`, {
+      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, articleId, parentCommentId, userId, authorName, commentText }),
+    });
+  } catch {}
+}
+
+async function shadowDeleteComment(commentId: string) {
+  try {
+    const token = await getWorkerAuthToken();
+    if (!token) return;
+    await fetch(`${WORKER_URL}/comments/${encodeURIComponent(commentId)}`, {
+      method: 'DELETE', headers: { Authorization: 'Bearer ' + token },
+    });
+  } catch {}
 }
 
 async function createComment(articleId: string, userId: string, authorName: string, commentText: string, parentCommentId: string | null) {
@@ -159,13 +179,16 @@ async function createComment(articleId: string, userId: string, authorName: stri
     })
   });
   if (!res.ok) throw new Error('Failed to post comment');
-  return res.json();
+  const doc = await res.json();
+  shadowWriteComment(doc.$id, articleId, parentCommentId, userId, authorName, commentText);
+  return doc;
 }
 
 async function deleteComment(commentId: string) {
   const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents/' + commentId, {
     method: 'DELETE', headers: H, credentials: 'include'
   });
+  shadowDeleteComment(commentId);
   return res.ok;
 }
 

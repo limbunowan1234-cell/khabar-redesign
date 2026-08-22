@@ -72,15 +72,6 @@ export async function logout() {
   await fetch(`${endpoint}/account/sessions/current`, { method: 'DELETE', headers: H, credentials: 'include' });
 }
 
-export async function postComment(articleId: string, userId: string, commentText: string, authorName: string, avatarUrl: string) {
-  const res = await fetch(`${endpoint}/databases/${dbId}/collections/comments/documents`, {
-    method: 'POST', headers: HJ, credentials: 'include',
-    body: JSON.stringify({ documentId: 'unique()', data: { articleId, userId, commentText, authorName, avatarUrl: avatarUrl || '', createdAt: new Date().toISOString(), parentCommentId: null } })
-  });
-  if (!res.ok) throw new Error('Comment failed');
-  return res.json();
-}
-
 export async function getArticleLikes(articleId: string) {
   const res = await fetch(`${WORKER_URL}/likes?articleId=${encodeURIComponent(articleId)}`);
   if (!res.ok) return [];
