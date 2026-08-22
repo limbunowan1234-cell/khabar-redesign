@@ -176,8 +176,15 @@ shadow-write call so this write path wasn't silently missed.
 `cloudflare/scripts/diff-bookmarks.mjs`, same shape as likes'. Baseline:
 45/45, zero drift.
 
-Still fully on Appwrite: comments/follows/publishing writes, admin
-panel, search/filter.
+**Status: Week 14 (shadow-write validation, follows) done.** Third write
+path, JWT-gated to `followerId`. Found the shared `toggleFollow` in
+`lib/appwrite.ts` was dead code — the real (only) follow/unfollow call
+site is `ProfileClient.tsx`'s own local implementation, which never used
+it. Removed the unused export, gave the real one its own shadow-write.
+`cloudflare/scripts/diff-follows.mjs`. Baseline: 109/109, zero drift.
+
+Still fully on Appwrite: comments/publishing writes, admin panel,
+search/filter.
 
 ## One-time setup
 
