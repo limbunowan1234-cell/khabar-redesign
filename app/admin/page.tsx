@@ -253,10 +253,6 @@ export default function AdminPage() {
       const coverPhoto = selectedPhotos.find((p: any) => p.$id === coverPhotoId) || selectedPhotos[0];
       const mainImageId = coverPhoto.imageFileId;
       const galleryIds = selectedPhotos.filter((p: any) => p.$id !== coverPhoto.$id).map((p: any) => p.imageFileId);
-      // location and galleryImageIds aren't tracked in D1's articles schema
-      // (predates this migration, verified against real data on 2026-08-20
-      // without them) -- the shadow-write below omits them, so a photo
-      // story's gallery images specifically won't show up via D1 yet.
       const articleData = {
         title: storyTitle,
         content: 'A photo story from Khabar Darjeeling featuring ' + selectedPhotos.length + ' images.',
@@ -410,10 +406,13 @@ function generateSlug(text: string): string {
         const highest = data.documents?.[0]?.weeklyIssue || 0;
         issueNum = highest + 1;
       }
+      const weeklyData = { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null, weeklyLive: false, weeklySection: !currentValue ? sectionName : null };
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
         method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null, weeklyLive: false, weeklySection: !currentValue ? sectionName : null } })
+        body: JSON.stringify({ data: weeklyData })
       });
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(articleId, weeklyData, workerToken);
       await loadArticles();
     } catch { setError('Weekly toggle failed'); }
   }
@@ -421,11 +420,13 @@ function generateSlug(text: string): string {
   async function publishWeeklyNow() {
     if (!confirm('Publish this issue right now? It will go live immediately.')) return;
     try {
+      const workerToken = await getWorkerAuthToken();
       for (const a of weeklyPicks) {
         await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + a.$id, {
           method: 'PATCH', headers: HJ, credentials: 'include',
           body: JSON.stringify({ data: { weeklyLive: true } })
         });
+        shadowEditArticle(a.$id, { weeklyLive: true }, workerToken);
       }
       alert('Issue published!');
       await loadWeeklyPicks();
@@ -451,6 +452,9 @@ function generateSlug(text: string): string {
     try {
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + a.$id, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { weeklyOrder: swapIdx } }) });
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + b.$id, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { weeklyOrder: idx } }) });
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(a.$id, { weeklyOrder: swapIdx }, workerToken);
+      shadowEditArticle(b.$id, { weeklyOrder: idx }, workerToken);
       await loadWeeklyPicks();
     } catch { setError('Reorder failed'); }
   }
@@ -460,18 +464,23 @@ function generateSlug(text: string): string {
     if (!newSection) return;
     try {
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { weeklySection: newSection } }) });
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(articleId, { weeklySection: newSection }, workerToken);
       await loadWeeklyPicks();
     } catch { setError('Section change failed'); }
   }
 
   async function setLeadStory(articleId: string) {
     try {
+      const workerToken = await getWorkerAuthToken();
       for (const p of weeklyPicks) {
         if (p.isWeeklyLead) {
           await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + p.$id, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { isWeeklyLead: false } }) });
+          shadowEditArticle(p.$id, { isWeeklyLead: false }, workerToken);
         }
       }
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { isWeeklyLead: true } }) });
+      shadowEditArticle(articleId, { isWeeklyLead: true }, workerToken);
       await loadWeeklyPicks();
     } catch { setError('Set lead failed'); }
   }
@@ -479,7 +488,10 @@ function generateSlug(text: string): string {
   async function removeFromWeekly(articleId: string) {
     if (!confirm('Remove this story from the Weekly?')) return;
     try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { isWeeklyPick: false, weeklyIssue: null, weeklySection: null, isWeeklyLead: false, weeklyOrder: 0 } }) });
+      const removeData = { isWeeklyPick: false, weeklyIssue: null, weeklySection: null, isWeeklyLead: false, weeklyOrder: 0 };
+      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: removeData }) });
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(articleId, removeData, workerToken);
       await loadWeeklyPicks();
     } catch { setError('Remove failed'); }
   }

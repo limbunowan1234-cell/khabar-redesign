@@ -51,6 +51,12 @@ CREATE TABLE articles (
   is_region_pinned  INTEGER,
   rejection_reason  TEXT,
   tracker_data      TEXT,
+  -- Legacy field, superseded by location_area for every article that
+  -- predates this migration (confirmed: every article with a non-null
+  -- `location` already has location_area set, which always wins in the
+  -- app's own `locationArea || location` fallback). Kept only because
+  -- the admin photo-story creation flow still sets it unconditionally.
+  location          TEXT,
   submitted_at      TEXT,
   published_at      TEXT,
   created_at        TEXT NOT NULL DEFAULT (datetime('now')),
@@ -72,6 +78,17 @@ CREATE TABLE article_supporting_images (
   sort_order  INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX idx_supporting_images_article ON article_supporting_images(article_id);
+
+-- Admin photo-story articles (category = 'Photo Story') attach extra
+-- gallery images beyond the one cover image_file_id -- same child-table
+-- shape as supporting images, just no caption.
+CREATE TABLE article_gallery_images (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  article_id  TEXT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  file_id     TEXT NOT NULL,
+  sort_order  INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_gallery_images_article ON article_gallery_images(article_id);
 
 -- ─── Engagement ─────────────────────────────────────────────────────────
 

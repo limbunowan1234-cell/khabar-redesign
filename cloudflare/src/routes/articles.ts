@@ -49,6 +49,7 @@ function toArticleJson(row: any) {
     isRegionPinned: !!row.is_region_pinned,
     rejectionReason: row.rejection_reason,
     trackerData: row.tracker_data,
+    location: row.location,
     publishedAt: row.published_at,
     submittedAt: row.submitted_at,
   };
@@ -157,7 +158,15 @@ articles.get('/:idOrSlug', async (c) => {
     JSON.stringify({ fileId: r.file_id, caption: r.caption })
   );
 
-  return c.json({ ...toArticleJson(row), supportingImages });
+  // Photo-story articles only -- a flat array of file id strings (no
+  // caption), matching ArticleClient.tsx's gallery viewer.
+  const gallery = await c.env.DB
+    .prepare('SELECT file_id FROM article_gallery_images WHERE article_id = ? ORDER BY sort_order')
+    .bind((row as any).id)
+    .all();
+  const galleryImageIds = (gallery.results || []).map((r: any) => r.file_id);
+
+  return c.json({ ...toArticleJson(row), supportingImages, galleryImageIds });
 });
 
 // PATCH /articles/:id/views — the one write endpoint Phase 1 needs, since
@@ -193,21 +202,25 @@ articles.post('/', async (c) => {
   }
   if (!user || user.$id !== body.submitterId) return c.json({ error: 'Unauthorized' }, 401);
 
+  // OR IGNORE rather than a targeted ON CONFLICT (id): slug is also
+  // UNIQUE, and while a real collision is very unlikely (every slug
+  // generator here appends a Date.now() suffix), a slug conflict should
+  // degrade the same way an id conflict (retry) does -- silently skip,
+  // never a hard failure on what's already a fire-and-forget shadow-write.
   await c.env.DB
     .prepare(
-      `INSERT INTO articles (
+      `INSERT OR IGNORE INTO articles (
         id, slug, title, side_header, content, genre, category, status,
-        location_district, location_area, image_file_id, image_caption, youtube_id,
+        location_district, location_area, location, image_file_id, image_caption, youtube_id,
         submitter_id, submitter_name, submitter_email, submitter_avatar, author_name, author_email,
         views, is_breaking, is_featured, is_contest_entry, tracker_data,
         submitted_at, published_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT (id) DO NOTHING`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       body.id, body.slug || null, body.title, body.sideHeader || null, body.content || null,
       body.genre || null, body.category || null, body.status || 'published',
-      body.locationDistrict || null, body.locationArea || null, body.imageFileId || null,
+      body.locationDistrict || null, body.locationArea || null, body.location || null, body.imageFileId || null,
       body.imageCaption || null, body.youtube_id || null,
       body.submitterId, body.submitterName || null, body.submitterEmail || null, body.submitterAvatar || null,
       body.authorName || null, body.authorEmail || null,
@@ -215,6 +228,17 @@ articles.post('/', async (c) => {
       body.submittedAt || null, body.publishedAt || null
     )
     .run();
+
+  if (Array.isArray(body.galleryImageIds)) {
+    for (let i = 0; i < body.galleryImageIds.length; i++) {
+      const fileId = body.galleryImageIds[i];
+      if (!fileId) continue;
+      await c.env.DB
+        .prepare('INSERT INTO article_gallery_images (article_id, file_id, sort_order) VALUES (?, ?, ?)')
+        .bind(body.id, fileId, i)
+        .run();
+    }
+  }
 
   if (Array.isArray(body.supportingImages)) {
     for (let i = 0; i < body.supportingImages.length; i++) {
@@ -239,7 +263,7 @@ articles.post('/', async (c) => {
 // differing only in which fields and which UI action triggers them.
 const PATCH_FIELD_MAP: Record<string, string> = {
   title: 'title', sideHeader: 'side_header', content: 'content', genre: 'genre',
-  locationDistrict: 'location_district', locationArea: 'location_area',
+  locationDistrict: 'location_district', locationArea: 'location_area', location: 'location',
   imageFileId: 'image_file_id', imageCaption: 'image_caption', youtube_id: 'youtube_id',
   isBreaking: 'is_breaking', isFeatured: 'is_featured', isContestEntry: 'is_contest_entry',
   trackerData: 'tracker_data', status: 'status', rejectionReason: 'rejection_reason',
@@ -279,10 +303,13 @@ articles.patch('/:id', async (c) => {
     sets.push(`${column} = ?`);
     params.push(BOOL_FIELDS.has(key) ? (body[key] ? 1 : 0) : body[key]);
   }
-  if (sets.length === 0) return c.json({ error: 'No recognized fields in body' }, 400);
-  sets.push("updated_at = datetime('now')");
+  const hasImageUpdate = Array.isArray(body.supportingImages) || Array.isArray(body.galleryImageIds);
+  if (sets.length === 0 && !hasImageUpdate) return c.json({ error: 'No recognized fields in body' }, 400);
 
-  await c.env.DB.prepare(`UPDATE articles SET ${sets.join(', ')} WHERE id = ?`).bind(...params, id).run();
+  if (sets.length > 0) {
+    sets.push("updated_at = datetime('now')");
+    await c.env.DB.prepare(`UPDATE articles SET ${sets.join(', ')} WHERE id = ?`).bind(...params, id).run();
+  }
 
   if (Array.isArray(body.supportingImages)) {
     await c.env.DB.prepare('DELETE FROM article_supporting_images WHERE article_id = ?').bind(id).run();
@@ -292,6 +319,18 @@ articles.patch('/:id', async (c) => {
       await c.env.DB
         .prepare('INSERT INTO article_supporting_images (article_id, file_id, caption, sort_order) VALUES (?, ?, ?, ?)')
         .bind(id, img.fileId, img.caption || null, i)
+        .run();
+    }
+  }
+
+  if (Array.isArray(body.galleryImageIds)) {
+    await c.env.DB.prepare('DELETE FROM article_gallery_images WHERE article_id = ?').bind(id).run();
+    for (let i = 0; i < body.galleryImageIds.length; i++) {
+      const fileId = body.galleryImageIds[i];
+      if (!fileId) continue;
+      await c.env.DB
+        .prepare('INSERT INTO article_gallery_images (article_id, file_id, sort_order) VALUES (?, ?, ?)')
+        .bind(id, fileId, i)
         .run();
     }
   }
