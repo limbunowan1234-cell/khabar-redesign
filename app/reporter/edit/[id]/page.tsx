@@ -86,7 +86,7 @@ export default function ReporterEditPage() {
         if (!userIsReporter) { setError('Access denied. Reporter or Admin only.'); setLoading(false); return; }
         setUser(data);
 
-        const artRes = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { headers: H, credentials: 'include' });
+        const artRes = await fetch(WORKER_URL + '/articles/' + articleId);
         if (!artRes.ok) { setError('Article not found.'); setLoading(false); return; }
         const article = await artRes.json();
 

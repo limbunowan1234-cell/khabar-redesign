@@ -400,10 +400,9 @@ function generateSlug(text: string): string {
       let sectionName = '';
       if (!currentValue) {
         sectionName = prompt('Section name for this story (e.g. Community Voices, Ground Reports):', '') || 'Community Voices';
-        const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'weeklyLive', values: [true] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: 'weeklyIssue' }));
-        const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] })), { headers: H, credentials: 'include' });
+        const res = await fetch(WORKER_URL + '/articles?weeklyLive=1&sort=weeklyIssueDesc&limit=1');
         const data = await res.json();
-        const highest = data.documents?.[0]?.weeklyIssue || 0;
+        const highest = Number(data.documents?.[0]?.weeklyIssue) || 0;
         issueNum = highest + 1;
       }
       const weeklyData = { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null, weeklyLive: false, weeklySection: !currentValue ? sectionName : null };
@@ -435,8 +434,7 @@ function generateSlug(text: string): string {
 
   async function loadWeeklyPicks() {
     try {
-      const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'isWeeklyPick', values: [true] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'weeklyLive', values: [false] }));
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderAsc', attribute: 'weeklyOrder' })), { headers: H, credentials: 'include' });
+      const res = await fetch(WORKER_URL + '/articles?isWeeklyPick=1&weeklyLive=0&sort=weeklyOrderAsc&limit=100');
       const data = await res.json();
       setWeeklyPicks(data.documents || []);
     } catch { setError('Failed to load weekly picks'); }
@@ -513,7 +511,7 @@ function generateSlug(text: string): string {
     setEditingArticle(article);
     setTitle(article.title);
     setContent(article.content || '');
-    if (!article.content) { fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + article.$id, { headers: H, credentials: 'include' }).then(r => r.ok ? r.json() : null).then(d => { if (d) setContent(d.content || ''); }); }
+    if (!article.content) { fetch(WORKER_URL + '/articles/' + article.$id).then(r => r.ok ? r.json() : null).then(d => { if (d) setContent(d.content || ''); }); }
     setGenre(genres.includes(article.genre) ? article.genre : (genres.includes(article.category) ? article.category : 'Voice of People'));
     setLocationDistrict(article.locationDistrict || 'Darjeeling'); setLocationArea(article.locationArea || article.location || '');
     setYoutubeId(article.youtube_id || '');

@@ -636,23 +636,18 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
     if (!user?.$id || districtApplied) return;
     (async () => {
       try {
-        const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [user.$id] }));
-        const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
-        const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H });
-        if (res.ok) {
-          const d = await res.json();
-          const row = d.documents?.[0];
-          const district = row?.homeDistrict;
-          const avatarUrl = row?.avatarUrl;
-          const bannerTheme = row?.bannerTheme;
-          if (district) { setUserDistrict(district); setSelectedDistrict(district); }
-          const needsDistrict = !district;
-          const needsAvatar = !avatarUrl;
-          const needsBanner = !bannerTheme;
-          if ((needsDistrict || needsAvatar || needsBanner) && !localStorage.getItem('profilePromptDismissed')) {
-            setProfilePromptNeeds({ district: needsDistrict, avatar: needsAvatar, banner: needsBanner });
-            setShowProfilePrompt(true);
-          }
+        const res = await fetch(WORKER_URL + '/profiles/' + encodeURIComponent(user.$id));
+        const row = res.ok ? await res.json() : undefined;
+        const district = row?.homeDistrict;
+        const avatarUrl = row?.avatarUrl;
+        const bannerTheme = row?.bannerTheme;
+        if (district) { setUserDistrict(district); setSelectedDistrict(district); }
+        const needsDistrict = !district;
+        const needsAvatar = !avatarUrl;
+        const needsBanner = !bannerTheme;
+        if ((needsDistrict || needsAvatar || needsBanner) && !localStorage.getItem('profilePromptDismissed')) {
+          setProfilePromptNeeds({ district: needsDistrict, avatar: needsAvatar, banner: needsBanner });
+          setShowProfilePrompt(true);
         }
       } catch (e) { console.error(e); }
       setDistrictApplied(true);

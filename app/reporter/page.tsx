@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const dbId = 'Khabar_db';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 export default function ReporterPage() {
   const [user, setUser] = useState<any>(null);
@@ -33,10 +35,11 @@ export default function ReporterPage() {
           }
           setUser(data);
           setIsAdmin(userIsAdmin);
-          const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [data.$id] }));
-          const q2 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-          const q3 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] }));
-          const artRes = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + q1 + '&queries[]=' + q2 + '&queries[]=' + q3, { headers: H, credentials: 'include' });
+          const workerToken = await getWorkerAuthToken();
+          const artRes = await fetch(
+            WORKER_URL + '/articles?status=all&submitterId=' + encodeURIComponent(data.$id) + '&limit=50',
+            workerToken ? { headers: { Authorization: 'Bearer ' + workerToken } } : undefined
+          );
           if (artRes.ok) {
             const artData = await artRes.json();
             setArticles(artData.documents || []);

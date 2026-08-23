@@ -289,12 +289,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
   async function checkFollowing(authorId: string) {
     if (!user || !authorId || authorId === user.$id) return;
     try {
-      const res = await fetch(
-        ENDPOINT + "/databases/" + DB + "/collections/follows/documents?queries[]=" +
-        encodeURIComponent(JSON.stringify({ method: "equal", attribute: "followerId", values: [user.$id] })) +
-        "&queries[]=" + encodeURIComponent(JSON.stringify({ method: "equal", attribute: "followingId", values: [authorId] })),
-        { headers: H, credentials: "include" }
-      );
+      const res = await fetch(WORKER_URL + '/follows?followerId=' + encodeURIComponent(user.$id) + '&followingId=' + encodeURIComponent(authorId));
       if (res.ok) { const d = await res.json(); setFollowing((d.documents || []).length > 0); }
     } catch {}
   }

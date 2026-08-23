@@ -109,6 +109,11 @@ articles.get('/', async (c) => {
   if (q.featured) { where.push('is_featured = 1'); }
   if (q.contest) { where.push('is_contest_entry = 1'); }
   if (q.submitterId) { where.push('submitter_id = ?'); params.push(q.submitterId); }
+  // admin's weekly-picks management (app/admin/page.tsx) -- next-issue
+  // lookup and the pending-picks list both need these.
+  if (q.weeklyLive === '1') { where.push('weekly_live = 1'); }
+  if (q.weeklyLive === '0') { where.push('weekly_live = 0'); }
+  if (q.isWeeklyPick === '1') { where.push('is_weekly_pick = 1'); }
   if (q.ids) {
     const ids = q.ids.split(',').filter(Boolean);
     if (ids.length === 0) return c.json({ documents: [], total: 0, nextCursor: null });
@@ -118,13 +123,24 @@ articles.get('/', async (c) => {
 
   const whereSql = where.join(' AND ');
 
+  // Whitelisted, never built from raw query input directly -- avoids any
+  // SQL-injection surface in an ORDER BY clause. weekly_issue is stored as
+  // TEXT (matches Appwrite's own numeric-string values) -- CAST to sort
+  // numerically ("10" would otherwise sort before "2" as plain text).
+  const SORT_MAP: Record<string, string> = {
+    createdAtDesc: 'created_at DESC',
+    weeklyIssueDesc: 'CAST(weekly_issue AS INTEGER) DESC',
+    weeklyOrderAsc: 'weekly_order ASC',
+  };
+  const sortSql = SORT_MAP[q.sort || ''] || SORT_MAP.createdAtDesc;
+
   const pageWhere = q.cursor ? `${whereSql} AND created_at < ?` : whereSql;
   const pageParams = q.cursor ? [...params, q.cursor] : params;
 
-  const sql = `SELECT * FROM articles WHERE ${pageWhere} ORDER BY created_at DESC LIMIT ?`;
+  const sql = `SELECT * FROM articles WHERE ${pageWhere} ORDER BY ${sortSql} LIMIT ?`;
   const { results } = await c.env.DB.prepare(sql).bind(...pageParams, limit).all();
   const docs = (results || []).map(toArticleJson);
-  const nextCursor = docs.length === limit ? (results![results!.length - 1] as any).created_at : null;
+  const nextCursor = docs.length === limit && sortSql === SORT_MAP.createdAtDesc ? (results![results!.length - 1] as any).created_at : null;
 
   const countRow = await c.env.DB
     .prepare(`SELECT COUNT(*) as total FROM articles WHERE ${whereSql}`)
