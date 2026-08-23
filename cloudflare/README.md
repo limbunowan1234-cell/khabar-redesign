@@ -532,6 +532,56 @@ a real slug collision instead of throwing.
 Not in this pass: the bulk author-name sync utility — its own distinct
 write shape, left for a future increment.
 
+**Status: Week 24 (go-live pass: cut remaining reads over to D1)
+done.** "Go live" was ambiguous, so asked first rather than guessing —
+it scoped down to: cut reads over fully for anything already
+shadow-written and diff-verified; writes stay dual for now (still
+Appwrite + shadow-write). Cutting writes over too would have been
+genuinely risky — several write paths were never end-to-end tested
+with a real login this whole migration.
+
+Audited every remaining direct-Appwrite fetch across ~21 files first.
+Found 7 genuine cutover candidates and, just as importantly, 4 that
+must *not* move: `certificate_state`'s docId lookup and three `follows`
+docId lookups (`ArticleClient.tsx`, `ProfileClient.tsx` ×2) — all four
+exist solely to feed a subsequent Appwrite write by Appwrite's own
+document id, which D1 doesn't have (D1's rows use their own generated
+ids, decoupled from Appwrite's). Cutting those over would have broken
+the write that follows them.
+
+Cut over: `HomeClient.tsx`'s home-district profile lookup (→
+`GET /profiles/:userId`), `ArticleClient.tsx`'s `checkFollowing`
+boolean check (→ `GET /follows`), admin's edit-content fallback fetch
+and reporter's edit-form load (→ `GET /articles/:id`), and the reporter
+dashboard's own-articles list (→
+`GET /articles?status=all&submitterId=`, JWT-gated the same way the
+profile page's "my articles" already is).
+
+Two needed real Worker work first: `GET /articles` didn't support
+filtering on `weeklyLive`/`isWeeklyPick`, or any sort besides
+`created_at desc`. Added both, plus a whitelisted `SORT_MAP` never
+built from raw query input (keeps `ORDER BY` injection-proof).
+
+Caught a real latent bug while adding the weekly-issue sort:
+`weekly_issue` is stored as TEXT in D1 (matches Appwrite's own
+numeric-string values), so a naive DESC sort would put `"10"` before
+`"2"` once issue numbers hit double digits — dormant today (the site's
+only at issue 7) but this sort didn't exist against D1 before today, so
+it would have shipped broken. Fixed with `CAST(weekly_issue AS
+INTEGER) DESC`. Also fixed the admin next-issue-number code: against
+Appwrite, `weeklyIssue + 1` worked because it was a real number there;
+against D1 it comes back as a string, so unguarded this would have
+silently produced `"71"` instead of `8`. Added an explicit `Number()`
+coercion.
+
+Verified: both new filter combinations cross-checked against live
+Appwrite counts (0 pending weekly picks in both — exact match). Loaded
+the homepage and an article page in a real browser afterward: both
+render correctly, no new console errors, no regressions on the
+(anonymous, most-trafficked) path. The reads that only fire for a
+logged-in user couldn't be exercised without a real login — same open
+item as every previous JWT-gated verification this migration.
+
 ## One-time setup
 
 ```bash
