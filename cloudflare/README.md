@@ -330,6 +330,36 @@ New `cloudflare/scripts/diff-notifications.mjs`, same shape as
 `diff-comments.mjs` plus a read-state drift check. Baseline: 422/422
 match exactly, including read state.
 
+**Status: Week 19 (admin dashboard + curate page article reads) done.**
+`app/admin/page.tsx`'s dashboard needs every status across every author,
+not just one person's own — the existing Week 9
+`status=all&submitterId=` only covers a user's own drafts. Added a
+second shape to `GET /articles`: `status=all` with no `submitterId`,
+gated by a new `isReporterOrAdmin()` check in `lib/auth.ts` (broader
+than `isAdmin()` — reporters manage articles too without being full
+admins). No verified reporter/admin JWT silently falls back to
+published-only, same non-leaking pattern as the existing check.
+
+Caught a real response-shape gap while wiring this up: `toArticleJson()`
+was missing two fields the admin edit flow actually reads from the list
+response — `trackerData` (populates the tracker-embed form when
+editing) and `rejectionReason`. Both columns already existed in D1's
+schema, just never exposed. Added them.
+
+`app/admin/curate/page.tsx` (setting hero/pinned flags for genre and
+region pages) turned out not to need any of this — it only ever curates
+published content, so it now just reads the existing public
+`GET /articles?genre=`/`?district=` route with no auth, rather than
+replicating the unrestricted-status query it had before. That old query
+didn't correspond to any real draft/pending workflow anyway — every
+article is created with `status: 'published'` directly — so this
+changes nothing observable today and is more correct going forward.
+
+Verified: the new `status=all` branch's auth boundary (no token, fake
+token) falls back to published-only as expected. The positive path
+needs a live login to confirm end-to-end, same open item as Week 9's
+original check.
+
 ## One-time setup
 
 ```bash
