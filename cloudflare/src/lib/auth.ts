@@ -48,3 +48,11 @@ export function isAdmin(user: AppwriteUser | null): boolean {
   if (!user) return false;
   return user.email?.toLowerCase() === 'nowanad@gmail.com' || (user.labels || []).includes('admin');
 }
+
+// Matches app/admin/page.tsx's "Reporter or Admin only" gate -- broader
+// than isAdmin(), since reporters manage articles too (breaking/featured/
+// contest flags, weekly picks) without being full admins.
+export function isReporterOrAdmin(user: AppwriteUser | null): boolean {
+  if (!user) return false;
+  return isAdmin(user) || (user.labels || []).includes('reporter');
+}

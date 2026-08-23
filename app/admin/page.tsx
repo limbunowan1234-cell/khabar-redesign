@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { computeContestRankings, rankToCertRank, RankedEntry } from '@/lib/certRanking';
 import { generateCertificateBlob, downloadBlob } from '@/lib/certGenerator';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
@@ -11,6 +12,12 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
+// Week 16+19 of the Cloudflare migration (see cloudflare/README.md):
+// contest_settings and the article dashboard list (status=all,
+// reporter/admin-gated -- see cloudflare/src/routes/articles.ts) read
+// from the Worker. Publishing, editing, and every other write here
+// (breaking/featured/contest flags, weekly picks, delete) stay on
+// Appwrite.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
@@ -137,7 +144,9 @@ export default function AdminPage() {
 
   async function loadArticles() {
     try {
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })) + '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'select', values: ['$id','$createdAt','$updatedAt','title','category','genre','locationDistrict','locationArea','location','imageFileId','youtube_id','isBreaking','isFeatured','isContestEntry','status','views','submitterName','authorName','submitterId','publishedAt','slug','weeklyIssue','isWeeklyLead','isWeeklyPick','weeklySection','trackerData'] })), { headers: H, credentials: 'include' });
+      const token = await getWorkerAuthToken();
+      const init = token ? { headers: { Authorization: 'Bearer ' + token } } : undefined;
+      const res = await fetch(WORKER_URL + '/articles?status=all&limit=100', init);
       if (res.ok) { const data = await res.json(); setArticles(data.documents || []); setTotalArticleCount(data.total || 0); }
     } catch {}
   }

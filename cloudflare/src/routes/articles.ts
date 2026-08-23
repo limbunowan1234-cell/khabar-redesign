@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { verifyUser } from '../lib/auth';
+import { verifyUser, isReporterOrAdmin } from '../lib/auth';
 
 type Bindings = { DB: D1Database };
 
@@ -47,6 +47,8 @@ function toArticleJson(row: any) {
     isGenrePinned: !!row.is_genre_pinned,
     isRegionFeatured: !!row.is_region_featured,
     isRegionPinned: !!row.is_region_pinned,
+    rejectionReason: row.rejection_reason,
+    trackerData: row.tracker_data,
     publishedAt: row.published_at,
     submittedAt: row.submitted_at,
   };
@@ -69,19 +71,28 @@ articles.get('/', async (c) => {
   const where: string[] = [];
   const params: unknown[] = [];
 
-  // status=all opts out of the default published-only filter -- an
-  // author's own dashboard needs to see its own pending/rejected/draft
-  // articles too, not just what's public. This is the one filter that
-  // can expose non-public data, so it's the one that needs a verified
-  // identity: the caller must present a valid Appwrite JWT (see
-  // ../lib/auth.ts) for the exact user named in submitterId. Anyone
-  // asking for someone else's drafts, or with no/invalid JWT, gets
-  // published-only instead -- same as everyone else, silently, rather
-  // than a 401 that would leak "yes, that's a valid user id."
+  // status=all opts out of the default published-only filter. Two valid
+  // shapes, both needing a verified identity since this is the one filter
+  // that can expose non-public data:
+  //  - status=all&submitterId=X -- an author's own dashboard, sees only
+  //    their own pending/rejected/draft articles. JWT must match X.
+  //  - status=all with no submitterId -- the admin/reporter dashboard
+  //    (app/admin/page.tsx), sees every article regardless of author.
+  //    JWT must belong to a reporter or admin (see ../lib/auth.ts).
+  // Anyone else, or no/invalid JWT, silently gets published-only instead
+  // of a 401 that would leak "yes, that's a valid user id."
   if (q.status === 'all' && q.submitterId) {
     const user = await verifyUser(c.req.raw);
     if (user && user.$id === q.submitterId) {
       // no status filter at all -- every status for this one author
+    } else {
+      where.push('status = ?');
+      params.push('published');
+    }
+  } else if (q.status === 'all') {
+    const user = await verifyUser(c.req.raw);
+    if (user && isReporterOrAdmin(user)) {
+      // no status filter at all -- every status, every author
     } else {
       where.push('status = ?');
       params.push('published');

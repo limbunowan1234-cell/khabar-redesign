@@ -10,6 +10,12 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
+// Week 19 of the Cloudflare migration (see cloudflare/README.md): the
+// article list below reads from the Worker's public /articles route
+// (published-only by default -- curation only ever applies to published
+// content anyway, so no auth needed here unlike the admin dashboard's
+// full-status list). Setting hero/pin flags still writes to Appwrite.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const regions = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
@@ -60,11 +66,8 @@ export default function CuratePage() {
   }, [mode, selected, loading, error]);
 
   async function loadArticles() {
-    const field = mode === 'genre' ? 'genre' : 'locationDistrict';
-    const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: field, values: [selected] }));
-    const q2 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-    const q3 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [40] }));
-    const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents?queries[]=' + q1 + '&queries[]=' + q2 + '&queries[]=' + q3, { headers: H, credentials: 'include' });
+    const param = mode === 'genre' ? 'genre' : 'district';
+    const res = await fetch(WORKER_URL + '/articles?' + param + '=' + encodeURIComponent(selected) + '&limit=40');
     if (res.ok) {
       const data = await res.json();
       setArticles(data.documents || []);
