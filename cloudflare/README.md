@@ -485,6 +485,53 @@ Also removed `app/post/page.tsx.bak`, a stale unrouted duplicate found
 while working in this file (confirmed dead — `.bak` isn't a valid
 Next.js route extension, untouched since July).
 
+**Status: Week 23 (photo-story fields, weekly-picks, edge cases)
+done.** Three follow-ups to Week 22.
+
+Added `location` (TEXT) and a new `article_gallery_images` child table
+(same shape as `article_supporting_images`, no caption) to D1, live-
+migrated on the remote database and added to `schema.sql` for future
+fresh imports. Checked before backfilling: zero existing photo-story
+articles in Appwrite, and of the 124 articles with a non-null legacy
+`location` field, all 124 already have `locationArea` set too — which
+always wins in the app's own fallback — so no backfill was actually
+needed, only forward support. `toArticleJson()` now includes
+`location`; the single-article read now also returns `galleryImageIds`.
+Both `POST` and `PATCH` accept and store both fields — Week 22's
+photo-story shadow-write was already sending them, it just had nothing
+on the Worker side to receive them.
+
+All 5 remaining weekly-picks write shapes from Week 22's inventory
+(add/remove pick, reorder, rename section, set lead story) needed zero
+new Worker code — the generic `PATCH /articles/:id` already whitelists
+every weekly field. Just wired shadow-writes into the 5 admin functions
+that call it. The two cron-triggered weekly-publish paths stay
+Appwrite-only — both run server-side with the admin API key and a
+`CRON_SECRET`, no per-admin JWT to reuse, same excluded shape as the
+analytics and news-digest crons.
+
+Edge cases found and fixed:
+- `PATCH /articles/:id` incorrectly rejected a body containing only
+  image-array updates and no column fields — fixed so the two run
+  independently.
+- `POST /articles` switched from a targeted `ON CONFLICT (id)` to
+  `INSERT OR IGNORE`, so a genuine slug collision degrades the same way
+  an id retry does (silently skipped) instead of throwing.
+- Investigated whether article deletion should cascade-clean D1
+  likes/comments/bookmarks — confirmed real Appwrite deletes don't do
+  this either, and `comments.article_id` deliberately holds non-article
+  pseudo-ids for contest/Bhasa Diwas discussions, so a real foreign key
+  there would break that feature — left as-is to match existing
+  behavior exactly.
+
+Verified directly against real D1: `GET` returns `location`/
+`galleryImageIds` correctly for a seeded test article; cascade delete
+of gallery images on article delete; `INSERT OR IGNORE` silently skips
+a real slug collision instead of throwing.
+
+Not in this pass: the bulk author-name sync utility — its own distinct
+write shape, left for a future increment.
+
 ## One-time setup
 
 ```bash
