@@ -47,32 +47,11 @@ async function ensureCollection(databases: Databases): Promise<void> {
   }
 }
 
-export async function recordEvent(event: AnalyticsEvent): Promise<void> {
+export async function recordEvent(event: AnalyticsEvent, id?: string): Promise<string> {
   const databases = getDatabases();
   await ensureCollection(databases);
-  await databases.createDocument(DB_ID, COLLECTION_ID, ID.unique(), event as unknown as Record<string, unknown>);
-}
-
-export async function fetchEventsSince(sinceIso: string): Promise<any[]> {
-  const databases = getDatabases();
-  await ensureCollection(databases);
-  const all: any[] = [];
-  let cursor: string | undefined;
-  // Analytics events are pruned to a 30-day rolling window (see the cleanup
-  // route), so this is bounded — no need for a separate daily-rollup table.
-  for (let page = 0; page < 20; page++) {
-    const queries = [
-      Query.greaterThanEqual('timestamp', sinceIso),
-      Query.orderAsc('timestamp'),
-      Query.limit(500),
-    ];
-    if (cursor) queries.push(Query.cursorAfter(cursor));
-    const res = await databases.listDocuments(DB_ID, COLLECTION_ID, queries);
-    all.push(...res.documents);
-    if (res.documents.length < 500) break;
-    cursor = res.documents[res.documents.length - 1].$id;
-  }
-  return all;
+  const doc = await databases.createDocument(DB_ID, COLLECTION_ID, id || ID.unique(), event as unknown as Record<string, unknown>);
+  return doc.$id;
 }
 
 export async function deleteEventsOlderThan(cutoffIso: string): Promise<number> {

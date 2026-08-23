@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchEventsSince } from '@/lib/analyticsEvents';
 
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT };
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 async function checkAdminJwt(jwt: string | null): Promise<boolean> {
   if (!jwt) return false;
@@ -25,13 +21,15 @@ async function checkAdminJwt(jwt: string | null): Promise<boolean> {
   }
 }
 
+async function fetchEventsSince(sinceIso: string): Promise<any[]> {
+  const res = await fetch(`${WORKER_URL}/analytics/events?since=${encodeURIComponent(sinceIso)}`, { cache: 'no-store' });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.documents || [];
+}
+
 async function fetchAllArticles(): Promise<any[]> {
-  const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }));
-  const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1000] }));
-  const res = await fetch(
-    `${ENDPOINT}/databases/${DB}/collections/articles/documents?queries[]=${q1}&queries[]=${q2}`,
-    { headers: H, cache: 'no-store' }
-  );
+  const res = await fetch(`${WORKER_URL}/articles?limit=1000`, { cache: 'no-store' });
   if (!res.ok) return [];
   const data = await res.json();
   return data.documents || [];
