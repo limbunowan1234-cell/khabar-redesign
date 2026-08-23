@@ -298,6 +298,38 @@ users). Deduped by keeping the max `downloadCount` per user — the
 conservative choice, since undercounting would let someone exceed the
 cap.
 
+**Status: Week 18 (notifications) done.** Private per-user data (a
+user's own activity feed and unread count), so the new
+`GET /notifications?userId=` route is JWT-gated the same way
+`GET /articles?status=all` is — the caller must present a verified JWT
+for the exact userId requested, or a 401, never someone else's
+notifications.
+
+Exported and imported 422 notifications into D1 for the first time —
+extended `export-appwrite.mjs` with an `exportNotifications()` function
+matching the existing per-collection pattern. Re-ran the full export
+while at it; confirmed the regenerated seed files for already-migrated
+collections (likes, comments, follows, bookmarks, profiles, bhasa-diwas)
+are gitignored scratch output, not re-imported — D1 already holds
+validated, shadow-written data for those that's more current than a
+fresh snapshot would be.
+
+Wired the two real read call sites — `NotificationBell.tsx`'s unread
+count and dropdown list, and `app/profile/page.tsx`'s recent-activity
+feed — from their own direct Appwrite fetches to the Worker, reusing
+`getWorkerAuthToken()` (profile's page already mints one for the
+my-articles fetch on the same load).
+
+Read-only, matching the current plan: marking a notification read,
+mark-all-read, and creating one in the first place (the
+send-notification admin route) all still write to Appwrite only —
+documented explicitly, same posture as the Bhasa Diwas comments
+exclusion.
+
+New `cloudflare/scripts/diff-notifications.mjs`, same shape as
+`diff-comments.mjs` plus a read-state drift check. Baseline: 422/422
+match exactly, including read state.
+
 ## One-time setup
 
 ```bash
