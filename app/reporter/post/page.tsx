@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import imageCompression from 'browser-image-compression';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 async function toUploadableJpeg(file: File): Promise<File> {
   // Appwrite's storage preview/transform endpoint can't read AVIF/HEIC
@@ -18,6 +19,21 @@ const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
 const dbId = 'Khabar_db';
+// Week 22 of the Cloudflare migration (see cloudflare/README.md):
+// publishing a new article also shadow-writes into D1 after the real
+// Appwrite create succeeds. Appwrite stays authoritative.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+async function shadowWriteArticle(id: string, data: Record<string, any>, jwt: string | null) {
+  if (!jwt) return;
+  try {
+    await fetch(`${WORKER_URL}/articles`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...data }),
+    });
+  } catch {}
+}
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
@@ -143,40 +159,40 @@ export default function ReporterPostPage() {
     setSubmitting(true);
     try {
       const supportingImagesData = supportingImages.map((img) => JSON.stringify({ fileId: img.fileId, caption: img.caption }));
+      const articleData = {
+        title: title.trim(),
+        sideHeader: sideHeader.trim() || null,
+        content: content.trim(),
+        slug: generateSlug(title),
+        genre,
+        locationDistrict,
+        locationArea: locationArea || null,
+        imageFileId: imageFileId || null,
+        imageCaption: imageCaption.trim() || null,
+        youtube_id: youtubeId || null,
+        isBreaking,
+        isFeatured,
+        isContestEntry: false,
+        supportingImages: supportingImagesData,
+        authorName: user?.name || 'Khabar Reporter',
+        authorEmail: user?.email || '',
+        submitterId: user?.$id || '',
+        submitterName: user?.name || '',
+        submitterEmail: user?.email || '',
+        submitterAvatar: null,
+        status: 'published',
+        submittedAt: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
+        views: 0
+      };
       const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
         method: 'POST', headers: HJ, credentials: 'include',
-        body: JSON.stringify({
-          documentId: 'unique()',
-          data: {
-            title: title.trim(),
-            sideHeader: sideHeader.trim() || null,
-            content: content.trim(),
-            slug: generateSlug(title),
-            genre,
-            locationDistrict,
-            locationArea: locationArea || null,
-            imageFileId: imageFileId || null,
-            imageCaption: imageCaption.trim() || null,
-            youtube_id: youtubeId || null,
-            isBreaking,
-            isFeatured,
-            isContestEntry: false,
-            supportingImages: supportingImagesData,
-            authorName: user?.name || 'Khabar Reporter',
-            authorEmail: user?.email || '',
-            submitterId: user?.$id || '',
-            submitterName: user?.name || '',
-            submitterEmail: user?.email || '',
-            submitterAvatar: null,
-            status: 'published',
-            submittedAt: new Date().toISOString(),
-            publishedAt: new Date().toISOString(),
-            views: 0
-          }
-        })
+        body: JSON.stringify({ documentId: 'unique()', data: articleData })
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Submit failed'); }
       const doc = await res.json();
+      const workerToken = await getWorkerAuthToken();
+      shadowWriteArticle(doc.$id, { ...articleData, supportingImages: supportingImages.map((img) => ({ fileId: img.fileId, caption: img.caption })) }, workerToken);
       setSuccess('Article published successfully!');
       setTimeout(() => router.push('/article/' + doc.$id), 1500);
     } catch (err: any) {

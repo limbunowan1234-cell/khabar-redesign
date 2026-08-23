@@ -12,13 +12,36 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-// Week 16+19 of the Cloudflare migration (see cloudflare/README.md):
+// Week 16+19+22 of the Cloudflare migration (see cloudflare/README.md):
 // contest_settings and the article dashboard list (status=all,
-// reporter/admin-gated -- see cloudflare/src/routes/articles.ts) read
-// from the Worker. Publishing, editing, and every other write here
-// (breaking/featured/contest flags, weekly picks, delete) stay on
-// Appwrite.
+// reporter/admin-gated) read from the Worker. Publishing a new article,
+// and editing/toggling flags on an existing one, now also shadow-write
+// into D1 after the real Appwrite write succeeds -- Appwrite stays
+// authoritative. Weekly-picks management and delete are not yet wired
+// (still Appwrite-only).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+async function shadowWriteArticle(id: string, data: Record<string, any>, jwt: string | null) {
+  if (!jwt) return;
+  try {
+    await fetch(`${WORKER_URL}/articles`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...data }),
+    });
+  } catch {}
+}
+
+async function shadowEditArticle(id: string, data: Record<string, any>, jwt: string | null) {
+  if (!jwt) return;
+  try {
+    await fetch(`${WORKER_URL}/articles/${id}`, {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch {}
+}
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
@@ -230,32 +253,37 @@ export default function AdminPage() {
       const coverPhoto = selectedPhotos.find((p: any) => p.$id === coverPhotoId) || selectedPhotos[0];
       const mainImageId = coverPhoto.imageFileId;
       const galleryIds = selectedPhotos.filter((p: any) => p.$id !== coverPhoto.$id).map((p: any) => p.imageFileId);
+      // location and galleryImageIds aren't tracked in D1's articles schema
+      // (predates this migration, verified against real data on 2026-08-20
+      // without them) -- the shadow-write below omits them, so a photo
+      // story's gallery images specifically won't show up via D1 yet.
+      const articleData = {
+        title: storyTitle,
+        content: 'A photo story from Khabar Darjeeling featuring ' + selectedPhotos.length + ' images.',
+        category: 'Photo Story',
+        location: 'Darjeeling',
+        imageFileId: mainImageId,
+        galleryImageIds: galleryIds,
+        youtube_id: null,
+        isBreaking: false, isFeatured: false, isContestEntry: false,
+        authorName: user?.name || 'Khabar Darjeeling',
+        authorEmail: user?.email || '',
+        submitterId: user?.$id || '',
+        submitterName: user?.name || '',
+        submitterEmail: user?.email || '',
+        status: 'published',
+        submittedAt: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
+        views: 0
+      };
       const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
         method: 'POST', headers: HJ, credentials: 'include',
-        body: JSON.stringify({
-          documentId: 'unique()',
-          data: {
-            title: storyTitle,
-            content: 'A photo story from Khabar Darjeeling featuring ' + selectedPhotos.length + ' images.',
-            category: 'Photo Story',
-            location: 'Darjeeling',
-            imageFileId: mainImageId,
-            galleryImageIds: galleryIds,
-            youtube_id: null,
-            isBreaking: false, isFeatured: false, isContestEntry: false,
-            authorName: user?.name || 'Khabar Darjeeling',
-            authorEmail: user?.email || '',
-            submitterId: user?.$id || '',
-            submitterName: user?.name || '',
-            submitterEmail: user?.email || '',
-            status: 'published',
-            submittedAt: new Date().toISOString(),
-            publishedAt: new Date().toISOString(),
-            views: 0
-          }
-        })
+        body: JSON.stringify({ documentId: 'unique()', data: articleData })
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Failed to post story'); }
+      const doc = await res.json();
+      const workerToken = await getWorkerAuthToken();
+      shadowWriteArticle(doc.$id, articleData, workerToken);
       setSuccess('Photo story posted as article!');
       setSelectedPhotoIds([]); setCoverPhotoId(''); setCoverPhotoId('');
       setStoryTitle('');
@@ -335,31 +363,32 @@ function generateSlug(text: string): string {
     if (content.length < 100) { setError('Content must be at least 100 characters'); return; }
     setPublishing(true); setError(''); setSuccess('');
     try {
+      const articleData = {
+        title, content, genre, locationDistrict, locationArea: locationArea || null,
+          slug: generateSlug(title),
+          trackerData: parseTracker(trackerTitle, trackerLines),
+        imageFileId: imageFileId || null,
+        imageCaption: imageCaption.trim() || null,
+        youtube_id: youtubeId || null,
+        isBreaking, isFeatured, isContestEntry,
+        authorName: user?.name || 'Unknown',
+        authorEmail: user?.email || '',
+        submitterId: user?.$id || '',
+        submitterName: user?.name || '',
+        submitterEmail: user?.email || '',
+        status: 'published',
+        submittedAt: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
+        views: 0
+      };
       const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
         method: 'POST', headers: HJ, credentials: 'include',
-        body: JSON.stringify({
-          documentId: 'unique()',
-          data: {
-            title, content, genre, locationDistrict, locationArea: locationArea || null,
-              slug: generateSlug(title),
-              trackerData: parseTracker(trackerTitle, trackerLines),
-            imageFileId: imageFileId || null,
-            imageCaption: imageCaption.trim() || null,
-            youtube_id: youtubeId || null,
-            isBreaking, isFeatured, isContestEntry,
-            authorName: user?.name || 'Unknown',
-            authorEmail: user?.email || '',
-            submitterId: user?.$id || '',
-            submitterName: user?.name || '',
-            submitterEmail: user?.email || '',
-            status: 'published',
-            submittedAt: new Date().toISOString(),
-            publishedAt: new Date().toISOString(),
-            views: 0
-          }
-        })
+        body: JSON.stringify({ documentId: 'unique()', data: articleData })
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Publish failed'); }
+      const doc = await res.json();
+      const workerToken = await getWorkerAuthToken();
+      shadowWriteArticle(doc.$id, articleData, workerToken);
       setSuccess('Article published!');
       setTitle(''); setContent(''); setYoutubeId(''); setImageFileId(''); setImagePreview('');
       setIsBreaking(false); setIsFeatured(false); setIsContestEntry(false);
@@ -459,6 +488,10 @@ function generateSlug(text: string): string {
     if (!confirm('Delete ' + title + '? This cannot be undone.')) return;
     try {
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'DELETE', headers: H, credentials: 'include' });
+      const workerToken = await getWorkerAuthToken();
+      if (workerToken) {
+        fetch(`${WORKER_URL}/articles/${articleId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + workerToken } }).catch(() => {});
+      }
       setArticles(articles.filter((a) => a.$id !== articleId));
       setSuccess('Article deleted!');
     } catch { setError('Delete failed'); }
@@ -492,19 +525,20 @@ function generateSlug(text: string): string {
     if (content.length < 100) { setError('Content must be at least 100 characters'); return; }
     setPublishing(true); setError(''); setSuccess('');
     try {
+      const editData = {
+        title, content, genre, locationDistrict, locationArea: locationArea || null,
+        imageFileId: imageFileId || null,
+        imageCaption: imageCaption.trim() || null,
+        youtube_id: youtubeId || null,
+        trackerData: parseTracker(trackerTitle, trackerLines),
+        isBreaking, isFeatured, isContestEntry
+      };
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + editingArticle.$id, {
         method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({
-          data: {
-            title, content, genre, locationDistrict, locationArea: locationArea || null,
-            imageFileId: imageFileId || null,
-            imageCaption: imageCaption.trim() || null,
-            youtube_id: youtubeId || null,
-            trackerData: parseTracker(trackerTitle, trackerLines),
-            isBreaking, isFeatured, isContestEntry
-          }
-        })
+        body: JSON.stringify({ data: editData })
       });
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(editingArticle.$id, editData, workerToken);
       setSuccess('Article updated!');
       setEditingArticle(null);
       setTitle(''); setContent(''); setYoutubeId(''); setImageFileId(''); setImagePreview('');
@@ -521,6 +555,8 @@ function generateSlug(text: string): string {
         method: 'PATCH', headers: HJ, credentials: 'include',
         body: JSON.stringify({ data: { isFeatured: value } })
       });
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(articleId, { isFeatured: value }, workerToken);
       setArticles(articles.map((a) => a.$id === articleId ? { ...a, isFeatured: value } : a));
     } catch { setError('Update failed'); }
   }
@@ -531,6 +567,8 @@ function generateSlug(text: string): string {
         method: 'PATCH', headers: HJ, credentials: 'include',
         body: JSON.stringify({ data: { isBreaking: value } })
       });
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(articleId, { isBreaking: value }, workerToken);
       setArticles(articles.map((a) => a.$id === articleId ? { ...a, isBreaking: value } : a));
     } catch { setError('Update failed'); }
   }

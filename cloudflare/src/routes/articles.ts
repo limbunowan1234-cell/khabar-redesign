@@ -172,3 +172,141 @@ articles.patch('/:id/views', async (c) => {
   if (!result) return c.json({ error: 'Not found' }, 404);
   return c.json({ views: (result as any).views });
 });
+
+// --- Shadow-write only (see cloudflare/README.md) ---
+// Appwrite stays authoritative for all three of these.
+
+// POST /articles -- creates a new article. `id` is the real Appwrite
+// document $id, passed through by the caller after the real create
+// succeeds (Appwrite generates it via documentId: 'unique()', same
+// reasoning as comments.ts: later edits/deletes need both systems to
+// agree on the id). JWT must belong to the exact submitterId in the
+// body -- matches the real app's current access model (app/post/page.tsx
+// lets any logged-in user create an article, not just reporters/admins;
+// the reporter/admin UI's own tighter gating is enforced client-side
+// only, not something this migration should silently invent).
+articles.post('/', async (c) => {
+  const user = await verifyUser(c.req.raw);
+  const body = await c.req.json().catch(() => null);
+  if (!body?.id || !body?.title || !body?.submitterId) {
+    return c.json({ error: 'id, title, and submitterId are required' }, 400);
+  }
+  if (!user || user.$id !== body.submitterId) return c.json({ error: 'Unauthorized' }, 401);
+
+  await c.env.DB
+    .prepare(
+      `INSERT INTO articles (
+        id, slug, title, side_header, content, genre, category, status,
+        location_district, location_area, image_file_id, image_caption, youtube_id,
+        submitter_id, submitter_name, submitter_email, submitter_avatar, author_name, author_email,
+        views, is_breaking, is_featured, is_contest_entry, tracker_data,
+        submitted_at, published_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT (id) DO NOTHING`
+    )
+    .bind(
+      body.id, body.slug || null, body.title, body.sideHeader || null, body.content || null,
+      body.genre || null, body.category || null, body.status || 'published',
+      body.locationDistrict || null, body.locationArea || null, body.imageFileId || null,
+      body.imageCaption || null, body.youtube_id || null,
+      body.submitterId, body.submitterName || null, body.submitterEmail || null, body.submitterAvatar || null,
+      body.authorName || null, body.authorEmail || null,
+      body.isBreaking ? 1 : 0, body.isFeatured ? 1 : 0, body.isContestEntry ? 1 : 0, body.trackerData || null,
+      body.submittedAt || null, body.publishedAt || null
+    )
+    .run();
+
+  if (Array.isArray(body.supportingImages)) {
+    for (let i = 0; i < body.supportingImages.length; i++) {
+      const img = body.supportingImages[i];
+      if (!img?.fileId) continue;
+      await c.env.DB
+        .prepare('INSERT INTO article_supporting_images (article_id, file_id, caption, sort_order) VALUES (?, ?, ?, ?)')
+        .bind(body.id, img.fileId, img.caption || null, i)
+        .run();
+    }
+  }
+
+  return c.json({ ok: true });
+});
+
+// Whitelist of fields PATCH accepts, camelCase (as sent by the client) ->
+// snake_case column. One generic endpoint covers every real edit shape
+// found in the app: full content edits, single-flag toggles
+// (breaking/featured/genre-region hero+pin), weekly-picks management
+// (add/remove/reorder/section/lead), and the admin author-name sync
+// utility -- all of them are just "update some subset of these columns,"
+// differing only in which fields and which UI action triggers them.
+const PATCH_FIELD_MAP: Record<string, string> = {
+  title: 'title', sideHeader: 'side_header', content: 'content', genre: 'genre',
+  locationDistrict: 'location_district', locationArea: 'location_area',
+  imageFileId: 'image_file_id', imageCaption: 'image_caption', youtube_id: 'youtube_id',
+  isBreaking: 'is_breaking', isFeatured: 'is_featured', isContestEntry: 'is_contest_entry',
+  trackerData: 'tracker_data', status: 'status', rejectionReason: 'rejection_reason',
+  submitterName: 'submitter_name',
+  isWeeklyPick: 'is_weekly_pick', weeklyLive: 'weekly_live', weeklyIssue: 'weekly_issue',
+  weeklySection: 'weekly_section', weeklyOrder: 'weekly_order', isWeeklyLead: 'is_weekly_lead',
+  isGenreFeatured: 'is_genre_featured', isGenrePinned: 'is_genre_pinned',
+  isRegionFeatured: 'is_region_featured', isRegionPinned: 'is_region_pinned',
+};
+const BOOL_FIELDS = new Set([
+  'isBreaking', 'isFeatured', 'isContestEntry', 'isWeeklyPick', 'weeklyLive',
+  'isWeeklyLead', 'isGenreFeatured', 'isGenrePinned', 'isRegionFeatured', 'isRegionPinned',
+]);
+
+// PATCH /articles/:id -- partial update. Allowed if the JWT belongs to
+// the article's own submitter, or to a reporter/admin (matches
+// reporter/edit/[id]/page.tsx's own ownership check, and admin/page.tsx's
+// broader edit capability over any article).
+articles.patch('/:id', async (c) => {
+  const id = c.req.param('id');
+  const user = await verifyUser(c.req.raw);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+  const row = await c.env.DB.prepare('SELECT submitter_id FROM articles WHERE id = ?').bind(id).first();
+  if (!row) return c.json({ error: 'Not found' }, 404);
+  if ((row as any).submitter_id !== user.$id && !isReporterOrAdmin(user)) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const body = await c.req.json().catch(() => null);
+  if (!body || typeof body !== 'object') return c.json({ error: 'Body required' }, 400);
+
+  const sets: string[] = [];
+  const params: unknown[] = [];
+  for (const [key, column] of Object.entries(PATCH_FIELD_MAP)) {
+    if (body[key] === undefined) continue;
+    sets.push(`${column} = ?`);
+    params.push(BOOL_FIELDS.has(key) ? (body[key] ? 1 : 0) : body[key]);
+  }
+  if (sets.length === 0) return c.json({ error: 'No recognized fields in body' }, 400);
+  sets.push("updated_at = datetime('now')");
+
+  await c.env.DB.prepare(`UPDATE articles SET ${sets.join(', ')} WHERE id = ?`).bind(...params, id).run();
+
+  if (Array.isArray(body.supportingImages)) {
+    await c.env.DB.prepare('DELETE FROM article_supporting_images WHERE article_id = ?').bind(id).run();
+    for (let i = 0; i < body.supportingImages.length; i++) {
+      const img = body.supportingImages[i];
+      if (!img?.fileId) continue;
+      await c.env.DB
+        .prepare('INSERT INTO article_supporting_images (article_id, file_id, caption, sort_order) VALUES (?, ?, ?, ?)')
+        .bind(id, img.fileId, img.caption || null, i)
+        .run();
+    }
+  }
+
+  return c.json({ ok: true });
+});
+
+// DELETE /articles/:id -- reporter/admin only, not scoped to own
+// articles (matches admin/page.tsx's handleDelete, which any reporter or
+// admin can invoke on any article today).
+articles.delete('/:id', async (c) => {
+  const id = c.req.param('id');
+  const user = await verifyUser(c.req.raw);
+  if (!user || !isReporterOrAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
+
+  await c.env.DB.prepare('DELETE FROM articles WHERE id = ?').bind(id).run();
+  return c.json({ ok: true });
+});

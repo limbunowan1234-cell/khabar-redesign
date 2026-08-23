@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
@@ -10,12 +11,24 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-// Week 19 of the Cloudflare migration (see cloudflare/README.md): the
+// Week 19+22 of the Cloudflare migration (see cloudflare/README.md): the
 // article list below reads from the Worker's public /articles route
 // (published-only by default -- curation only ever applies to published
 // content anyway, so no auth needed here unlike the admin dashboard's
-// full-status list). Setting hero/pin flags still writes to Appwrite.
+// full-status list). Setting hero/pin flags now also shadow-writes into
+// D1 after the real Appwrite write succeeds.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+async function shadowEditArticle(id: string, data: Record<string, any>, jwt: string | null) {
+  if (!jwt) return;
+  try {
+    await fetch(`${WORKER_URL}/articles/${id}`, {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch {}
+}
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const regions = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
@@ -78,17 +91,20 @@ export default function CuratePage() {
     setBusyId(articleId);
     const featField = mode === 'genre' ? 'isGenreFeatured' : 'isRegionFeatured';
     try {
+      const workerToken = await getWorkerAuthToken();
       const currentHeroes = articles.filter((a) => a[featField] && a.$id !== articleId);
       for (const h of currentHeroes) {
         await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + h.$id, {
           method: 'PATCH', headers: HJ, credentials: 'include',
           body: JSON.stringify({ data: { [featField]: false } }),
         });
+        shadowEditArticle(h.$id, { [featField]: false }, workerToken);
       }
       await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
         method: 'PATCH', headers: HJ, credentials: 'include',
         body: JSON.stringify({ data: { [featField]: true } }),
       });
+      shadowEditArticle(articleId, { [featField]: true }, workerToken);
       await loadArticles();
     } finally {
       setBusyId('');
@@ -103,6 +119,8 @@ export default function CuratePage() {
         method: 'PATCH', headers: HJ, credentials: 'include',
         body: JSON.stringify({ data: { [featField]: false } }),
       });
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(articleId, { [featField]: false }, workerToken);
       await loadArticles();
     } finally {
       setBusyId('');
@@ -122,6 +140,8 @@ export default function CuratePage() {
         method: 'PATCH', headers: HJ, credentials: 'include',
         body: JSON.stringify({ data: { [pinField]: !currentlyPinned } }),
       });
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(articleId, { [pinField]: !currentlyPinned }, workerToken);
       await loadArticles();
     } finally {
       setBusyId('');

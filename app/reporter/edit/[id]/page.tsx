@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import imageCompression from 'browser-image-compression';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 async function toUploadableJpeg(file: File): Promise<File> {
   // Appwrite's storage preview/transform endpoint can't read AVIF/HEIC
@@ -20,6 +21,21 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
+// Week 22 of the Cloudflare migration (see cloudflare/README.md): saving
+// an edit also shadow-writes into D1 after the real Appwrite write
+// succeeds. Appwrite stays authoritative.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+async function shadowEditArticle(id: string, data: Record<string, any>, jwt: string | null) {
+  if (!jwt) return;
+  try {
+    await fetch(`${WORKER_URL}/articles/${id}`, {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch {}
+}
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
 
@@ -168,26 +184,27 @@ export default function ReporterEditPage() {
     setSubmitting(true);
     try {
       const supportingImagesData = supportingImages.map((img) => JSON.stringify({ fileId: img.fileId, caption: img.caption }));
+      const editData = {
+        title: title.trim(),
+        sideHeader: sideHeader.trim() || null,
+        content: content.trim(),
+        genre,
+        locationDistrict,
+        locationArea: locationArea || null,
+        imageFileId: imageFileId || null,
+        imageCaption: imageCaption.trim() || null,
+        youtube_id: youtubeId || null,
+        isBreaking,
+        isFeatured,
+        supportingImages: supportingImagesData,
+      };
       const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
         method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({
-          data: {
-            title: title.trim(),
-            sideHeader: sideHeader.trim() || null,
-            content: content.trim(),
-            genre,
-            locationDistrict,
-            locationArea: locationArea || null,
-            imageFileId: imageFileId || null,
-            imageCaption: imageCaption.trim() || null,
-            youtube_id: youtubeId || null,
-            isBreaking,
-            isFeatured,
-            supportingImages: supportingImagesData,
-          }
-        })
+        body: JSON.stringify({ data: editData })
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Save failed'); }
+      const workerToken = await getWorkerAuthToken();
+      shadowEditArticle(articleId, { ...editData, supportingImages: supportingImages.map((img) => ({ fileId: img.fileId, caption: img.caption })) }, workerToken);
       setSuccess('Article updated successfully!');
       setTimeout(() => router.push('/article/' + articleId), 1500);
     } catch (err: any) {

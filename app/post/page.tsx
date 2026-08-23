@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
@@ -9,6 +10,21 @@ const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
+// Week 22 of the Cloudflare migration (see cloudflare/README.md):
+// publishing also shadow-writes into D1 after the real Appwrite create
+// succeeds. Appwrite stays authoritative.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+async function shadowWriteArticle(id: string, data: Record<string, any>, jwt: string | null) {
+  if (!jwt) return;
+  try {
+    await fetch(`${WORKER_URL}/articles`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...data }),
+    });
+  } catch {}
+}
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
@@ -94,38 +110,38 @@ export default function PostPage() {
         const suffix = Date.now().toString(36);
         return (base ? base + '-' : 'news-') + suffix;
       }
+      const articleData = {
+        title: title.trim(),
+        content: content.trim(),
+        slug: generateSlug(title),
+        genre,
+        locationDistrict,
+        locationArea: locationArea || null,
+        imageFileId: imageFileId || null,
+        imageCaption: imageCaption.trim() || null,
+        youtube_id: youtubeId || null,
+        isBreaking: false,
+        isFeatured: false,
+        isContestEntry,
+        authorName: user?.name || 'Unknown',
+        authorEmail: user?.email || '',
+        submitterId: user?.$id || '',
+        submitterName: user?.name || '',
+        submitterEmail: user?.email || '',
+        submitterAvatar: null,
+        status: 'published',
+        submittedAt: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
+        views: 0
+      };
       const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
         method: 'POST', headers: HJ, credentials: 'include',
-        body: JSON.stringify({
-          documentId: 'unique()',
-          data: {
-            title: title.trim(),
-            content: content.trim(),
-            slug: generateSlug(title),
-            genre,
-            locationDistrict,
-            locationArea: locationArea || null,
-            imageFileId: imageFileId || null,
-            imageCaption: imageCaption.trim() || null,
-            youtube_id: youtubeId || null,
-            isBreaking: false,
-            isFeatured: false,
-            isContestEntry,
-            authorName: user?.name || 'Unknown',
-            authorEmail: user?.email || '',
-            submitterId: user?.$id || '',
-            submitterName: user?.name || '',
-            submitterEmail: user?.email || '',
-            submitterAvatar: null,
-            status: 'published',
-            submittedAt: new Date().toISOString(),
-            publishedAt: new Date().toISOString(),
-            views: 0
-          }
-        })
+        body: JSON.stringify({ documentId: 'unique()', data: articleData })
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Submit failed'); }
       const doc = await res.json();
+      const workerToken = await getWorkerAuthToken();
+      shadowWriteArticle(doc.$id, articleData, workerToken);
       setSuccess('Article published successfully!');
       setTimeout(() => router.push('/article/' + doc.$id), 1500);
     } catch (err: any) { setError(err.message || 'Submit failed'); }
