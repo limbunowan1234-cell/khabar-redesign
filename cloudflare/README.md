@@ -360,6 +360,45 @@ token) falls back to published-only as expected. The positive path
 needs a live login to confirm end-to-end, same open item as Week 9's
 original check.
 
+**Status: Week 20 (analytics_events) done.** Different shape than the
+rest of this read-first pass: `analytics_events` is a live,
+high-frequency event stream (every page view), not stable reference
+data. Reading it from a one-time D1 snapshot would show meaningless
+numbers within minutes, so this one got read+write together this week
+rather than deferred — same reasoning as Week 16's `contest_settings`.
+
+Turned out simpler than the JWT-gated writes: the existing write path
+(`app/api/analytics/track/route.ts`) is already public and
+unauthenticated on the Appwrite side — most readers aren't logged in,
+so there was never a user session to check. The new
+`POST /analytics/events` on the Worker needs no auth either, same trust
+level as `PATCH /articles/:id/views`.
+
+`recordEvent()` previously always generated its own Appwrite document id
+internally. Changed it to accept an optional id and return the one
+used, so the track route generates one UUID shared by both the real
+Appwrite write and the D1 shadow-write — gives the shadow-write real
+idempotency (`ON CONFLICT DO NOTHING`) via a retry-safe shared id, same
+pattern `comments.ts` uses for the same reason.
+
+`app/api/admin/analytics/route.ts` (already JWT-gated to admin) now
+reads events from the Worker instead of Appwrite; its article-fetch
+helper switched to the existing public `/articles` route as a free win.
+Removed the now-dead `fetchEventsSince` export from
+`lib/analyticsEvents.ts`.
+
+Verified: `POST` is idempotent against real D1 (retry with the same id
+produced no duplicate row), `GET` returns what was written, test row
+cleaned up afterward.
+
+Deliberately out of scope: D1 retention. Appwrite's `analytics_events`
+gets pruned to a 30-day rolling window by a Vercel cron gated by
+`CRON_SECRET`; D1 has no equivalent yet, since that would need
+`CRON_SECRET` provisioned as a Worker secret and that value isn't
+available in this session. Low-severity — D1 storage accumulating
+unbounded for a while doesn't block anything — but documented rather
+than silently skipped.
+
 ## One-time setup
 
 ```bash
