@@ -190,12 +190,12 @@ export default function ProfilePage() {
 
         // Recent activity feed
         try {
-          const actRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents?queries[]=' +
-            encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userData.$id] })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: 'createdAt' })) +
-            '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [5] })),
-            { headers: H, credentials: 'include' });
-          if (actRes.ok) { const ad = await actRes.json(); setRecentActivity(ad.documents || []); }
+          if (workerToken) {
+            const actRes = await fetch(WORKER_URL + '/notifications?userId=' + encodeURIComponent(userData.$id) + '&limit=5', {
+              headers: { Authorization: 'Bearer ' + workerToken },
+            });
+            if (actRes.ok) { const ad = await actRes.json(); setRecentActivity(ad.documents || []); }
+          }
         } catch {}
 
 

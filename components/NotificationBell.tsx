@@ -2,12 +2,18 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
 const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
+// Week 18 of the Cloudflare migration (see cloudflare/README.md): reading
+// the notification list/unread count comes from the Worker now (private
+// per-user data, JWT-gated). Marking read/enabling push both still write
+// to Appwrite -- read-only migration this pass.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -63,10 +69,11 @@ export default function NotificationBell({ light = true }: { light?: boolean }) 
   async function fetchUnread() {
     if (!user?.$id) return;
     try {
-      const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [user.$id] })) +
-        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'read', values: [false] })) +
-        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
-      const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents?queries[]=' + q, { headers: H, credentials: 'include' });
+      const token = await getWorkerAuthToken();
+      if (!token) return;
+      const res = await fetch(WORKER_URL + '/notifications?userId=' + encodeURIComponent(user.$id) + '&unreadOnly=1&limit=1', {
+        headers: { Authorization: 'Bearer ' + token },
+      });
       if (res.ok) { const d = await res.json(); setUnreadCount(d.total || 0); }
     } catch {}
   }
@@ -74,10 +81,11 @@ export default function NotificationBell({ light = true }: { light?: boolean }) 
   async function loadList() {
     if (!user?.$id) return;
     try {
-      const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [user.$id] })) +
-        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: 'createdAt' })) +
-        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [15] }));
-      const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents?queries[]=' + q, { headers: H, credentials: 'include' });
+      const token = await getWorkerAuthToken();
+      if (!token) return;
+      const res = await fetch(WORKER_URL + '/notifications?userId=' + encodeURIComponent(user.$id) + '&limit=15', {
+        headers: { Authorization: 'Bearer ' + token },
+      });
       if (res.ok) { const d = await res.json(); setNotifications(d.documents || []); }
     } catch {}
   }
