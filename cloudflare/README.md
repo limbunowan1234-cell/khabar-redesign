@@ -399,6 +399,35 @@ available in this session. Low-severity — D1 storage accumulating
 unbounded for a while doesn't block anything — but documented rather
 than silently skipped.
 
+**Status: Week 21 (news_digest) done.** Same shape as Week 16's
+`contest_settings` and Week 20's `analytics_events`: a single-row
+admin-only cache, so read+write moved together rather than deferred —
+reading a stale/empty row would be a real regression for the one admin
+who uses this, not a harmless lag.
+
+`news_digest` predates this migration and was never exported. Confirmed
+via grep it has exactly one real consumer path —
+`app/admin/news-digest/page.tsx` through
+`app/api/admin/news-digest/{route,refresh/route}.ts`, both already
+admin-JWT-gated. Backfilled D1 from the real current Appwrite row first
+(new `cloudflare/scripts/seed-news-digest.mjs`) so the read never shows
+stale/empty data even before the first shadow-write lands — same
+precaution as Week 16.
+
+New `GET`/`POST /news-digest` on the Worker, admin-gated the same way
+`contest_settings` is. Both Next.js routes reuse the incoming
+`x-admin-jwt` for the Worker call. `GET` reads from D1 when a real
+admin JWT is present; the cron-secret path (`NEWS_DIGEST_CRON_SECRET`,
+no per-admin JWT to reuse) keeps reading Appwrite directly.
+
+Deliberately out of scope, documented rather than silently skipped: the
+cron-triggered write path has no JWT either, so it doesn't
+shadow-write — same class of gap as Week 20's analytics retention cron.
+
+Verified: auth boundary (no token, fake token, both 401). Seeded D1 row
+matches Appwrite exactly (3381-char sectionsJson, same
+lastVerified/updatedAt).
+
 ## One-time setup
 
 ```bash
