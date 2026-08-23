@@ -428,6 +428,63 @@ Verified: auth boundary (no token, fake token, both 401). Seeded D1 row
 matches Appwrite exactly (3381-char sectionsJson, same
 lastVerified/updatedAt).
 
+**Status: Week 22 (article create/edit/delete shadow-writes) done.**
+Articles are the highest-value data in this migration, so this got more
+scrutiny than any write path so far — every auth boundary, idempotency
+check, and cascade-delete verified directly against real D1 before
+touching a single client call site.
+
+Scoped first with a full inventory: 11 distinct write shapes across 6
+files (create ×4, full edit ×2, single-flag toggles ×6, weekly-picks
+management ×5 shapes, delete, bulk author-name sync). Rather than 11
+endpoints, collapsed everything except create and delete into one
+generic `PATCH /articles/:id` that updates only whichever whitelisted
+fields are present in the body — full edits, every flag toggle, and
+curate's hero/pin management are really the same operation, differing
+only in which UI action triggers them.
+
+New on the Worker:
+- `POST /articles` — create. `id` is the real Appwrite `$id`, passed
+  through after the real create succeeds (same reasoning as
+  `comments.ts`). JWT must match the body's `submitterId` — matches the
+  app's real access model exactly (`app/post/page.tsx` lets any
+  logged-in user create an article, not just reporters/admins;
+  tightening that here would invent a restriction the real app doesn't
+  have).
+- `PATCH /articles/:id` — generic partial update. Allowed if the JWT
+  belongs to the article's own submitter, or to a reporter/admin
+  (matches `reporter/edit/[id]`'s own ownership check).
+- `DELETE /articles/:id` — reporter/admin only, not ownership-scoped
+  (matches `admin/page.tsx`'s current `handleDelete`).
+
+Wired every real call site: reporter/post, the public contributor path
+(`app/post/page.tsx`), admin's publish/photo-story/edit/
+toggle-featured/toggle-breaking/delete, reporter/edit, and curate's
+hero/pin toggles.
+
+Documented gap: the photo-story creation path's `location` and
+`galleryImageIds` fields aren't tracked in D1's articles schema (it
+predates this migration). The shadow-write omits them — a photo story's
+gallery images specifically won't reflect in D1 yet.
+
+Deferred, not bundled into this already-large change: weekly-picks
+add/remove/reorder/section/lead management, the cron-triggered weekly
+publish, and the bulk author-name sync utility — each its own distinct
+write shape.
+
+Verified directly against real D1: auth boundary on all three endpoints
+(401 without a valid token); create's idempotent insert (retry produced
+`changes: 0`); cascade delete of `article_supporting_images` when the
+parent article is deleted. Could not verify the full authenticated
+POST/PATCH flow end-to-end — no real login or user-scoped JWT available
+in this session (attempted minting one via the admin API's
+`Users.createJWT`; not permitted for this API key) — same open item as
+Weeks 9, 19, and 20.
+
+Also removed `app/post/page.tsx.bak`, a stale unrouted duplicate found
+while working in this file (confirmed dead — `.bak` isn't a valid
+Next.js route extension, untouched since July).
+
 ## One-time setup
 
 ```bash
