@@ -979,6 +979,38 @@ seen in Week 32).
 path that had been quietly left on Appwrite.** Appwrite's articles
 collection can be considered completely frozen.
 
+**Status: Week 36 (last direct-Appwrite article read) done.**
+`app/daily-updates/page.tsx` was the one page left reading articles
+straight from Appwrite instead of the Worker/D1 — flagged as out of
+scope during Week 34 since it's a genuinely separate read migration,
+not a write. Its four query shapes (Darjeeling top-6, four other
+districts' top-6 combined, single most-recent for the headline
+fallback, top-12 recent for "other news") all map onto the Worker's
+existing `GET /articles`, with one addition needed: the "other
+districts" query matches four district values in one call, and the
+Worker's `district` filter only supported a single exact value.
+
+`cloudflare/src/routes/articles.ts`: `district` now accepts a
+comma-separated list (`location_district IN (...)`), same shape as
+the existing `ids` filter. A single value still produces the same
+equality-shaped query as before, so `region/[name]/page.tsx` and
+`admin/curate`'s existing single-district callers are unaffected.
+`app/daily-updates/page.tsx`: `fetchArticles` now hits the Worker
+instead of building Appwrite `queries[]` params by hand — `status`
+defaults to published and sort defaults to `createdAtDesc` on the
+Worker already, so every query here collapses to just
+`district`/`limit`.
+
+Verified: typecheck clean on both sides. Deployed the Worker and
+curl-confirmed all three query shapes directly (multi-district `IN`,
+single-district backward compat, no-filter default). Loaded
+`/daily-updates` in a real browser against the dev server — both news
+columns, the top headline, and "other news" all populated correctly
+from real D1 data, no duplicates between sections.
+
+This was the last remaining direct-Appwrite article read anywhere in
+the app.
+
 ## One-time setup
 
 ```bash
