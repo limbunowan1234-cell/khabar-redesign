@@ -43,7 +43,7 @@ const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics',
 const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
 
 function getImageUrl(fileId: string) {
-  return endpoint + '/storage/buckets/' + bucketId + '/files/' + fileId + '/view?project=' + projectId;
+  return WORKER_URL + '/cdn/articles/' + fileId;
 }
 
 function formatDate(s: string) {
@@ -286,14 +286,15 @@ export default function AdminPage() {
     setError('');
     try {
       setImagePreview(URL.createObjectURL(file));
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
       const formData = new FormData();
-      formData.append('fileId', 'unique()');
       formData.append('file', file);
-      const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Upload failed'); }
+      const res = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: formData });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Upload failed'); }
       const data = await res.json();
-      setImageFileId(data.$id);
-      setImagePreview(getImageUrl(data.$id));
+      setImageFileId(data.fileId);
+      setImagePreview(getImageUrl(data.fileId));
       setSuccess('Image uploaded!');
     } catch (err: any) { setError('Upload failed: ' + err.message); setImagePreview(''); }
     setUploadingImage(false);

@@ -9,10 +9,10 @@ const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
 const dbId = 'Khabar_db';
-const bucketId = 'article-image';
 // Week 34 of the Cloudflare migration (see cloudflare/README.md):
 // publishing writes to D1 directly now -- Appwrite's articles
-// collection is frozen as of this cutover.
+// collection is frozen as of this cutover. Week 39: image upload does
+// too, through the Worker's R2-backed /cdn/articles endpoint.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
@@ -64,14 +64,15 @@ export default function PostPage() {
     setError('');
     try {
       setImagePreview(URL.createObjectURL(file));
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
       const formData = new FormData();
-      formData.append('fileId', 'unique()');
       formData.append('file', file);
-      const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Upload failed'); }
+      const res = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: formData });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Upload failed'); }
       const data = await res.json();
-      setImageFileId(data.$id);
-      setImagePreview(endpoint + '/storage/buckets/' + bucketId + '/files/' + data.$id + '/view?project=' + projectId);
+      setImageFileId(data.fileId);
+      setImagePreview(WORKER_URL + '/cdn/articles/' + data.fileId);
       setSuccess('Image uploaded!');
       setTimeout(() => setSuccess(''), 2000);
     } catch (err: any) { setError('Upload failed: ' + err.message); setImagePreview(''); }

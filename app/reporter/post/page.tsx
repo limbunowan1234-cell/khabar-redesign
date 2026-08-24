@@ -23,7 +23,6 @@ const dbId = 'Khabar_db';
 // publishing a new article writes to D1 directly now -- Appwrite's
 // articles collection is frozen as of this cutover.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
-const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
@@ -97,14 +96,15 @@ export default function ReporterPostPage() {
     setUploadingMain(true);
     try {
       const jpeg = await toUploadableJpeg(file);
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
       const formData = new FormData();
-      formData.append('fileId', 'unique()');
       formData.append('file', jpeg);
-      const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
+      const res = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: formData });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
-      setImageFileId(data.$id);
-      setImagePreview(endpoint + '/storage/buckets/' + bucketId + '/files/' + data.$id + '/view?project=' + projectId);
+      setImageFileId(data.fileId);
+      setImagePreview(WORKER_URL + '/cdn/articles/' + data.fileId);
     } catch {
       setError('Main photo upload failed.');
     }
@@ -117,14 +117,15 @@ export default function ReporterPostPage() {
     setUploadingSupporting(true);
     try {
       const jpeg = await toUploadableJpeg(file);
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
       const formData = new FormData();
-      formData.append('fileId', 'unique()');
       formData.append('file', jpeg);
-      const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
+      const res = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: formData });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
-      const preview = endpoint + '/storage/buckets/' + bucketId + '/files/' + data.$id + '/view?project=' + projectId;
-      setSupportingImages((prev) => [...prev, { fileId: data.$id, caption: '', preview }]);
+      const preview = WORKER_URL + '/cdn/articles/' + data.fileId;
+      setSupportingImages((prev) => [...prev, { fileId: data.fileId, caption: '', preview }]);
     } catch {
       setError('Supporting photo upload failed.');
     }

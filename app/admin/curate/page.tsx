@@ -9,7 +9,6 @@ const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
 const dbId = 'Khabar_db';
-const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 // Week 19+34 of the Cloudflare migration (see cloudflare/README.md): the
 // article list below reads from the Worker's public /articles route
@@ -34,7 +33,7 @@ const regions = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'We
 
 function getImageUrl(fileId: string) {
   if (!fileId) return '';
-  return endpoint + '/storage/buckets/' + bucketId + '/files/' + fileId + '/view?project=' + projectId;
+  return WORKER_URL + '/cdn/articles/' + fileId;
 }
 
 export default function CuratePage() {

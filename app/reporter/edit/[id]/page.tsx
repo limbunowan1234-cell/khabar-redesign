@@ -19,11 +19,11 @@ const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
 const dbId = 'Khabar_db';
-const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 // Week 34 of the Cloudflare migration (see cloudflare/README.md):
 // saving an edit writes to D1 directly now -- Appwrite's articles
-// collection is frozen as of this cutover.
+// collection is frozen as of this cutover. Week 39: image upload and
+// preview both go through the Worker's R2-backed /cdn/articles too.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
@@ -97,12 +97,12 @@ export default function ReporterEditPage() {
         setImageFileId(article.imageFileId || '');
         setImageCaption(article.imageCaption || '');
         if (article.imageFileId) {
-          setImagePreview(endpoint + '/storage/buckets/' + bucketId + '/files/' + article.imageFileId + '/view?project=' + projectId);
+          setImagePreview(WORKER_URL + '/cdn/articles/' + article.imageFileId);
         }
         const parsedSupporting = (article.supportingImages || []).map((s: string) => {
           try {
             const parsed = JSON.parse(s);
-            return { fileId: parsed.fileId, caption: parsed.caption || '', preview: endpoint + '/storage/buckets/' + bucketId + '/files/' + parsed.fileId + '/view?project=' + projectId };
+            return { fileId: parsed.fileId, caption: parsed.caption || '', preview: WORKER_URL + '/cdn/articles/' + parsed.fileId };
           } catch {
             return null;
           }
@@ -122,14 +122,15 @@ export default function ReporterEditPage() {
     setUploadingMain(true);
     try {
       const jpeg = await toUploadableJpeg(file);
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
       const formData = new FormData();
-      formData.append('fileId', 'unique()');
       formData.append('file', jpeg);
-      const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
+      const res = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: formData });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
-      setImageFileId(data.$id);
-      setImagePreview(endpoint + '/storage/buckets/' + bucketId + '/files/' + data.$id + '/view?project=' + projectId);
+      setImageFileId(data.fileId);
+      setImagePreview(WORKER_URL + '/cdn/articles/' + data.fileId);
     } catch {
       setError('Main photo upload failed.');
     }
@@ -142,14 +143,15 @@ export default function ReporterEditPage() {
     setUploadingSupporting(true);
     try {
       const jpeg = await toUploadableJpeg(file);
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
       const formData = new FormData();
-      formData.append('fileId', 'unique()');
       formData.append('file', jpeg);
-      const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
+      const res = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: formData });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
-      const preview = endpoint + '/storage/buckets/' + bucketId + '/files/' + data.$id + '/view?project=' + projectId;
-      setSupportingImages((prev) => [...prev, { fileId: data.$id, caption: '', preview }]);
+      const preview = WORKER_URL + '/cdn/articles/' + data.fileId;
+      setSupportingImages((prev) => [...prev, { fileId: data.fileId, caption: '', preview }]);
     } catch {
       setError('Supporting photo upload failed.');
     }
