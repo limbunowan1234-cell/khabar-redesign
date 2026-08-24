@@ -298,24 +298,16 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
     if (!user) { window.location.href = "/auth"; return; }
     setFollowLoading(true);
     try {
+      const token = await getWorkerAuthToken();
+      if (!token) return;
+      const headers = { Authorization: "Bearer " + token };
       if (following) {
-        const res = await fetch(
-          ENDPOINT + "/databases/" + DB + "/collections/follows/documents?queries[]=" +
-          encodeURIComponent(JSON.stringify({ method: "equal", attribute: "followerId", values: [user.$id] })) +
-          "&queries[]=" + encodeURIComponent(JSON.stringify({ method: "equal", attribute: "followingId", values: [authorId] })),
-          { headers: H, credentials: "include" }
-        );
-        if (res.ok) {
-          const d = await res.json();
-          if (d.documents?.[0]) {
-            await fetch(ENDPOINT + "/databases/" + DB + "/collections/follows/documents/" + d.documents[0].$id, { method: "DELETE", headers: H, credentials: "include" });
-          }
-        }
+        await fetch(WORKER_URL + "/follows?" + new URLSearchParams({ followerId: user.$id, followingId: authorId }), { method: "DELETE", headers });
         setFollowing(false);
       } else {
-        await fetch(ENDPOINT + "/databases/" + DB + "/collections/follows/documents", {
-          method: "POST", headers: HJ, credentials: "include",
-          body: JSON.stringify({ documentId: "unique()", data: { followerId: user.$id, followerName: user.name, followingId: authorId, followingName: authorName, createdAt: new Date().toISOString() } })
+        await fetch(WORKER_URL + "/follows", {
+          method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ followerId: user.$id, followerName: user.name, followingId: authorId, followingName: authorName })
         });
         setFollowing(true);
       }

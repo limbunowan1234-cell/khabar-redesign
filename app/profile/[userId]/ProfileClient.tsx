@@ -5,15 +5,14 @@ import { getWorkerAuthToken } from '@/lib/appwrite';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
 const H = { 'X-Appwrite-Project': PROJECT };
-// Week 8 of the Cloudflare migration (see cloudflare/README.md): profile,
-// articles, likes, and follows reads come from the Worker. Auth stays on
-// Appwrite. The follow/unfollow write (Week 14) shadow-writes into D1
-// too, fire-and-forget, after the real Appwrite write succeeds -- this
-// is the only real follow/unfollow call site in the app (the shared
-// toggleFollow in lib/appwrite.ts is unused dead code), so it gets its
-// own copy of the shadow-write logic rather than a shared helper.
+// Week 8+27 of the Cloudflare migration (see cloudflare/README.md):
+// profile, articles, likes, and follows reads come from the Worker.
+// Auth stays on Appwrite. Follow/unfollow (Week 27) writes to D1
+// directly now -- Appwrite's follows collection is frozen as of this
+// cutover. (Corrected an earlier, stale claim here that this was the
+// only real follow/unfollow call site -- ArticleClient.tsx has its own
+// separate one too, also cut over in Week 27.)
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(article: any): string {
@@ -21,22 +20,6 @@ function getImageUrl(article: any): string {
   if (!id || ['Text', 'null', 'undefined', ''].includes(String(id))) return '';
   if (String(id).startsWith('http')) return id;
   return WORKER_URL + '/cdn/articles/' + id;
-}
-
-async function shadowWriteFollow(followerId: string, followingId: string, followerName: string | null, followingName: string | null, created: boolean) {
-  try {
-    const token = await getWorkerAuthToken();
-    if (!token) return;
-    const headers = { Authorization: 'Bearer ' + token };
-    if (created) {
-      await fetch(`${WORKER_URL}/follows`, {
-        method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ followerId, followingId, followerName, followingName }),
-      });
-    } else {
-      await fetch(`${WORKER_URL}/follows?${new URLSearchParams({ followerId, followingId })}`, { method: 'DELETE', headers });
-    }
-  } catch {}
 }
 
 const TIERS = [
@@ -135,37 +118,23 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
     if (followBusy) return;
     setFollowBusy(true);
     try {
-      const existingRes = await fetch(
-        ENDPOINT + '/databases/' + DB + '/collections/follows/documents?queries[]=' +
-        encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followerId', values: [currentUser.$id] })) +
-        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'followingId', values: [userId] })),
-        { headers: H, credentials: 'include' }
-      );
-      const existingData = await existingRes.json();
-      const existingDocs = existingData.documents || [];
-      if (existingDocs.length > 0) {
-        // Delete all matching follow records (cleans up any pre-existing duplicates too)
-        for (const doc of existingDocs) {
-          await fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents/' + doc.$id, {
-            method: 'DELETE', headers: H, credentials: 'include',
-          });
-        }
-        shadowWriteFollow(currentUser.$id, userId, null, null, false);
+      const token = await getWorkerAuthToken();
+      if (!token) return;
+      const headers = { Authorization: 'Bearer ' + token };
+      if (isFollowing) {
+        await fetch(`${WORKER_URL}/follows?${new URLSearchParams({ followerId: currentUser.$id, followingId: userId })}`, { method: 'DELETE', headers });
         setIsFollowing(false);
-        setFollowerCount((c) => Math.max(0, c - existingDocs.length));
+        setFollowerCount((c) => Math.max(0, c - 1));
       } else {
         // followingName is stored alongside followerName so the "Following"
         // list can render this person's name without an extra lookup — it
         // was never being set before, so that list always fell back to
         // a generic "User" placeholder.
         const followingName = profile?.displayName || articles[0]?.submitterName || 'User';
-        await fetch(ENDPOINT + '/databases/' + DB + '/collections/follows/documents', {
-          method: 'POST',
-          headers: { ...H, 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ documentId: 'unique()', data: { followerId: currentUser.$id, followingId: userId, followerName: currentUser.name, followingName, createdAt: new Date().toISOString() } }),
+        await fetch(`${WORKER_URL}/follows`, {
+          method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ followerId: currentUser.$id, followingId: userId, followerName: currentUser.name, followingName }),
         });
-        shadowWriteFollow(currentUser.$id, userId, currentUser.name, followingName, true);
         setIsFollowing(true);
         setFollowerCount((c) => c + 1);
       }
