@@ -1011,6 +1011,50 @@ from real D1 data, no duplicates between sections.
 This was the last remaining direct-Appwrite article read anywhere in
 the app.
 
+**Status: Week 37 (tenth write cutover — notifications and
+push_subscriptions) done.** A different shape than every prior
+cutover: `app/api/send-notification/route.ts` creates notifications
+and reads push subscriptions on behalf of an arbitrary *recipient* —
+whoever's article got commented on, not whoever's calling the route —
+so no per-user JWT boundary applies here at all.
+
+Added a shared-secret service auth for exactly this case:
+`verifyService()` in `cloudflare/src/lib/auth.ts` checks an
+`X-Service-Secret` header against a new `SERVICE_SECRET` Worker
+secret, mirrored as `WORKER_SERVICE_SECRET` on Vercel (both set live
+for this commit — `wrangler secret put` and `vercel env add`,
+production and preview).
+
+New `cloudflare/src/routes/pushSubscriptions.ts`: `POST /` (own-user
+JWT, called from `NotificationBell.tsx`'s `enablePush`), `GET /` and
+`DELETE /:id` (service-only, called from `send-notification`).
+`notifications.ts` gains `POST /` (service-only create) and `PATCH
+/:id` (own-user `markRead`). `NotificationBell.tsx`'s
+`enablePush`/`markRead`/`markAllRead` and `send-notification`'s
+notification-create and subscription lookup/cleanup all moved off
+Appwrite onto the Worker.
+
+**`fcm_tokens` deliberately not touched** — asked the user first,
+since this codebase has no write path for it at all (nothing here
+ever creates an `fcm_tokens` document). Confirmed: a separate mobile
+app writes FCM tokens straight to Appwrite. Migrating the read side
+to D1 would silently break FCM push for that app, since it has no way
+to write into D1. Staying on Appwrite permanently, same as the
+APK-download bucket.
+
+Verified: typecheck and full production build (`--webpack` —
+Turbopack's native bindings are blocked by this machine's Application
+Control policy) both clean. curl-confirmed the auth boundary directly
+against the live Worker (no secret and wrong secret both 401, correct
+secret 200) and exercised `POST /notifications` and `GET
+/push-subscriptions` for real — test row deleted from D1 after.
+Loaded the homepage logged out in a real browser: no calls to the new
+endpoints at all, confirming `NotificationBell`'s existing logged-out
+no-op still holds, no regression. `markRead`/`enablePush` themselves
+need a real logged-in session to exercise end-to-end — same category
+of gap Week 33 flagged for articles, but lower-stakes here (opt-in
+feature, not core content) — not live-tested this pass.
+
 ## One-time setup
 
 ```bash
