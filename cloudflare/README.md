@@ -770,6 +770,41 @@ collections — worth the same live-data check before cutting over
 Verified: Worker auth boundary re-checked (no token / fake token, both
 401). Typecheck and full production build clean.
 
+**Status: Week 31 (seventh write cutover — certificate_state) done.**
+Different from Weeks 29–30: certificate_state's write side was never
+shadow-written at all, only the read (download count, Week 17). Built
+the write path fresh rather than just flipping an existing one.
+
+New `POST /certificates` on the Worker, JWT-gated to the exact userId.
+Unlike the old Appwrite version — which needed a docId lookup to decide
+PATCH-vs-POST, the exact get-or-create race that produced Week 17's
+duplicate-row bug in the first place — this is one upsert keyed on the
+real `UNIQUE(user_id)` constraint D1 already enforces. No docId, no
+race, verified directly against real D1 (two upserts with different
+counts land in the same row, not two rows).
+
+Applied the Week 30 lesson before touching anything: checked live
+Appwrite against D1 first rather than assuming the Week 17 snapshot was
+still current. It wasn't — a new user had downloaded a certificate
+three times today, entirely absent from D1. Expected this time though,
+not a shadow-write failure: Week 17 explicitly documented the write
+side as still Appwrite-only, so nothing was ever supposed to be keeping
+D1 in sync. Synced the missing row before cutting anything over — 16
+raw Appwrite rows now (up from 13), still deduping to the same 9 users
+at their same counts, plus the one new one.
+
+`app/profile/page.tsx`'s certificate status and download handler both
+simplified — no more docId field on `certState` at all, no more
+Appwrite queries to find one. Removed the now-fully-dead `HJ`/`DB`
+constants this left behind.
+
+Verified: Worker auth boundary (one transient 404 on first check, gone
+on retry — known edge-propagation flakiness, not a real issue). Upsert
+idempotency confirmed directly against real D1. Typecheck and full
+production build clean. Could not test an actual certificate download
+end-to-end — needs a real logged-in session, same open item as every
+write path this migration.
+
 ## One-time setup
 
 ```bash
