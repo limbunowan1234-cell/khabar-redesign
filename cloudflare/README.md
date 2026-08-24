@@ -928,6 +928,57 @@ baseline (`diff-articles.mjs`): 190/190, zero drift on status, title,
 and every curation flag — the test article from Week 33's live
 verification left no trace behind.
 
+**Status: Week 35 (close the cron-write gap) done.** Week 34 left one
+loose end: the two cron-triggered weekly-publish routes, documented
+back in Week 23 as an exclusion since a cron job has no per-admin JWT
+to authenticate against the Worker with. They were still writing
+`weeklyLive` to Appwrite every Sunday — the one write path left
+touching a collection that was otherwise fully frozen.
+
+Closed it the same way Week 32 closed the equivalent gap for
+analytics_events retention: a native Cloudflare Cron Trigger
+(`cloudflare/wrangler.toml`'s `[triggers]`, branching in
+`scheduled()` on `event.cron`) needs no HTTP auth boundary at all,
+since it's not an HTTP request — sidesteps the JWT problem instead of
+solving it.
+
+Found something while doing this: `app/api/publish-weekly/route.ts`
+(weekly Vercel cron, `0 0 * * 0`) and a Sunday-only branch inside
+`app/api/revalidate-sitemaps/route.ts` (daily Vercel cron) were both
+independently running the exact same "publish pending weekly picks"
+write, on the same schedule. Looked for any caller that needed them
+to stay separate — none found (the admin's manual "publish now"
+button already went through the Worker directly, per Week 34). Rather
+than reimplementing that duplication against D1, consolidated into
+one: a single new Worker cron trigger, `0 0 * * SUN` (Cloudflare's
+day-of-week runs 1=Sunday..7=Saturday, not 0-6 — `SUN` sidesteps the
+ambiguity), doing one `UPDATE articles SET weekly_live = 1 WHERE
+is_weekly_pick = 1 AND weekly_live = 0`. Deleted
+`app/api/publish-weekly/route.ts` and its `vercel.json` cron entry
+entirely; `revalidate-sitemaps` now only revalidates sitemaps.
+
+Also fixed a stale comment in `cloudflare/src/routes/articles.ts` —
+the POST/PATCH/DELETE section header still said "shadow-write only,
+Appwrite stays authoritative," left over from before Week 34 made
+them the primary write path. Updated `diff-articles.mjs`'s framing to
+match: the one expected-drift exception it carried (the two cron
+routes) no longer applies — all four counts should now stay at zero
+with no exceptions.
+
+Verified: SQL confirmed valid against real D1 directly (`SELECT
+COUNT(*) ... WHERE is_weekly_pick = 1 AND weekly_live = 0` — 0
+pending at deploy time, nothing live to test the `UPDATE` branch
+against, but the query shape is identical and the columns exist).
+Worker typecheck clean, deployed, both triggers confirmed registered
+(`wrangler deploy` output lists `schedule: 0 1 * * *` and `schedule: 0
+0 * * SUN`). Next.js typecheck clean after clearing a stale `.next`
+cache that still referenced the deleted route (same class of issue
+seen in Week 32).
+
+**Every article write is now fully on D1 — including the one cron
+path that had been quietly left on Appwrite.** Appwrite's articles
+collection can be considered completely frozen.
+
 ## One-time setup
 
 ```bash
