@@ -56,3 +56,15 @@ export function isReporterOrAdmin(user: AppwriteUser | null): boolean {
   if (!user) return false;
   return isAdmin(user) || (user.labels || []).includes('reporter');
 }
+
+// For requests that aren't on behalf of the caller's own account at all --
+// app/api/send-notification/route.ts creates notifications for, and reads
+// push subscriptions for, whichever user triggered some *other* user's
+// action (e.g. commenting on their article), so a per-user JWT can't apply.
+// A shared secret, sent only server-to-server, stands in for "this really
+// is our own trusted backend" the same way the Appwrite API key already
+// does on the Vercel side of that same route.
+export function verifyService(request: Request, env: { SERVICE_SECRET?: string }): boolean {
+  const secret = request.headers.get('X-Service-Secret');
+  return !!env.SERVICE_SECRET && secret === env.SERVICE_SECRET;
+}

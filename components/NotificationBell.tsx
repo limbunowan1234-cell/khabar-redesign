@@ -4,15 +4,11 @@ import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
 import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT };
-const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
 // Week 18 of the Cloudflare migration (see cloudflare/README.md): reading
-// the notification list/unread count comes from the Worker now (private
-// per-user data, JWT-gated). Marking read/enabling push both still write
-// to Appwrite -- read-only migration this pass.
+// the notification list/unread count comes from the Worker (private
+// per-user data, JWT-gated). Week 37: marking read and enabling push both
+// write to the Worker/D1 too -- Appwrite's notifications and
+// push_subscriptions collections are frozen.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -99,9 +95,12 @@ export default function NotificationBell({ light = true }: { light?: boolean }) 
   async function markRead(n: any) {
     if (n.read) return;
     try {
-      await fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents/' + n.$id, {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { read: true } })
+      const token = await getWorkerAuthToken();
+      if (!token) return;
+      await fetch(WORKER_URL + '/notifications/' + n.$id, {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ read: true }),
       });
       setNotifications((prev) => prev.map((x) => x.$id === n.$id ? { ...x, read: true } : x));
       setUnreadCount((c) => Math.max(0, c - 1));
@@ -110,10 +109,13 @@ export default function NotificationBell({ light = true }: { light?: boolean }) 
 
   async function markAllRead() {
     try {
+      const token = await getWorkerAuthToken();
+      if (!token) return;
       await Promise.all(notifications.filter((n) => !n.read).map((n) =>
-        fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents/' + n.$id, {
-          method: 'PATCH', headers: HJ, credentials: 'include',
-          body: JSON.stringify({ data: { read: true } })
+        fetch(WORKER_URL + '/notifications/' + n.$id, {
+          method: 'PATCH',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ read: true }),
         })
       ));
       setNotifications((prev) => prev.map((x) => ({ ...x, read: true })));
@@ -142,12 +144,12 @@ export default function NotificationBell({ light = true }: { light?: boolean }) 
       });
       const subJson: any = sub.toJSON();
 
-      await fetch(ENDPOINT + '/databases/' + DB + '/collections/push_subscriptions/documents', {
-        method: 'POST', headers: HJ, credentials: 'include',
-        body: JSON.stringify({
-          documentId: 'unique()',
-          data: { userId: user.$id, endpoint: subJson.endpoint, p256dh: subJson.keys.p256dh, auth: subJson.keys.auth, createdAt: new Date().toISOString() }
-        })
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
+      await fetch(WORKER_URL + '/push-subscriptions', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.$id, endpoint: subJson.endpoint, p256dh: subJson.keys.p256dh, auth: subJson.keys.auth }),
       });
       setPushStatus('granted');
     } catch (err) {

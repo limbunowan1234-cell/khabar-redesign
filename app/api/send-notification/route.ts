@@ -1,6 +1,18 @@
-﻿import webpush from 'web-push';
+import webpush from 'web-push';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
+
+// Week 37 of the Cloudflare migration (see cloudflare/README.md): the
+// in-app notification row and web-push subscriptions both move to D1
+// through the Worker, gated by a shared secret (see verifyService() in
+// cloudflare/src/lib/auth.ts) since this route creates/reads them on
+// behalf of arbitrary recipients, not its own identity.
+//
+// fcm_tokens stays on Appwrite permanently, not a migration gap -- a
+// separate mobile app writes FCM tokens straight to Appwrite's
+// fcm_tokens collection, a path D1 has no way to receive.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '', 'Content-Type': 'application/json' };
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -48,48 +60,28 @@ export async function POST(req: Request) {
       return Response.json({ error: 'userId and message required' }, { status: 400 });
     }
 
-    // 1. ALWAYS write to notifications collection first (in-app bell) - independent of push delivery
+    // 1. ALWAYS write the in-app bell notification first - independent of push delivery
     let notificationCreated = false;
     try {
-      const notifRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/notifications/documents', {
+      const notifRes = await fetch(WORKER_URL + '/notifications', {
         method: 'POST',
-        headers: H,
-        body: JSON.stringify({
-          documentId: 'unique()',
-          data: {
-            userId,
-            type: type || 'general',
-            message,
-            articleId: articleId || null,
-            articleSlug: articleSlug || null,
-            fromUserName: fromUserName || null,
-            read: false,
-            createdAt: new Date().toISOString()
-          },
-          permissions: [
-            'read("user:' + userId + '")',
-            'update("user:' + userId + '")',
-            'delete("user:' + userId + '")'
-          ]
-        })
+        headers: SERVICE_HEADERS,
+        body: JSON.stringify({ userId, type: type || 'general', message, articleId, articleSlug, fromUserName }),
       });
       notificationCreated = notifRes.ok;
       if (!notifRes.ok) {
-        const errText = await notifRes.text();
-        console.error('notifications write failed:', notifRes.status, errText);
+        console.error('notifications write failed:', notifRes.status, await notifRes.text());
       }
     } catch (err) {
       console.error('notifications write threw:', err);
     }
-
-    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
 
     // 2. Web push (best-effort, never blocks the response)
     let webPushCount = 0;
     let webResults: any[] = [];
     if (setupVapid()) {
       try {
-        const subsRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/push_subscriptions/documents?queries[]=' + q, { headers: H });
+        const subsRes = await fetch(WORKER_URL + '/push-subscriptions?userId=' + encodeURIComponent(userId), { headers: SERVICE_HEADERS });
         const subsData = await subsRes.json();
         const subs = subsData.documents || [];
         webPushCount = subs.length;
@@ -101,7 +93,7 @@ export async function POST(req: Request) {
               JSON.stringify({ title: title || 'Khabar Darjeeling', body: message, url: url || (articleSlug ? '/article/' + articleSlug : '/') })
             ).catch(async (err: any) => {
               if (err.statusCode === 410 || err.statusCode === 404) {
-                await fetch(ENDPOINT + '/databases/' + DB + '/collections/push_subscriptions/documents/' + sub.$id, { method: 'DELETE', headers: H });
+                await fetch(WORKER_URL + '/push-subscriptions/' + sub.$id, { method: 'DELETE', headers: SERVICE_HEADERS });
               }
               throw err;
             })
@@ -112,12 +104,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. FCM push (best-effort, never blocks the response)
+    // 3. FCM push (best-effort, never blocks the response) -- stays on
+    // Appwrite; see the header comment on fcm_tokens above.
     let fcmCount = 0;
     let fcmResults: any[] = [];
     const messaging = getFirebaseMessaging();
     if (messaging) {
       try {
+        const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
         const fcmRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/fcm_tokens/documents?queries[]=' + q, { headers: H });
         const fcmData = await fcmRes.json();
         const tokens = fcmData.documents || [];

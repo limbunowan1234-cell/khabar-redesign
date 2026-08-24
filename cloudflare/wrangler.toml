@@ -34,3 +34,8 @@ crons = ["0 1 * * *", "0 0 * * SUN"]
 # Secrets (set via `wrangler secret put NAME`, never committed here):
 #   APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID  — used to verify sessions against
 #     Appwrite's /account endpoint, since auth stays there (see migration plan).
+#   SERVICE_SECRET — shared with Vercel's WORKER_SERVICE_SECRET env var.
+#     Lets app/api/send-notification/route.ts create notifications and read
+#     push subscriptions for arbitrary recipients (not its own JWT identity)
+#     without opening that up to the public — see verifyService() in
+#     src/lib/auth.ts.

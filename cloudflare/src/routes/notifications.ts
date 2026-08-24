@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import { verifyUser } from '../lib/auth';
+import { verifyUser, verifyService } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; SERVICE_SECRET: string };
 
 export const notifications = new Hono<{ Bindings: Bindings }>();
 
@@ -23,11 +23,7 @@ function toNotificationJson(row: any) {
 // GET /notifications?userId=X&unreadOnly=1&limit=N -- a user's own
 // notifications, private data, so the caller must present a verified JWT
 // for the exact userId requested (same boundary as GET
-// /articles?status=all). Read-only: marking read/unread, and creating a
-// notification in the first place, both still write to Appwrite --
-// app/api/send-notification/route.ts is a server-side admin-key route,
-// same shape as the routes excluded in Weeks 15/16, and markRead/
-// markAllRead are simple per-user writes that can follow in a later pass.
+// /articles?status=all).
 notifications.get('/', async (c) => {
   const userId = c.req.query('userId');
   if (!userId) return c.json({ error: 'userId is required' }, 400);
@@ -49,4 +45,39 @@ notifications.get('/', async (c) => {
     .first();
 
   return c.json({ documents: docs, total: (countRow as any)?.total ?? 0 });
+});
+
+// POST /notifications  { userId, type, message, articleId?, articleSlug?,
+// fromUserName? } -- service-only. app/api/send-notification creates these
+// on behalf of whichever *other* user triggered the notification (e.g. a
+// comment reply), so the recipient never has a JWT to present here.
+notifications.post('/', async (c) => {
+  if (!verifyService(c.req.raw, c.env)) return c.json({ error: 'Unauthorized' }, 401);
+  const body = await c.req.json().catch(() => null);
+  if (!body?.userId || !body?.message) return c.json({ error: 'userId and message are required' }, 400);
+
+  const id = crypto.randomUUID();
+  await c.env.DB
+    .prepare(
+      `INSERT INTO notifications (id, user_id, type, message, article_id, article_slug, from_user_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(id, body.userId, body.type || 'general', body.message, body.articleId || null, body.articleSlug || null, body.fromUserName || null)
+    .run();
+  return c.json({ ok: true, id });
+});
+
+// PATCH /notifications/:id  { read: true } -- own-user only, matches
+// NotificationBell.tsx's markRead/markAllRead (one call per notification).
+notifications.patch('/:id', async (c) => {
+  const id = c.req.param('id');
+  const user = await verifyUser(c.req.raw);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+  const row = await c.env.DB.prepare('SELECT user_id FROM notifications WHERE id = ?').bind(id).first();
+  if (!row) return c.json({ error: 'Not found' }, 404);
+  if ((row as any).user_id !== user.$id) return c.json({ error: 'Unauthorized' }, 401);
+
+  await c.env.DB.prepare('UPDATE notifications SET read = 1 WHERE id = ?').bind(id).run();
+  return c.json({ ok: true });
 });

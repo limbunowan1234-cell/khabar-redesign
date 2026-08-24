@@ -11,6 +11,7 @@ import { bhasaDiwas } from './routes/bhasaDiwas';
 import { contest } from './routes/contest';
 import { certificates } from './routes/certificates';
 import { notifications } from './routes/notifications';
+import { pushSubscriptions } from './routes/pushSubscriptions';
 import { analytics } from './routes/analytics';
 import { newsDigest } from './routes/newsDigest';
 
@@ -35,6 +36,7 @@ app.route('/bhasa-diwas', bhasaDiwas);
 app.route('/contest', contest);
 app.route('/certificates', certificates);
 app.route('/notifications', notifications);
+app.route('/push-subscriptions', pushSubscriptions);
 app.route('/analytics', analytics);
 app.route('/news-digest', newsDigest);
 
