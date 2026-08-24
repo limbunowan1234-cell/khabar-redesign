@@ -1,21 +1,17 @@
 import type { Metadata } from 'next';
 import DailyUpdatesPosterClient from '@/components/DailyUpdatesPosterClient';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
+// Week 36 of the Cloudflare migration (see cloudflare/README.md): reads
+// from the Worker/D1 instead of Appwrite directly -- the last of the
+// direct-Appwrite article reads.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 const SITE = 'https://khabardarjeeling.in';
-const H = { 'X-Appwrite-Project': PROJECT };
 
 const OTHER_DISTRICTS = ['Kalimpong', 'Kurseong', 'Mirik', 'Siliguri'];
 
-async function fetchArticles(queries: string[]): Promise<any[]> {
+async function fetchArticles(qs: string): Promise<any[]> {
   try {
-    const qs = queries.map((q) => 'queries[]=' + encodeURIComponent(q)).join('&');
-    const res = await fetch(`${ENDPOINT}/databases/${DB}/collections/articles/documents?${qs}`, {
-      headers: H,
-      next: { revalidate: 300 },
-    });
+    const res = await fetch(`${WORKER_URL}/articles?${qs}`, { next: { revalidate: 300 } });
     if (!res.ok) return [];
     const data = await res.json();
     return data.documents || [];
@@ -31,29 +27,13 @@ export const metadata: Metadata = {
 };
 
 export default async function DailyUpdatesPage() {
+  // status defaults to published on the Worker when omitted, and sort
+  // defaults to createdAtDesc -- matching every query shape below.
   const [darjeelingArticles, otherDistrictArticles, headlineCandidates, recentArticles] = await Promise.all([
-    fetchArticles([
-      JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }),
-      JSON.stringify({ method: 'equal', attribute: 'locationDistrict', values: ['Darjeeling'] }),
-      JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }),
-      JSON.stringify({ method: 'limit', values: [6] }),
-    ]),
-    fetchArticles([
-      JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }),
-      JSON.stringify({ method: 'equal', attribute: 'locationDistrict', values: OTHER_DISTRICTS }),
-      JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }),
-      JSON.stringify({ method: 'limit', values: [6] }),
-    ]),
-    fetchArticles([
-      JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }),
-      JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }),
-      JSON.stringify({ method: 'limit', values: [1] }),
-    ]),
-    fetchArticles([
-      JSON.stringify({ method: 'equal', attribute: 'status', values: ['published'] }),
-      JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }),
-      JSON.stringify({ method: 'limit', values: [12] }),
-    ]),
+    fetchArticles('district=' + encodeURIComponent('Darjeeling') + '&limit=6'),
+    fetchArticles('district=' + encodeURIComponent(OTHER_DISTRICTS.join(',')) + '&limit=6'),
+    fetchArticles('limit=1'),
+    fetchArticles('limit=12'),
   ]);
 
   // Prefer a breaking/featured story for the top headline; fall back to the

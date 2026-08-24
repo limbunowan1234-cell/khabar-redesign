@@ -109,7 +109,14 @@ articles.get('/', async (c) => {
     params.push(q.status || 'published');
   }
 
-  if (q.district) { where.push('location_district = ?'); params.push(q.district); }
+  // Comma-separated accepts multiple districts (app/daily-updates -- "other
+  // districts" combines 4 in one query) while staying a plain equality for
+  // every existing single-value caller (region/[name], curate).
+  if (q.district) {
+    const districts = q.district.split(',').filter(Boolean);
+    where.push(`location_district IN (${districts.map(() => '?').join(',')})`);
+    params.push(...districts);
+  }
   if (q.genre) { where.push('genre = ?'); params.push(q.genre); }
   if (q.breaking) { where.push('is_breaking = 1'); }
   if (q.featured) { where.push('is_featured = 1'); }
