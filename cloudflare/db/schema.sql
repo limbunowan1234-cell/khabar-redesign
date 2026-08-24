@@ -193,6 +193,7 @@ CREATE TABLE bhasa_diwas_submissions (
   submitter_id   TEXT,
   submitter_name TEXT,
   votes          INTEGER NOT NULL DEFAULT 0,  -- denormalized counter, see bhasa_diwas_votes
+  is_featured    INTEGER NOT NULL DEFAULT 0,  -- added Week 38, via ALTER TABLE on the live DB
   created_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX idx_bhasa_submitter ON bhasa_diwas_submissions(submitter_id);

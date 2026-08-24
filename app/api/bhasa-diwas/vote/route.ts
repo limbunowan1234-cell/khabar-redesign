@@ -1,5 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { Client, Databases, Query, ID } from 'node-appwrite';
+
+// Week 11 of the Cloudflare migration (see cloudflare/README.md): the
+// leaderboard read comes from the Worker. Week 38: casting a vote does
+// too -- the Worker enforces one-vote-per-submission with a real UNIQUE
+// constraint (INSERT ... ON CONFLICT DO NOTHING), atomically, rather than
+// this route's old check-then-create race against Appwrite.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '', 'Content-Type': 'application/json' };
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,53 +19,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const client = new Client()
-      .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
-      .setKey(process.env.APPWRITE_API_KEY || '');
+    const res = await fetch(WORKER_URL + '/bhasa-diwas/votes', {
+      method: 'POST',
+      headers: SERVICE_HEADERS,
+      body: JSON.stringify({ submissionId, voterId: userId }),
+    });
+    const data = await res.json();
 
-    const databases = new Databases(client);
-
-    const existingVote = await databases.listDocuments(
-      'Khabar_db',
-      'bhasa_diwas_votes',
-      [
-        Query.equal('submissionId', submissionId),
-        Query.equal('voterId', userId)
-      ]
-    );
-
-    if (existingVote.documents.length > 0) {
+    if (!res.ok) {
       return NextResponse.json(
-        { success: false, error: 'तपाइँ पहिले नै यस रचनामा मत दिइसक्नुभएको छ' },
-        { status: 400 }
+        { success: false, error: data.error === 'Already voted' ? 'तपाइँ पहिले नै यस रचनामा मत दिइसक्नुभएको छ' : 'मत दिन असफल' },
+        { status: res.status }
       );
     }
-
-    await databases.createDocument(
-      'Khabar_db',
-      'bhasa_diwas_votes',
-      ID.unique(),
-      {
-        submissionId,
-        voterId: userId
-      }
-    );
-
-    const submission = await databases.getDocument(
-      'Khabar_db',
-      'bhasa_diwas_submissions',
-      submissionId
-    );
-
-    await databases.updateDocument(
-      'Khabar_db',
-      'bhasa_diwas_submissions',
-      submissionId,
-      {
-        votes: (submission.votes || 0) + 1
-      }
-    );
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -69,9 +42,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-// Week 11 of the Cloudflare migration (see cloudflare/README.md).
-const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 export async function GET(req: NextRequest) {
   try {

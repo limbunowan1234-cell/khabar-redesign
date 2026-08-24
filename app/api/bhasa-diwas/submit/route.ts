@@ -1,13 +1,13 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
-import { Client, Databases, Storage, ID } from 'node-appwrite';
-import { randomBytes } from 'crypto';
+import { NextRequest, NextResponse } from 'next/server';
+import { Client, Storage, ID } from 'node-appwrite';
 
-function generateManualId(): string {
-  // Appwrite IDs must be <= 36 chars, alphanumeric + underscore/hyphen,
-  // and cannot start with a special character. Generate a safe 20-char
-  // hex string prefixed with a letter to guarantee validity.
-  return 'm' + randomBytes(10).toString('hex');
-}
+// Week 38 of the Cloudflare migration (see cloudflare/README.md): the
+// submission row writes to D1 through the Worker now. Photo upload stays
+// on Appwrite Storage -- imageFileId is (and always was) an Appwrite file
+// id, rendered via /api/image-proxy against that same bucket, so no
+// display-side change is needed by leaving this part alone.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '', 'Content-Type': 'application/json' };
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,38 +22,34 @@ export async function POST(req: NextRequest) {
 
     if (!title || !category || !description || !submitterName || !submitterId) {
       return NextResponse.json(
-        { error: 'à¤¸à¤¬à¥ˆ à¤•à¥à¤·à¥‡à¤¤à¥à¤° à¤†à¤µà¤¶à¥à¤¯à¤• à¤›à¤¨à¥' },
+        { error: 'सबै क्षेत्र आवश्यक छन्' },
         { status: 400 }
       );
     }
 
     if (!['poetry', 'essay', 'photo'].includes(category)) {
       return NextResponse.json(
-        { error: 'à¤…à¤®à¤¾à¤¨à¥à¤¯ à¤µà¤°à¥à¤—' },
+        { error: 'अमान्य वर्ग' },
         { status: 400 }
       );
     }
 
     if (category === 'photo' && !photoFile) {
       return NextResponse.json(
-        { error: 'à¤«à¥‹à¤Ÿà¥‹ à¤µà¤°à¥à¤—à¤•à¥‹ à¤²à¤¾à¤—à¤¿ à¤šà¤¿à¤¤à¥à¤° à¤†à¤µà¤¶à¥à¤¯à¤• à¤›' },
+        { error: 'फोटो वर्गको लागि चित्र आवश्यक छ' },
         { status: 400 }
       );
     }
-
-    const client = new Client()
-      .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
-      .setKey(process.env.APPWRITE_API_KEY || '');
-
-    const databases = new Databases(client);
-    const storage = new Storage(client);
-    console.log('Using API key starting with:', (process.env.APPWRITE_API_KEY || '').substring(0, 15));
 
     let imageFileId: string | null = null;
 
     if (photoFile) {
       try {
+        const client = new Client()
+          .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+          .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
+          .setKey(process.env.APPWRITE_API_KEY || '');
+        const storage = new Storage(client);
         const buffer = await photoFile.arrayBuffer();
         const file = await storage.createFile(
           '6a67a307002f71e8dcf5',
@@ -64,57 +60,39 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         console.error('Photo upload failed:', error);
         return NextResponse.json(
-          { error: 'à¤šà¤¿à¤¤à¥à¤° à¤…à¤ªà¤²à¥‹à¤¡ à¤…à¤¸à¤«à¤²' },
+          { error: 'चित्र अपलोड असफल' },
           { status: 500 }
         );
       }
     }
 
-    let submission = null;
-    let lastError: any = null;
-
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const newId = generateManualId();
-      console.log(`Attempt ${attempt + 1}: trying manual ID ${newId}`);
-      try {
-        submission = await databases.createDocument(
-          'Khabar_db',
-          'bhasa_diwas_submissions',
-          newId,
-          {
-            title: title.substring(0, 200),
-            category,
-            description: description.substring(0, 35000),
-            submitterName: submitterName.substring(0, 100),
-            submitterId,
-            imageFileId: imageFileId || null,
-            votes: 0
-          }
-        );
-        console.log(`Success on attempt ${attempt + 1} with ID ${newId}`);
-        break;
-      } catch (err: any) {
-        lastError = err;
-        console.warn(`Attempt ${attempt + 1} failed for ID ${newId}: code=${err?.code}, message=${err?.message}`);
-        if (err?.code === 409) {
-          continue;
-        }
-        throw err;
-      }
+    const res = await fetch(WORKER_URL + '/bhasa-diwas/submissions', {
+      method: 'POST',
+      headers: SERVICE_HEADERS,
+      body: JSON.stringify({
+        id: crypto.randomUUID(),
+        title: title.substring(0, 200),
+        category,
+        description: description.substring(0, 35000),
+        submitterName: submitterName.substring(0, 100),
+        submitterId,
+        imageFileId,
+      }),
+    });
+    if (!res.ok) {
+      console.error('Worker submission create failed:', res.status, await res.text());
+      throw new Error('Worker write failed');
     }
-
-    if (!submission) {
-      throw lastError;
-    }
+    const data = await res.json();
 
     return NextResponse.json({
       success: true,
-      submission: submission
+      submission: data.submission,
     });
   } catch (error) {
     console.error('Submission error:', error);
     return NextResponse.json(
-      { error: 'à¤¸à¤¬à¤®à¤¿à¤¶à¤¨ à¤…à¤¸à¤«à¤² à¤­à¤¯à¥‹' },
+      { error: 'सबमिशन असफल भयो' },
       { status: 500 }
     );
   }

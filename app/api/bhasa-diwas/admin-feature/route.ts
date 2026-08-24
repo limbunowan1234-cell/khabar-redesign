@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, Databases } from 'node-appwrite';
+
+// Week 38 of the Cloudflare migration (see cloudflare/README.md): the
+// isFeatured write moves to D1. Admin identity is still verified against
+// Appwrite (auth stays there permanently) via the forwarded session
+// cookie, exactly as before -- only the database write moved.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '', 'Content-Type': 'application/json' };
 
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 
@@ -32,14 +38,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
-    const adminClient = new Client()
-      .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
-      .setKey(process.env.APPWRITE_API_KEY || '');
-
-    const databases = new Databases(adminClient);
-
-    await databases.updateDocument('Khabar_db', 'bhasa_diwas_submissions', id, { isFeatured: !!isFeatured });
+    const res = await fetch(WORKER_URL + '/bhasa-diwas/submissions/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: SERVICE_HEADERS,
+      body: JSON.stringify({ isFeatured: !!isFeatured }),
+    });
+    if (!res.ok) throw new Error('Worker write failed');
 
     return NextResponse.json({ success: true });
   } catch (error) {
