@@ -855,6 +855,36 @@ after. Typecheck and full production build clean (after clearing a
 stale `.next/` cache that referenced the deleted cleanup route and was
 tripping an unrelated WASM/SWC build-worker crash on retry).
 
+**Status: Week 33 (a real bug, found by finally testing live) done.**
+Before considering the articles write cutover — the highest-stakes one
+— asked for real admin credentials to test create/edit/delete through
+an actual live browser session, since no write path this whole
+migration had ever been exercised end-to-end, only verified via curl.
+That gap turned out to be hiding a real bug curl-only testing
+structurally could not have found.
+
+Found live: the user created a real test article via the admin panel,
+and Manage showed zero articles despite the create having actually
+succeeded correctly (confirmed directly against Appwrite and D1 — both
+had it, matching). Traced it to `GET /articles?status=all` with no
+other filter — exactly `app/admin/page.tsx`'s dashboard call shape —
+leaving the `where` clause completely empty for a verified
+reporter/admin JWT (the one branch that intentionally applies no
+status filter). Produced `WHERE  ORDER BY ...` — invalid SQL, a 500 on
+every real admin dashboard load. The negative path (no/fake token)
+never hit this, since it always falls back to `status = 'published'`,
+keeping the clause non-empty — exactly why this was invisible to every
+curl-based check this migration has done.
+
+Reproduced the exact SQL error directly against real D1, fixed by
+seeding the where-clause builder with an always-true sentinel.
+Verified three ways: the reproduced error is gone running the same SQL
+directly; the user refreshed after redeploy and Manage showed the
+article correctly; the user then deleted it through the real UI and
+both Appwrite and D1 dropped from 191 back to 190 — confirming create
+and delete both actually work correctly end-to-end. The bug was in
+this one read path, not in the writes themselves.
+
 ## One-time setup
 
 ```bash
