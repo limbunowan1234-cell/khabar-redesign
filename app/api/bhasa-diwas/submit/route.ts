@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, Storage, ID } from 'node-appwrite';
 
 // Week 38 of the Cloudflare migration (see cloudflare/README.md): the
-// submission row writes to D1 through the Worker now. Photo upload stays
-// on Appwrite Storage -- imageFileId is (and always was) an Appwrite file
-// id, rendered via /api/image-proxy against that same bucket, so no
-// display-side change is needed by leaving this part alone.
+// submission row writes to D1 through the Worker now. Week 40: photo
+// upload moves off Appwrite Storage too, onto R2 via the Worker's
+// service-secret-gated POST /cdn/bhasa-diwas -- unlike article images,
+// this bucket (6a67a307002f71e8dcf5) never had an R2 mirror at all, so
+// this closes a real gap rather than replacing a redundant path.
+// imageFileId is now an R2 key rendered via /cdn/bhasa-diwas/<key>, not
+// an Appwrite file id -- see app/nepali-bhasa-diwas/[id]/page.tsx.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
-const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '', 'Content-Type': 'application/json' };
+const SERVICE_SECRET_HEADER = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '' };
+const SERVICE_HEADERS = { ...SERVICE_SECRET_HEADER, 'Content-Type': 'application/json' };
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,18 +48,16 @@ export async function POST(req: NextRequest) {
 
     if (photoFile) {
       try {
-        const client = new Client()
-          .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-          .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
-          .setKey(process.env.APPWRITE_API_KEY || '');
-        const storage = new Storage(client);
-        const buffer = await photoFile.arrayBuffer();
-        const file = await storage.createFile(
-          '6a67a307002f71e8dcf5',
-          ID.unique(),
-          new File([buffer], photoFile.name, { type: photoFile.type })
-        );
-        imageFileId = file.$id;
+        const uploadForm = new FormData();
+        uploadForm.append('file', photoFile);
+        const uploadRes = await fetch(WORKER_URL + '/cdn/bhasa-diwas', {
+          method: 'POST',
+          headers: SERVICE_SECRET_HEADER,
+          body: uploadForm,
+        });
+        if (!uploadRes.ok) throw new Error('Worker upload failed: ' + uploadRes.status);
+        const uploadData = await uploadRes.json();
+        imageFileId = uploadData.fileId;
       } catch (error) {
         console.error('Photo upload failed:', error);
         return NextResponse.json(

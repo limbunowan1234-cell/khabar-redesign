@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/authStore';
 import Link from 'next/link';
 
+// Week 40 of the Cloudflare migration (see cloudflare/README.md): photo
+// submissions read from R2 through the Worker now.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
 const CATS: Record<string, { label: string; bg: string }> = {
   poetry: { label: '✍️ काव्य', bg: '#f3e8ff' },
   essay: { label: '📚 निबन्ध', bg: '#dbeafe' },
@@ -102,7 +106,7 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
               <div style={S.photoTile}>
                 {submission.imageFileId && (
                   <img
-                    src={'/api/image-proxy?fileId=' + submission.imageFileId + '&bucket=6a67a307002f71e8dcf5'}
+                    src={WORKER_URL + '/cdn/bhasa-diwas/' + submission.imageFileId}
                     alt={submission.title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />

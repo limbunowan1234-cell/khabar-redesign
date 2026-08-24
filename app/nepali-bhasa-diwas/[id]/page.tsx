@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const description = clean(sub.description);
   const url = SITE + '/nepali-bhasa-diwas/' + id;
   const image = sub.imageFileId
-    ? SITE + '/api/image-proxy?fileId=' + sub.imageFileId + '&bucket=6a67a307002f71e8dcf5'
+    ? WORKER_URL + '/cdn/bhasa-diwas/' + sub.imageFileId
     : SITE + '/assets/bhasa-diwas-hero.png';
   const looksLowQuality = (sub.title || '').trim().length < 5 || (sub.description || '').trim().length < 100;
 

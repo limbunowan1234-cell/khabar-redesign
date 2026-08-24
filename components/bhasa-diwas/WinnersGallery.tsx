@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
+// Week 40 of the Cloudflare migration (see cloudflare/README.md): photo
+// submissions read from R2 through the Worker now.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const CATS: Record<string, { emoji: string; nepali: string; color: string }> = {
   poetry: { emoji: '✍️', nepali: 'काव्य', color: 'linear-gradient(135deg, #9333ea, #6b21a8)' },
@@ -83,7 +86,7 @@ export default function WinnersGallery() {
                   </div>
                   {category === 'photo' && winner.imageFileId && (
                     <div style={{ height: '180px', background: '#e5e7eb' }}>
-                      <img src={"/api/image-proxy?fileId=" + winner.imageFileId + "&bucket=6a67a307002f71e8dcf5"} alt={winner.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={WORKER_URL + '/cdn/bhasa-diwas/' + winner.imageFileId} alt={winner.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
                   )}
                   <div style={S.cardBody}>

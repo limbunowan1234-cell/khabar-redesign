@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
 import SiteFooter from '@/components/SiteFooter';
 
+// Week 40 of the Cloudflare migration (see cloudflare/README.md): photo
+// submissions read from R2 through the Worker now.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
 const CATEGORY_LABELS: Record<string, string> = {
   poetry: 'काव्य',
   essay: 'निबन्ध',
@@ -76,7 +80,7 @@ function PhotoContent({ title, description, imageFileId }: { title: string; desc
       {imageFileId && (
         <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px', background: '#e5e7eb' }}>
           <img
-            src={'/api/image-proxy?fileId=' + imageFileId + '&bucket=6a67a307002f71e8dcf5'}
+            src={WORKER_URL + '/cdn/bhasa-diwas/' + imageFileId}
             alt={title}
             style={{ width: '100%', height: 'auto', display: 'block' }}
           />
