@@ -805,6 +805,56 @@ production build clean. Could not test an actual certificate download
 end-to-end — needs a real logged-in session, same open item as every
 write path this migration.
 
+**Status: Week 32 (eighth write cutover — analytics_events, plus a
+real production fix) done.** Not a routine cutover — found via
+Vercel's runtime error logs that analytics tracking has been
+completely broken in production since at least 2026-08-17. The
+Appwrite service API key is missing the `collections.write` scope, so
+every attempt to auto-create the `analytics_events` collection has
+failed (58 errors / 48 users in just the last 24h checked). Worse,
+because the old track route awaited the Appwrite write before firing
+the D1 shadow-write, that failure was silently blocking the
+shadow-write too — D1 had zero rows this whole time despite Week 20's
+shadow-write existing since. The entire admin analytics dashboard has
+been showing zero real data since deployment.
+
+`app/api/analytics/track/route.ts` no longer touches Appwrite at all —
+writes to D1 only, through the same Worker endpoint. No data existed
+anywhere to lose (the Appwrite collection literally doesn't exist), so
+this is the cleanest cutover of the eight so far.
+
+Found and fixed a second, related failure while tracing this: the
+daily `analytics_events` retention job — piggybacked onto the real,
+Vercel-cron-triggered `/api/revalidate-sitemaps` route, since Vercel's
+Hobby plan caps cron jobs at 2 — was calling the same broken
+`ensureCollection()` path and had also been silently failing every
+day, isolated in its own try/catch so it never took sitemap
+revalidation down with it — just quietly deleted nothing, forever.
+
+Replaced both with a single fix: 30-day retention now runs as a native
+Cloudflare Cron Trigger (`wrangler.toml`'s new `[triggers]` block, a
+`scheduled()` handler added to the Worker's default export) instead of
+an HTTP route. This sidesteps the whole problem class outright — no
+shared secret to provision, no Vercel cron slot to compete for, since
+it's not an HTTP request at all. This is the fix for the gap Week 20
+explicitly left open ("D1 has no retention yet — would need
+`CRON_SECRET` provisioned as a Worker secret, not available in this
+session") — turned out the real fix didn't need that secret at all.
+
+Deleted the now-fully-dead `app/api/admin/analytics/cleanup/route.ts`
+(a manually-triggered duplicate of the same broken Appwrite cleanup,
+never itself registered as a real cron) and `lib/analyticsEvents.ts`
+entirely (`recordEvent`, `deleteEventsOlderThan`, `ensureCollection` —
+no callers left anywhere once the above three files stopped using
+them).
+
+Verified: deployed and confirmed the cron trigger registered
+(`schedule: 0 1 * * *`). Tested the Worker's write/read cycle directly
+end-to-end against real D1 — works correctly, test row cleaned up
+after. Typecheck and full production build clean (after clearing a
+stale `.next/` cache that referenced the deleted cleanup route and was
+tripping an unrelated WASM/SWC build-worker crash on retry).
+
 ## One-time setup
 
 ```bash
