@@ -1055,6 +1055,67 @@ need a real logged-in session to exercise end-to-end — same category
 of gap Week 33 flagged for articles, but lower-stakes here (opt-in
 feature, not core content) — not live-tested this pass.
 
+**Status: Week 38 (eleventh write cutover — Bhasa Diwas submit/vote)
+done.** The last named collection: `bhasa_diwas_submissions` and
+`bhasa_diwas_votes` had been read-only on D1 since Week 11, but every
+write (submit, vote, admin feature/delete) still went to Appwrite.
+
+`cloudflare/src/routes/bhasaDiwas.ts` gains `POST /submissions`
+(create), `PATCH /submissions/:id` (isFeatured), `DELETE
+/submissions/:id`, and `POST /votes` (create + increment,
+atomically). All four are service-secret-gated (`verifyService`, the
+same mechanism Week 37 added) — none of the four Next.js callers here
+verify a per-user JWT today (submit/vote never did; admin-feature/
+admin-delete verify real admin identity themselves via a forwarded
+Appwrite cookie, then just need to prove to the Worker they're the
+trusted backend). A straight relocation of the existing trust model,
+not a security change either way.
+
+**A real correctness improvement, not just a relocation, in the vote
+path**: the old Appwrite code checked for an existing vote with a
+separate `listDocuments()` call before creating one — a real race the
+`schema.sql` comment on `bhasa_diwas_votes` already called out. The
+Worker instead does one `INSERT ... ON CONFLICT (submission_id,
+voter_id) DO NOTHING` against D1's real `UNIQUE` constraint, so
+double-voting is now actually impossible under concurrent requests,
+not just usually prevented.
+
+**Fixed a dormant bug while adding `is_featured`**: the admin
+moderation page's "Feature" toggle reads from the Worker (since Week
+11), but the Worker never had this column, so it's been silently
+showing every submission as unfeatured regardless of Appwrite's real
+value since that week. Added the column live (`ALTER TABLE` on the
+real D1 database, plus `schema.sql`) so the toggle actually reflects
+and controls real state now. New submissions default to unfeatured;
+any previously-featured Appwrite rows aren't backfilled — no API key
+available this session to check/copy them — cheap to re-toggle by
+hand if any exist.
+
+**Deliberately not touched: photo upload.** `photo`-category
+submissions still upload to Appwrite Storage, same bucket, same
+`imageFileId` semantics, rendered via the same `/api/image-proxy`
+path. Moving actual image bytes to R2 is a separate, larger piece of
+work (new bucket, upload endpoint, `cdn` route) than this
+database-write cutover — a real remaining item, not a permanent
+exclusion like `fcm_tokens`.
+
+Verified: typecheck and full production build (`--webpack`) both
+clean. Full round-trip against the live Worker: created a test
+submission, voted (success), voted again (correctly rejected as
+already-voted), toggled `isFeatured`, deleted — test rows removed
+from D1 after. Loaded the real page in a browser: the submissions
+list renders actual D1 content correctly (unchanged read path,
+confirms no regression).
+
+With this, every named collection in the original migration scope —
+likes, bookmarks, follows, comments, contest_settings, news_digest,
+certificate_state, analytics_events, articles, notifications,
+push_subscriptions, and now Bhasa Diwas — is off Appwrite for both
+reads and writes. What's left is narrower: `fcm_tokens` (permanent
+exclusion, a separate mobile app owns that write path), the
+author-name sync utility (permanent exclusion, one-time tool), and
+Bhasa Diwas photo storage (a real remaining item).
+
 ## One-time setup
 
 ```bash
