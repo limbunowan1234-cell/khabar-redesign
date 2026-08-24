@@ -621,6 +621,35 @@ different file, a known local-dev-only gap). Could not test an actual
 like/unlike end-to-end — needs a real logged-in session, same open
 item as every write path this migration.
 
+**Status: Week 26 (second write cutover — bookmarks) done.** Same
+pattern as Week 25's likes cutover: `toggleBookmark` writes to D1
+through the Worker only now. Appwrite's `bookmarks` collection is
+frozen as of this commit. Two call sites, same as Week 13 found: the
+shared helper in `lib/appwrite.ts`, and `app/bookmarks/page.tsx`'s own
+separate remove implementation.
+
+Found a real bug while touching the second call site: that page's
+bookmark list has read from the Worker/D1 since Week 8, so the bookmark
+objects it held used D1's own generated id, not Appwrite's real
+document id. Its Appwrite `DELETE` call used that id anyway — which
+never matched a real Appwrite document, so that delete had been
+silently no-op'ing (404, never thrown) since Week 8. Only the D1
+shadow-delete (Week 13, keyed by `userId`+`articleId`, not id) was ever
+actually removing anything from that page. Moot now — the broken call
+is gone entirely, replaced by the same direct D1 delete the working
+shadow-write already used. Removed the now-unused `DB` constant this
+left behind.
+
+Updated `diff-bookmarks.mjs`'s framing the same way as likes, and
+flagged that "only in Appwrite" might be nonzero at the Week 26
+baseline because of the bug above. Checked: it wasn't. 45/45, both
+only-in counts at 0 — the bug evidently was never triggered by a real
+user in practice.
+
+Verified: typecheck and full production build clean. Could not test an
+actual bookmark/unbookmark end-to-end — needs a real logged-in session,
+same open item as every write path this migration.
+
 ## One-time setup
 
 ```bash
