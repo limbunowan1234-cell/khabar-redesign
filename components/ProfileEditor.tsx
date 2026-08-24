@@ -1,12 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const BUCKET = 'article-image';
-const H = { 'X-Appwrite-Project': PROJECT };
-const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
+// Week 41 of the Cloudflare migration (see cloudflare/README.md): profile
+// reads and writes both go through the Worker/D1 now, including avatar
+// upload (reuses the same R2-backed /cdn/articles endpoint article
+// images use, since it's the same underlying bucket).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getInitials(name: string): string {
   if (!name) return 'U';
@@ -17,7 +17,6 @@ function getInitials(name: string): string {
 interface Props { userId: string; userName: string; }
 
 export default function ProfileEditor({ userId, userName }: Props) {
-  const [docId, setDocId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
   const [bannerTheme, setBannerTheme] = useState('crimson');
@@ -30,20 +29,14 @@ export default function ProfileEditor({ userId, userName }: Props) {
 
   useEffect(() => {
     let alive = true;
-    const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
-    const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
-    fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' })
+    fetch(WORKER_URL + '/profiles/' + encodeURIComponent(userId))
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => {
-        if (!alive || !d) return;
-        const row = (d.documents || [])[0];
-        if (row) {
-          setDocId(row.$id);
-          setAvatarUrl(row.avatarUrl || '');
-          setBio(row.bio || ''); setBannerTheme(row.bannerTheme || 'crimson');
-          setDisplayName(row.displayName || userName || '');
-          setHomeDistrict(row.homeDistrict || '');
-        }
+      .then((row) => {
+        if (!alive || !row) return;
+        setAvatarUrl(row.avatarUrl || '');
+        setBio(row.bio || ''); setBannerTheme(row.bannerTheme || 'crimson');
+        setDisplayName(row.displayName || userName || '');
+        setHomeDistrict(row.homeDistrict || '');
       })
       .catch(() => {});
     return () => { alive = false; };
@@ -54,13 +47,14 @@ export default function ProfileEditor({ userId, userName }: Props) {
     if (!file) return;
     setUploading(true); setErr('');
     try {
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
       const form = new FormData();
-      form.append('fileId', 'unique()');
       form.append('file', file);
-      const res = await fetch(ENDPOINT + '/storage/buckets/' + BUCKET + '/files', { method: 'POST', headers: H, credentials: 'include', body: form });
+      const res = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: form });
       if (!res.ok) throw new Error('upload');
       const f = await res.json();
-      setAvatarUrl(ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + f.$id + '/view?project=' + PROJECT);
+      setAvatarUrl(WORKER_URL + '/cdn/articles/' + f.fileId);
     } catch {
       setErr('Image upload failed. Try a smaller JPG or PNG.');
     }
@@ -70,26 +64,20 @@ export default function ProfileEditor({ userId, userName }: Props) {
   async function save() {
     setSaving(true); setErr('');
     try {
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
       const data = { userId, displayName, userName: displayName, bio, avatarUrl, bannerTheme, homeDistrict };
-      const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
-      const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
-      const checkRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' });
-      const checkData = checkRes.ok ? await checkRes.json() : { documents: [] };
-      const existingId = checkData.documents?.[0]?.$id || null;
-
-      let res;
-      if (existingId) {
-        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + existingId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data }) });
-      } else {
-        res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents', { method: 'POST', headers: HJ, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data: { ...data, joinedAT: new Date().toISOString() } }) });
-      }
+      const res = await fetch(WORKER_URL + '/profiles', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
       if (!res.ok) throw new Error('save');
       window.location.reload();
     } catch {
-      setErr('Could not save. Check that Users have Update permission on profiles.');
+      setErr('Could not save. Please try again.');
       setSaving(false);
     }
-
   }
 
   const hasImg = avatarUrl && avatarUrl.indexOf('http') === 0;

@@ -2,10 +2,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
+// Week 41 of the Cloudflare migration (see cloudflare/README.md): the
+// initial profile row on signup writes to D1 through the Worker now.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 export default function AuthPage() {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -41,13 +45,14 @@ export default function AuthPage() {
           const meRes = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
           const me = meRes.ok ? await meRes.json() : null;
           if (me?.$id) {
-            await fetch(endpoint + '/databases/Khabar_db/collections/profiles/documents', {
-              method: 'POST', headers: HJ, credentials: 'include',
-              body: JSON.stringify({
-                documentId: 'unique()',
-                data: { userId: me.$id, displayName: name, userName: name, homeDistrict, joinedAT: new Date().toISOString() }
-              })
-            });
+            const token = await getWorkerAuthToken();
+            if (token) {
+              await fetch(WORKER_URL + '/profiles', {
+                method: 'POST',
+                headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: me.$id, displayName: name, userName: name, homeDistrict }),
+              });
+            }
           }
         } catch (profileErr) {
           console.error('Profile creation failed (non-blocking):', profileErr);

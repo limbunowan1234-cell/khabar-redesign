@@ -1,6 +1,6 @@
 ﻿'use client';
 import SiteFooter from '@/components/SiteFooter';
-import { trackApkDownload } from '@/lib/appwrite';
+import { trackApkDownload, getWorkerAuthToken } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
 import WeatherWarning from '@/components/WeatherWarning';
 import WeatherStrip from '@/components/WeatherStrip';
@@ -632,12 +632,14 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
   const [profilePromptUploading, setProfilePromptUploading] = useState(false);
   const [profilePromptNeeds, setProfilePromptNeeds] = useState<{ district: boolean; avatar: boolean; banner: boolean }>({ district: false, avatar: false, banner: false });
   const [districtApplied, setDistrictApplied] = useState(false);
+  const profileExistedRef = useRef(false);
   useEffect(() => {
     if (!user?.$id || districtApplied) return;
     (async () => {
       try {
         const res = await fetch(WORKER_URL + '/profiles/' + encodeURIComponent(user.$id));
         const row = res.ok ? await res.json() : undefined;
+        profileExistedRef.current = !!row;
         const district = row?.homeDistrict;
         const avatarUrl = row?.avatarUrl;
         const bannerTheme = row?.bannerTheme;
@@ -755,32 +757,30 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
               if (!user) return;
               setProfilePromptUploading(true);
               try {
+                const token = await getWorkerAuthToken();
+                if (!token) throw new Error('Not authenticated');
+                const authHeaders = { Authorization: 'Bearer ' + token };
+
                 let avatarUrl = '';
                 if (profilePromptAvatarFile) {
                   const form = new FormData();
-                  form.append('fileId', 'unique()');
                   form.append('file', profilePromptAvatarFile);
-                  const upRes = await fetch(ENDPOINT + '/storage/buckets/article-image/files', { method: 'POST', headers: H, credentials: 'include', body: form });
+                  const upRes = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: authHeaders, body: form });
                   if (upRes.ok) {
                     const upData = await upRes.json();
-                    avatarUrl = ENDPOINT + '/storage/buckets/article-image/files/' + upData.$id + '/view?project=' + projectId;
+                    avatarUrl = WORKER_URL + '/cdn/articles/' + upData.fileId;
                   }
                 }
-                const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [user.$id] }));
-                const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }));
-                const checkRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H });
-                const checkData = checkRes.ok ? await checkRes.json() : { documents: [] };
-                const existingId = checkData.documents?.[0]?.$id;
-                const HJ2 = { ...H, 'Content-Type': 'application/json' };
-                const updateData: any = {};
+                const updateData: any = { userId: user.$id };
+                if (!profileExistedRef.current) { updateData.displayName = user.name; updateData.userName = user.name; }
                 if (profilePromptNeeds.district && profilePromptDistrict) updateData.homeDistrict = profilePromptDistrict;
                 if (profilePromptNeeds.avatar && avatarUrl) updateData.avatarUrl = avatarUrl;
                 if (profilePromptNeeds.banner) updateData.bannerTheme = profilePromptBanner;
-                if (existingId) {
-                  await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents/' + existingId, { method: 'PATCH', headers: HJ2, credentials: 'include', body: JSON.stringify({ data: updateData }) });
-                } else {
-                  await fetch(ENDPOINT + '/databases/' + DB + '/collections/profiles/documents', { method: 'POST', headers: HJ2, credentials: 'include', body: JSON.stringify({ documentId: 'unique()', data: { userId: user.$id, displayName: user.name, userName: user.name, joinedAT: new Date().toISOString(), ...updateData } }) });
-                }
+                await fetch(WORKER_URL + '/profiles', {
+                  method: 'POST',
+                  headers: { ...authHeaders, 'Content-Type': 'application/json' },
+                  body: JSON.stringify(updateData),
+                });
                 if (updateData.homeDistrict) { setUserDistrict(updateData.homeDistrict); setSelectedDistrict(updateData.homeDistrict); }
               } catch (e) { console.error(e); }
               setProfilePromptUploading(false);
