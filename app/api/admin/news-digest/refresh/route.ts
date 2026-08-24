@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveDigest } from '@/lib/newsDigest';
 
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
-// Shadow-write into D1, alongside the real Appwrite write (which stays
-// authoritative). Fire-and-forget -- see the matching comment in
-// ../route.ts for the full reasoning.
-async function shadowWriteDigest(jwt: string, body: { sectionsJson: string; lastVerified: string; updatedAt: string }) {
-  try {
-    await fetch(`${WORKER_URL}/news-digest`, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch {}
-}
+// Week 30 of the Cloudflare migration (see cloudflare/README.md): writes
+// D1 directly now -- see the matching comment in ../route.ts.
 
 async function checkAdminJwt(jwt: string | null): Promise<boolean> {
   if (!jwt) return false;
@@ -233,8 +222,12 @@ export async function POST(req: NextRequest) {
       lastVerified,
       updatedAt: new Date().toISOString(),
     };
-    await saveDigest(payload);
-    if (jwt) shadowWriteDigest(jwt, payload);
+    const res = await fetch(`${WORKER_URL}/news-digest`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + jwt!, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Worker write failed: ' + res.status);
     return NextResponse.json({ digest: payload });
   } catch (error) {
     console.error('news-digest refresh error:', error);
