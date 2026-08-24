@@ -1216,6 +1216,58 @@ remaining items back in Week 39 (admin photos/ad gallery, Hills in
 Frame photography, profile avatars) — same shape as this bug, still
 open.
 
+**Status: Week 41 (profiles off Appwrite — reads, writes, and avatar
+uploads) done.** Closes one of the three items flagged in Week 39.
+`profiles` has had a D1 read route (`GET /profiles/:userId`) for a
+while, but every write — `ProfileEditor.tsx`'s full edit form,
+`HomeClient.tsx`'s profile-completion prompt, and
+`app/auth/page.tsx`'s initial profile row on signup — still went
+straight to Appwrite. Avatar upload (same `article-image` bucket as
+articles) went to Appwrite Storage too.
+
+`cloudflare/src/routes/profiles.ts` gains `POST /` — own-user JWT
+gated, partial (only fields present in the body are touched),
+upserting via `INSERT ... ON CONFLICT (user_id) DO UPDATE`. `user_id`
+is the real `PRIMARY KEY`, so this needed no docId lookup at all,
+unlike the old Appwrite version's list-then-create-or-update dance in
+every one of the three callers. Avatar upload reuses Week 39's
+existing `POST /cdn/articles` endpoint verbatim — same bucket, no new
+upload code needed.
+
+Converted: `ProfileEditor.tsx` (full edit: avatar, name, district,
+bio, banner — dropped its now-unnecessary `docId` state and
+existing-doc lookup), `HomeClient.tsx`'s profile-completion prompt
+(partial: district/avatar/banner only), `auth/page.tsx`'s signup
+(initial row: displayName/userName/homeDistrict). Also switched
+`ProfileBio.tsx`'s read (a redundant direct-Appwrite query, despite
+the D1 route already existing) to the Worker.
+
+**One correctness subtlety handled deliberately**: the old code only
+ever set `displayName`/`userName` on first-create, never touching it
+on a later update — so a user's customized display name survives. A
+single generic partial-upsert endpoint can't tell insert from update
+from the outside, so `HomeClient.tsx` now tracks whether the profile
+row already existed (from the `GET` it already does on load) and only
+includes `displayName`/`userName` in its own save call when it
+didn't — preserves the exact old behavior instead of the upsert
+silently overwriting a customized display name on every subsequent
+partial save.
+
+Verified: typecheck and full production build (`--webpack`) clean.
+Confirmed the auth boundary against the live Worker (no auth and a
+fake bearer token both 401). Verified the upsert SQL directly against
+real D1 with a scratch row: an initial partial insert followed by a
+second partial update touching different columns left the first
+insert's fields completely untouched — confirms the no-clobber
+behavior the whole design depends on. Logged-out browser check:
+homepage and `/profile` both load cleanly, `/profile` correctly
+redirects to `/auth`, no new console errors.
+
+Two remaining items from Week 39 are still open: admin photos/ad
+gallery, and Hills in Frame photography — both genuinely bigger
+undertakings (full collection migrations, not just an image-storage
+swap), not started.
+
 ## One-time setup
 
 ```bash
