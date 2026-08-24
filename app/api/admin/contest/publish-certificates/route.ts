@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, Databases } from 'node-appwrite';
 
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-const DB_ID = 'Khabar_db';
-const COLLECTION_ID = 'contest_settings';
-const DOC_ID = 'main';
 
 async function checkAdminJwt(jwt: string | null): Promise<boolean> {
   if (!jwt) return false;
@@ -24,35 +20,12 @@ async function checkAdminJwt(jwt: string | null): Promise<boolean> {
   }
 }
 
-function getDatabases(): Databases {
-  const client = new Client()
-    .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'khabardarjeeling')
-    .setKey(process.env.APPWRITE_API_KEY || '');
-  return new Databases(client);
-}
-
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
-// Shadow-writes into D1, alongside the real Appwrite write above (which
-// stays authoritative). Fire-and-forget: a D1 failure here must never
-// surface to the admin or block the real action. Reuses the same admin
-// JWT already verified above -- the Worker checks it independently.
-async function shadowWriteContestSettings(jwt: string, body: { certificatesLive?: boolean; pinnedCommentId?: string | null }) {
-  try {
-    await fetch(`${WORKER_URL}/contest/settings`, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch {}
-}
-
-// The contest_settings/main document was created with empty $permissions,
-// so PATCHing it from the browser with just the admin's user session was
-// silently failing (Appwrite returned an error the old client code never
-// checked). Writing through this server route with the service API key
-// sidesteps that permission gap entirely.
+// Week 29 of the Cloudflare migration (see cloudflare/README.md): writes
+// to D1 directly now -- Appwrite's contest_settings/main document is
+// frozen as of this cutover. Reuses the same admin JWT already verified
+// above -- the Worker checks it independently.
 export async function POST(req: NextRequest) {
   const jwt = req.headers.get('x-admin-jwt');
   const isAdmin = await checkAdminJwt(jwt);
@@ -60,21 +33,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 
-  if (!process.env.APPWRITE_API_KEY) {
-    console.error('publish-certificates error: APPWRITE_API_KEY is not set');
-    return NextResponse.json({ error: 'Server is missing APPWRITE_API_KEY.' }, { status: 500 });
-  }
-
   try {
     const body = await req.json();
     const live = !!body.live;
-    const databases = getDatabases();
-    try {
-      await databases.updateDocument(DB_ID, COLLECTION_ID, DOC_ID, { certificatesLive: live });
-    } catch {
-      await databases.createDocument(DB_ID, COLLECTION_ID, DOC_ID, { certificatesLive: live });
-    }
-    shadowWriteContestSettings(jwt!, { certificatesLive: live });
+    const res = await fetch(`${WORKER_URL}/contest/settings`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + jwt!, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ certificatesLive: live }),
+    });
+    if (!res.ok) throw new Error('Worker write failed: ' + res.status);
     return NextResponse.json({ success: true, certificatesLive: live });
   } catch (error) {
     console.error('publish-certificates error:', error);
