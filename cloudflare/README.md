@@ -637,6 +637,37 @@ actual like/unlike or bookmark/unbookmark end-to-end for either — needs
 a real logged-in session, same open item as every write path this
 migration.
 
+**Status: Week 27 (third write cutover — follows) done.** Same pattern
+as Weeks 25–26: follow/unfollow now writes to D1 through the Worker
+only. Appwrite's `follows` collection is frozen as of this commit.
+
+Two call sites — the same two Week 24 correctly declined to cut over,
+since they needed Appwrite's own document id for a subsequent Appwrite
+delete, which D1 can't supply. That constraint disappears once the
+delete itself targets D1 instead: `ArticleClient.tsx`'s `handleFollow`
+and `ProfileClient.tsx`'s `toggleFollow` both now delete by
+`followerId`+`followingId` directly, no id lookup needed at all.
+
+`ProfileClient.tsx`'s `toggleFollow` simplified further: it no longer
+needs a pre-delete `GET` to find "existing docs" (the old code even
+looped to delete multiple, since Appwrite's collection had no real
+uniqueness constraint) — D1 enforces `UNIQUE(follower_id,
+following_id)`, and the component already knows `isFollowing` from
+state, so the toggle just acts on that directly. Removed the
+`shadowWriteFollow` helper — no longer a shadow, it's the only write.
+
+Corrected a stale comment in `ProfileClient.tsx` claiming it held "the
+only real follow/unfollow call site in the app" — it didn't;
+`ArticleClient.tsx` has always had its own separate one, cut over here
+too. Removed a now-dead `DB` constant left behind.
+
+Updated `diff-follows.mjs`'s framing the same way as likes/bookmarks.
+Cutover-moment baseline: 109/109, both only-in counts at 0.
+
+Verified: typecheck and full production build clean. Could not test an
+actual follow/unfollow end-to-end — needs a real logged-in session,
+same open item as every write path this migration.
+
 ## One-time setup
 
 ```bash
