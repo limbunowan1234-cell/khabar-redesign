@@ -885,6 +885,49 @@ both Appwrite and D1 dropped from 191 back to 190 — confirming create
 and delete both actually work correctly end-to-end. The bug was in
 this one read path, not in the writes themselves.
 
+**Status: Week 34 (ninth write cutover — articles) done.** The big
+one, done in one pass. Every article write across all 5 files that
+touch the articles collection now writes to D1 through the Worker
+only. Appwrite's articles collection is frozen — the highest-value
+data in this migration, and the last major collection left
+dual-writing.
+
+Cut over, by file: `reporter/post` and public `post` (create, now
+generating the article id client-side instead of capturing Appwrite's
+real `$id` from a response that no longer happens); `reporter/edit`
+(own-article edit); `admin/page.tsx` (publish, photo-story create,
+full edit, flag toggles, delete, and all 6 weekly-picks functions —
+consolidated the file's two shadow-write helpers into primary
+`writeArticle`/`editArticle` functions, throwing on failure now
+instead of swallowing it, shared by all 12 call sites instead of each
+carrying its own duplicated pair); `admin/curate` (hero/pin toggles,
+same consolidation).
+
+Why this was safe to do in one pass: Week 33 already confirmed create
+and delete work correctly end-to-end through a real logged-in session
+— the one thing every prior write cutover this migration lacked — and
+found + fixed the one real bug anywhere in this path. Edit wasn't
+separately live-tested, but every edit call site here routes through
+the same two consolidated helpers already exercised by Week 22's
+direct Worker-level verification, and shares no code with the bug that
+was found and fixed.
+
+Deliberately not touched: the two cron-triggered weekly-publish
+routes — documented exclusion since Week 23, no per-admin JWT
+available to a cron job. Updated `diff-articles.mjs`'s framing: all
+four drift counts should now stay at zero, with one expected
+exception — real, weekly-fields-only drift right after those two cron
+routes fire, since they're the one write path still landing on
+Appwrite only. Also noted but not touched: `app/daily-updates/page.tsx`
+reads articles directly from Appwrite across 4 query shapes — a
+genuinely separate, never-done read migration, unrelated to this
+write cutover.
+
+Verified: typecheck and full production build clean. Cutover-moment
+baseline (`diff-articles.mjs`): 190/190, zero drift on status, title,
+and every curation flag — the test article from Week 33's live
+verification left no trace behind.
+
 ## One-time setup
 
 ```bash
