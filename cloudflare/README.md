@@ -737,6 +737,39 @@ target rather than a shadow that could fail silently.
 
 Verified: typecheck and full production build clean.
 
+**Status: Week 30 (sixth write cutover — news_digest) done.** Same
+shape as Week 29, one real surprise. Both admin routes now read and
+write D1 only, through the Worker endpoint they were already
+shadow-writing to. Dropped the cron-secret fallback path entirely —
+grepped for it first: not in `vercel.json`'s crons array, no other
+caller anywhere. Dead capability, not a real path needing a
+replacement auth mechanism. Deleted `lib/newsDigest.ts` entirely —
+nothing called its two exports once both routes stopped using them.
+
+The pre-freeze check caught something real this time. Same
+verification that passed cleanly for `contest_settings` in Week 29
+found D1 was stale here: Appwrite's `news_digest` had been updated
+today, but D1 still held Week 21's original backfill. The admin had
+refreshed the digest for real through the actual admin UI at some
+point in between, and the shadow-write meant to mirror that into D1
+had silently never landed — fire-and-forget shadow-writes swallow
+their own errors by design, and there was no dedicated diff script for
+this single-row collection to catch it, unlike likes/comments/follows/
+bookmarks. Re-synced from the live Appwrite document before cutting
+anything over — freezing first would have permanently lost real
+content.
+
+Root cause of the original shadow-write failure not determined —
+fire-and-forget swallows the actual error, and there's no server log
+access in this session to dig further. Worth remembering as a concrete
+example of why "a shadow-write exists" isn't the same guarantee as "the
+shadow-write is working," especially for low-traffic, rarely-diffed
+collections — worth the same live-data check before cutting over
+`certificate_state` and `analytics_events` next.
+
+Verified: Worker auth boundary re-checked (no token / fake token, both
+401). Typecheck and full production build clean.
+
 ## One-time setup
 
 ```bash
