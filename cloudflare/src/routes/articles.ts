@@ -69,7 +69,13 @@ articles.get('/', async (c) => {
   // the total count). Cursor is pagination-only, so it's applied separately
   // to the page query — total reflects the whole filtered set, matching how
   // Appwrite's listDocuments().total behaves regardless of pagination.
-  const where: string[] = [];
+  // Seeded with an always-true sentinel so `where` is never empty -- a
+  // verified reporter/admin hitting status=all with no other filter (the
+  // admin dashboard's exact call) previously left `where` empty, producing
+  // `WHERE  ORDER BY ...` -- invalid SQL, a 500 on every load. Only
+  // possible to hit with a real verified JWT, which is exactly the one
+  // path curl-only testing never exercised this whole migration.
+  const where: string[] = ['1=1'];
   const params: unknown[] = [];
 
   // status=all opts out of the default published-only filter. Two valid
