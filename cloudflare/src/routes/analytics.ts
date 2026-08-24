@@ -6,8 +6,11 @@ export const analytics = new Hono<{ Bindings: Bindings }>();
 
 // POST /analytics/events -- public, unauthenticated, same trust model as
 // PATCH /articles/:id/views: anonymous page-view telemetry, no user
-// session involved (most readers aren't logged in). app/api/analytics/
-// track/route.ts still writes to Appwrite first and shadow-writes here.
+// session involved (most readers aren't logged in). Week 32: this is
+// the only write now -- app/api/analytics/track/route.ts no longer
+// touches Appwrite at all. 30-day retention runs natively as a
+// Cloudflare Cron Trigger (see the scheduled() handler in index.ts),
+// not an HTTP route, so it needs no auth of its own.
 analytics.post('/events', async (c) => {
   const body = await c.req.json().catch(() => null);
   if (!body?.id || !body?.visitorId || !body?.eventType || !body?.timestamp) {

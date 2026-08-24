@@ -1,7 +1,12 @@
 ﻿import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
-import { deleteEventsOlderThan } from '@/lib/analyticsEvents';
 
+// Week 32 of the Cloudflare migration (see cloudflare/README.md):
+// analytics_events retention used to ride along on this cron (Vercel's
+// Hobby plan caps cron jobs at 2, so there was never a slot for its
+// own) -- moved to a native Cloudflare Cron Trigger instead
+// (cloudflare/wrangler.toml's [triggers], see the scheduled() handler
+// in cloudflare/src/index.ts), since the write itself moved to D1 too.
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const DB = 'Khabar_db';
@@ -40,21 +45,8 @@ export async function GET(req: Request) {
 
     const weekly = await publishWeeklyIfSunday();
 
-    // Vercel's Hobby plan caps cron jobs at 2 (already used by this route
-    // and publish-weekly), so daily analytics_events retention rides along
-    // on this existing daily cron instead of registering a third one.
-    let analyticsCleanup: { deleted: number } | { error: string };
-    try {
-      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const deleted = await deleteEventsOlderThan(cutoff);
-      analyticsCleanup = { deleted };
-    } catch (e) {
-      console.error('analytics cleanup (via revalidate-sitemaps) error:', e);
-      analyticsCleanup = { error: 'failed' };
-    }
-
     console.log('Sitemaps revalidated at', new Date().toISOString());
-    return NextResponse.json({ success: true, timestamp: new Date().toISOString(), weekly, analyticsCleanup });
+    return NextResponse.json({ success: true, timestamp: new Date().toISOString(), weekly });
   } catch (error) {
     console.error('Revalidation error:', error);
     return NextResponse.json({ error: 'Revalidation failed' }, { status: 500 });

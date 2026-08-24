@@ -38,4 +38,22 @@ app.route('/notifications', notifications);
 app.route('/analytics', analytics);
 app.route('/news-digest', newsDigest);
 
-export default app;
+export default {
+  fetch: app.fetch,
+
+  // Week 32: 30-day analytics_events retention, running natively on
+  // Cloudflare's own schedule (see [triggers] in wrangler.toml) rather
+  // than as an HTTP route triggered by a Vercel cron with a shared
+  // secret. Appwrite's equivalent (piggybacked on the
+  // /api/revalidate-sitemaps cron, since Vercel's Hobby plan caps cron
+  // jobs at 2) had been silently failing since the collection it
+  // targeted never actually existed -- this sidesteps that whole class
+  // of problem, since there's no HTTP auth boundary to get wrong and no
+  // Vercel cron slot to compete for.
+  async scheduled(_event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    ctx.waitUntil(
+      env.DB.prepare('DELETE FROM analytics_events WHERE timestamp < ?').bind(cutoff).run()
+    );
+  },
+};

@@ -1,26 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { recordEvent } from '@/lib/analyticsEvents';
 import { randomUUID } from 'node:crypto';
 
-// Public endpoint: any visitor (logged in or not) can report a page view.
-// Writes go through the service API key (see lib/analyticsEvents.ts) rather
-// than granting the analytics_events collection public write access, so
-// this route is the only path that can create events.
+// Week 32 of the Cloudflare migration (see cloudflare/README.md): writes
+// to D1 directly now, not Appwrite. Appwrite never actually worked here
+// in production -- the service API key was missing the
+// collections.write scope needed to auto-create analytics_events, so
+// every single write had been failing since at least 2026-08-17 (found
+// via Vercel runtime error logs). Since the Appwrite write was awaited
+// before the D1 shadow-write, that failure was silently blocking the
+// shadow-write too -- D1 had zero rows this whole time. This wasn't a
+// migration decision so much as fixing a completely dead production
+// feature by finishing the cutover that should have made it resilient
+// in the first place.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
-
-// Shadow-writes into D1 alongside the real Appwrite write above (which
-// stays authoritative). Fire-and-forget: a D1 failure here must never
-// surface to the reader. No auth needed -- this data was already public,
-// unauthenticated telemetry on the Appwrite side (see the comment above).
-async function shadowWriteEvent(id: string, event: Record<string, unknown>) {
-  try {
-    await fetch(`${WORKER_URL}/analytics/events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, ...event }),
-    });
-  } catch {}
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,8 +34,11 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     };
 
-    await recordEvent(event, id);
-    shadowWriteEvent(id, event);
+    await fetch(`${WORKER_URL}/analytics/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...event }),
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

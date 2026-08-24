@@ -13,6 +13,13 @@ database_id = "991e6a3d-1aca-4c2a-bbdf-5b8d374d45b8"
 binding = "IMAGES"
 bucket_name = "khabar-article-images"
 
+# Runs the scheduled() handler in src/index.ts daily -- 30-day
+# analytics_events retention. Native Cloudflare cron, no HTTP auth
+# needed (see the comment on the scheduled() export for why this
+# replaced the old Vercel-cron/Appwrite approach).
+[triggers]
+crons = ["0 1 * * *"]
+
 # APK downloads are staying on Appwrite permanently (explicit decision —
 # not a deferral). Only 2 files, no bandwidth pressure, not worth the
 # extra bucket/route/script surface.
