@@ -41,16 +41,27 @@ app.route('/news-digest', newsDigest);
 export default {
   fetch: app.fetch,
 
-  // Week 32: 30-day analytics_events retention, running natively on
-  // Cloudflare's own schedule (see [triggers] in wrangler.toml) rather
-  // than as an HTTP route triggered by a Vercel cron with a shared
-  // secret. Appwrite's equivalent (piggybacked on the
-  // /api/revalidate-sitemaps cron, since Vercel's Hobby plan caps cron
-  // jobs at 2) had been silently failing since the collection it
-  // targeted never actually existed -- this sidesteps that whole class
-  // of problem, since there's no HTTP auth boundary to get wrong and no
-  // Vercel cron slot to compete for.
-  async scheduled(_event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+  // Two native Cloudflare Cron Triggers (see [triggers] in wrangler.toml),
+  // distinguished by event.cron. Neither needs an HTTP auth boundary or a
+  // Vercel cron slot (Hobby plan caps those at 2), unlike the
+  // Appwrite-era approach both replaced.
+  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    if (event.cron === '0 0 * * SUN') {
+      // Week 35: publishes any pending weekly picks (isWeeklyPick=1,
+      // weeklyLive=0) every Sunday at 00:00 UTC. Replaces two Vercel-cron
+      // routes (app/api/publish-weekly, and a Sunday-only branch inside
+      // app/api/revalidate-sitemaps) that independently ran this same
+      // write against Appwrite on the same schedule -- moot now that
+      // articles is D1-only (Week 34 froze Appwrite's copy).
+      ctx.waitUntil(
+        env.DB.prepare(
+          "UPDATE articles SET weekly_live = 1, updated_at = datetime('now') WHERE is_weekly_pick = 1 AND weekly_live = 0"
+        ).run()
+      );
+      return;
+    }
+
+    // Week 32: daily 30-day analytics_events retention.
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     ctx.waitUntil(
       env.DB.prepare('DELETE FROM analytics_events WHERE timestamp < ?').bind(cutoff).run()

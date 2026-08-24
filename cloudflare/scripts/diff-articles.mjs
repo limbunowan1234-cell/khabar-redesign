@@ -1,14 +1,12 @@
 #!/usr/bin/env node
-// Post-cutover check (Week 34): articles write to D1 only now for every
-// client-side path -- create, edit, delete, flag toggles, weekly-picks
-// management, curate hero/pin. Appwrite's articles collection is frozen
-// for those. All four counts here should stay at zero going forward,
-// with one known exception: the two cron-triggered weekly-publish
-// routes (app/api/publish-weekly, app/api/revalidate-sitemaps's Sunday
-// auto-publish) are a deliberate, documented exclusion -- no per-admin
-// JWT available to a cron job -- and still write weeklyLive/weeklyIssue
-// to Appwrite only. Expect real (small, weekly-fields-only) drift right
-// after those fire; anything else nonzero is a real problem.
+// Post-cutover check (Weeks 34-35): articles write to D1 only now for
+// every path -- create, edit, delete, flag toggles, weekly-picks
+// management (including the Sunday auto-publish, now a native
+// Cloudflare Cron Trigger per cloudflare/wrangler.toml's [triggers]
+// rather than a Vercel-cron route hitting Appwrite). Appwrite's
+// articles collection is frozen entirely. All four counts here should
+// stay at zero going forward -- no known exceptions left; any nonzero
+// result is a real problem.
 //
 // Usage: APPWRITE_API_KEY=xxx node scripts/diff-articles.mjs
 

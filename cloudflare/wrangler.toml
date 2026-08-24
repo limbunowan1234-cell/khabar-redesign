@@ -13,12 +13,19 @@ database_id = "991e6a3d-1aca-4c2a-bbdf-5b8d374d45b8"
 binding = "IMAGES"
 bucket_name = "khabar-article-images"
 
-# Runs the scheduled() handler in src/index.ts daily -- 30-day
-# analytics_events retention. Native Cloudflare cron, no HTTP auth
-# needed (see the comment on the scheduled() export for why this
-# replaced the old Vercel-cron/Appwrite approach).
+# Two schedules, both handled by scheduled() in src/index.ts (branches on
+# event.cron), no HTTP auth needed for either:
+#   "0 1 * * *"  -- daily, 30-day analytics_events retention (Week 32).
+#   "0 0 * * SUN"  -- weekly (Sunday 00:00 UTC), publishes pending weekly
+#                   picks (Week 35). Replaces two Vercel-cron routes that
+#                   were both independently doing this same write against
+#                   Appwrite on the same schedule -- app/api/publish-weekly
+#                   and a Sunday-only branch inside
+#                   app/api/revalidate-sitemaps -- neither of which could
+#                   keep writing to Appwrite once articles froze there
+#                   in Week 34.
 [triggers]
-crons = ["0 1 * * *"]
+crons = ["0 1 * * *", "0 0 * * SUN"]
 
 # APK downloads are staying on Appwrite permanently (explicit decision —
 # not a deferral). Only 2 files, no bandwidth pressure, not worth the

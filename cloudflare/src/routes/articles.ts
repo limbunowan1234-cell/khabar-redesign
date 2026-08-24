@@ -204,18 +204,18 @@ articles.patch('/:id/views', async (c) => {
   return c.json({ views: (result as any).views });
 });
 
-// --- Shadow-write only (see cloudflare/README.md) ---
-// Appwrite stays authoritative for all three of these.
+// --- Primary writes as of Week 34 (see cloudflare/README.md) ---
+// Appwrite's articles collection is frozen; these three (POST, PATCH
+// /:id, DELETE) are the sole write path now, not a shadow-write copy.
 
-// POST /articles -- creates a new article. `id` is the real Appwrite
-// document $id, passed through by the caller after the real create
-// succeeds (Appwrite generates it via documentId: 'unique()', same
-// reasoning as comments.ts: later edits/deletes need both systems to
-// agree on the id). JWT must belong to the exact submitterId in the
-// body -- matches the real app's current access model (app/post/page.tsx
-// lets any logged-in user create an article, not just reporters/admins;
-// the reporter/admin UI's own tighter gating is enforced client-side
-// only, not something this migration should silently invent).
+// POST /articles -- creates a new article. `id` is generated client-side
+// (crypto.randomUUID(), since Week 34 -- Appwrite no longer generates it)
+// and passed through so later edits/deletes can address the same row.
+// JWT must belong to the exact submitterId in the body -- matches the
+// real app's current access model (app/post/page.tsx lets any logged-in
+// user create an article, not just reporters/admins; the reporter/admin
+// UI's own tighter gating is enforced client-side only, not something
+// this migration should silently invent).
 articles.post('/', async (c) => {
   const user = await verifyUser(c.req.raw);
   const body = await c.req.json().catch(() => null);

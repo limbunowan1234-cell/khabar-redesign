@@ -1,4 +1,4 @@
-﻿import { revalidatePath } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 
 // Week 32 of the Cloudflare migration (see cloudflare/README.md):
@@ -7,46 +7,20 @@ import { NextResponse } from 'next/server';
 // own) -- moved to a native Cloudflare Cron Trigger instead
 // (cloudflare/wrangler.toml's [triggers], see the scheduled() handler
 // in cloudflare/src/index.ts), since the write itself moved to D1 too.
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
+//
+// Week 35: the weekly-picks publish that used to run here on Sundays
+// (and, redundantly, in its own now-deleted app/api/publish-weekly
+// route on the same schedule) moved the same way, for the same reason
+// -- articles is D1-only as of Week 34, so writing weeklyLive to
+// Appwrite here isn't valid anymore.
 
-async function publishWeeklyIfSunday() {
-  const now = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000;
-  const istNow = new Date(now.getTime() + istOffset);
-  const isSunday = istNow.getUTCDay() === 0;
-  if (!isSunday) return { published: false, reason: 'not sunday' };
-
-  try {
-    const q = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'isWeeklyPick', values: [true] }));
-    const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'weeklyLive', values: [false] }));
-    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents?queries[]=' + q + '&queries[]=' + q2, { headers: H });
-    if (!res.ok) return { published: false, reason: 'fetch failed' };
-    const data = await res.json();
-    const picks = data.documents || [];
-    for (const a of picks) {
-      await fetch(ENDPOINT + '/databases/' + DB + '/collections/articles/documents/' + a.$id, {
-        method: 'PATCH', headers: H,
-        body: JSON.stringify({ data: { weeklyLive: true } })
-      });
-    }
-    return { published: true, count: picks.length };
-  } catch (e) {
-    return { published: false, reason: 'error' };
-  }
-}
-
-export async function GET(req: Request) {
+export async function GET() {
   try {
     revalidatePath('/sitemap.ts');
     revalidatePath('/news-sitemap.xml');
 
-    const weekly = await publishWeeklyIfSunday();
-
     console.log('Sitemaps revalidated at', new Date().toISOString());
-    return NextResponse.json({ success: true, timestamp: new Date().toISOString(), weekly });
+    return NextResponse.json({ success: true, timestamp: new Date().toISOString() });
   } catch (error) {
     console.error('Revalidation error:', error);
     return NextResponse.json({ error: 'Revalidation failed' }, { status: 500 });

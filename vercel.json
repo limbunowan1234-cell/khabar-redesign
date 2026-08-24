@@ -3,10 +3,6 @@
     {
       "path": "/api/revalidate-sitemaps",
       "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/publish-weekly",
-      "schedule": "0 0 * * 0"
     }
   ]
 }
