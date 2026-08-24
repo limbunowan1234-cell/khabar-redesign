@@ -582,6 +582,45 @@ render correctly, no new console errors, no regressions on the
 logged-in user couldn't be exercised without a real login — same open
 item as every previous JWT-gated verification this migration.
 
+**Status: Week 25 (first real write cutover — likes) done.** The
+write-cutover phase begins. Every write path since Week 12 has been
+dual — real Appwrite write plus a best-effort D1 shadow-write, Appwrite
+authoritative. This is the first one actually flipped:
+`toggleArticleLike`/`toggleCommentLike` in `lib/appwrite.ts` now write
+to D1 through the Worker only. Appwrite's `likes` collection is frozen
+as of this commit — nothing writes to it again.
+
+Picked likes to go first deliberately: lowest stakes of everything
+shadow-written (losing a like is inconsequential, unlike an article or
+a comment), the most mature write path (12+ weeks of clean diffs, the
+first one ever built), and the read side has trusted D1 exclusively
+since Week 8 — so this cutover is really just deleting the Appwrite
+call, not changing what anything displays.
+
+Mechanically: both toggle functions mint a JWT (already existed for the
+shadow-write), check current state via `GET /likes` (already scoped
+correctly server-side — no client-side filtering needed), then `POST`
+or `DELETE` against the Worker directly. Removed `shadowWriteLike` — no
+longer a shadow, it's the only write. Bookmarks is intentionally
+untouched this round, still shadow-writing to Appwrite as primary — its
+own future cutover.
+
+Updated `diff-likes.mjs`'s framing, since cutover flips what its two
+counts mean: "only in Appwrite" should now stay flat forever (real
+drift if it grows), while "only in D1" becomes the expected, growing
+bucket for everything that happens from here on — not a bug signal
+like it is for every other collection this script's shape is copied
+from. Captured the cutover-moment baseline: 1137/1137, both only-in
+counts at 0.
+
+Verified: typecheck and full production build clean. Loaded an article
+page in a real browser — renders correctly, no errors traceable to
+this change (one unrelated pre-existing 500 on `/api/analytics/track`,
+caused by `APPWRITE_API_KEY` missing from local `.env.local` — a
+different file, a known local-dev-only gap). Could not test an actual
+like/unlike end-to-end — needs a real logged-in session, same open
+item as every write path this migration.
+
 ## One-time setup
 
 ```bash
