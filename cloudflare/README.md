@@ -668,6 +668,49 @@ Verified: typecheck and full production build clean. Could not test an
 actual follow/unfollow end-to-end — needs a real logged-in session,
 same open item as every write path this migration.
 
+**Status: Week 28 (fourth write cutover — comments) done.** One step
+up in complexity from the last three: three real client call sites
+(`ArticleClient.tsx`, `ContestClient.tsx`,
+`HillsInFrameSwipeClient.tsx`) instead of one or two. All now write to
+D1 through the Worker only. Comments aren't a toggle, so the shape
+differs from likes/bookmarks/follows: the old code relied on Appwrite
+generating the real document id, captured it, then reused it for the
+shadow-write. With Appwrite out of the loop, the client now generates
+its own id upfront (`crypto.randomUUID()`). Checked all three callers
+first — none use `createComment`'s return value (they always re-fetch
+the list afterward), so no need to reconstruct a full comment object.
+
+Found a more serious gap while working through the third file:
+`HillsInFrameSwipeClient.tsx` had its own completely separate `likes`
+implementation for Hills in Frame photos, never migrated at all — still
+hitting Appwrite directly for both reads and writes, missed entirely by
+Week 25's likes cutover because it never used the shared helper. Week
+25's "Appwrite's likes collection is frozen" claim was actually wrong
+for this one feature. Switched it to the shared
+`toggleArticleLike`/`getArticleLikes` helpers, now D1-only like
+everything else — and improved on the original along the way, since it
+now reverts its optimistic UI update if the write fails, which neither
+backend's version ever did.
+
+Removed now-fully-dead Appwrite REST constants from all three files —
+comments were the last thing still using them for a database write in
+two of the three; `ContestClient.tsx` still needs its auth-check
+constants, unrelated to this migration.
+
+Diff script framing needed a different note this time: unlike the last
+three, the Bhasa Diwas comments POST route is a deliberate, ongoing
+exclusion (server-side, admin API key, no per-user JWT) never
+shadow-written and untouched by this cutover. "Only in Appwrite" will
+keep growing from new Bhasa Diwas comments specifically — expected, not
+drift. Cutover-moment baseline: 383 vs 382, the same single
+pre-existing gap documented since Week 15.
+
+Verified: typecheck and full production build clean. Loaded an article
+page in a real browser — renders correctly, no errors traceable to this
+change. Could not test an actual comment post/delete or the Hills in
+Frame like fix end-to-end — needs a real logged-in session, same open
+item as every write path this migration.
+
 ## One-time setup
 
 ```bash
