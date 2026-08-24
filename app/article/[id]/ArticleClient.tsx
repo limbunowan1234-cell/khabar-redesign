@@ -9,16 +9,11 @@ import { getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, g
 import { useAuthStore } from '@/lib/authStore';
 import { trackPageView } from '@/lib/analyticsTracker';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const H = { 'X-Appwrite-Project': PROJECT };
-const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
-const DB = 'Khabar_db';
-// Week 3 of the Cloudflare migration (see cloudflare/README.md): article
-// data, related/author article lists, view counting and images all read
-// from the Worker/R2. Comments (Week 15) now read from the Worker too
-// and shadow-write into D1 on post/delete -- Appwrite stays the real
-// write. Follows still write to Appwrite only.
+// Week 3+25+27+28 of the Cloudflare migration (see cloudflare/README.md):
+// article data, related/author article lists, view counting and images
+// all read from the Worker/R2. Likes (Week 25), follows (Week 27), and
+// comments (Week 28) all write to D1 directly now -- no direct Appwrite
+// database calls left in this file at all.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(article: any): string {
@@ -144,51 +139,32 @@ async function fetchComments(articleId: string) {
   return data.documents || [];
 }
 
-// Shadow-writes into D1 using the same document id Appwrite generated,
-// fire-and-forget -- see cloudflare/README.md. Comments (unlike likes/
-// bookmarks/follows) aren't a toggle, so D1's row id has to match
-// Appwrite's real $id for a later delete to find the right row on both
-// sides.
-async function shadowWriteComment(id: string, articleId: string, parentCommentId: string | null, userId: string, authorName: string, commentText: string) {
-  try {
-    const token = await getWorkerAuthToken();
-    if (!token) return;
-    await fetch(`${WORKER_URL}/comments`, {
-      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, articleId, parentCommentId, userId, authorName, commentText }),
-    });
-  } catch {}
-}
-
-async function shadowDeleteComment(commentId: string) {
-  try {
-    const token = await getWorkerAuthToken();
-    if (!token) return;
-    await fetch(`${WORKER_URL}/comments/${encodeURIComponent(commentId)}`, {
-      method: 'DELETE', headers: { Authorization: 'Bearer ' + token },
-    });
-  } catch {}
-}
-
+// Week 28 of the Cloudflare migration (see cloudflare/README.md):
+// comments write to D1 directly now -- Appwrite's comments collection
+// is frozen as of this cutover. Unlike likes/bookmarks/follows, D1
+// generates its own id client-side (comments aren't a toggle, so
+// there's no Appwrite $id to reuse anymore) -- callers here don't use
+// createComment's return value, they always re-fetch via
+// fetchComments() afterward, so no need to construct a full comment
+// object to hand back.
 async function createComment(articleId: string, userId: string, authorName: string, commentText: string, parentCommentId: string | null) {
-  const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents', {
-    method: 'POST', headers: HJ, credentials: 'include',
-    body: JSON.stringify({
-      documentId: 'unique()',
-      data: { articleId, userId, authorName, commentText, parentCommentId: parentCommentId || null, avatarUrl: '', createdAt: new Date().toISOString() }
-    })
+  const token = await getWorkerAuthToken();
+  if (!token) throw new Error('Not authenticated');
+  const id = crypto.randomUUID();
+  const res = await fetch(`${WORKER_URL}/comments`, {
+    method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, articleId, parentCommentId, userId, authorName, commentText }),
   });
   if (!res.ok) throw new Error('Failed to post comment');
-  const doc = await res.json();
-  shadowWriteComment(doc.$id, articleId, parentCommentId, userId, authorName, commentText);
-  return doc;
+  return { $id: id };
 }
 
 async function deleteComment(commentId: string) {
-  const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents/' + commentId, {
-    method: 'DELETE', headers: H, credentials: 'include'
+  const token = await getWorkerAuthToken();
+  if (!token) return false;
+  const res = await fetch(`${WORKER_URL}/comments/${encodeURIComponent(commentId)}`, {
+    method: 'DELETE', headers: { Authorization: 'Bearer ' + token },
   });
-  shadowDeleteComment(commentId);
   return res.ok;
 }
 

@@ -8,15 +8,14 @@ import { getCommentLikes, toggleCommentLike, getWorkerAuthToken } from '@/lib/ap
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
-const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
-const DB = 'Khabar_db';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-// Week 10+16 of the Cloudflare migration (see cloudflare/README.md): the
-// entries list, likes, discussion comments, and contest_settings (pinned
-// comment) below all read from the Worker. Posting/deleting a comment and
-// pinning one both still write to Appwrite first (shadow-written into D1
-// after), since the admin pin action is a server-side route, not this
-// client component.
+// Week 10+16+28 of the Cloudflare migration (see cloudflare/README.md):
+// the entries list, likes, discussion comments, and contest_settings
+// (pinned comment) below all read from the Worker. Posting/deleting a
+// discussion comment now writes to D1 directly (Week 28 cutover, same
+// as ArticleClient.tsx). Pinning a comment is a separate server-side
+// admin route that still writes to Appwrite first, shadow-written into
+// D1 after -- unrelated to this client component's own comment writes.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 // Contest-wide discussion reuses the same comments collection articles use,
@@ -36,48 +35,26 @@ async function fetchDiscussion() {
   return data.documents || [];
 }
 
-// Shadow-writes into D1 using Appwrite's real document id -- same
-// reasoning as ArticleClient.tsx's shadowWriteComment.
-async function shadowWriteDiscussionComment(id: string, parentCommentId: string | null, userId: string, authorName: string, commentText: string) {
-  try {
-    const token = await getWorkerAuthToken();
-    if (!token) return;
-    await fetch(`${WORKER_URL}/comments`, {
-      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, articleId: DISCUSSION_ID, parentCommentId, userId, authorName, commentText }),
-    });
-  } catch {}
-}
-
-async function shadowDeleteDiscussionComment(commentId: string) {
-  try {
-    const token = await getWorkerAuthToken();
-    if (!token) return;
-    await fetch(`${WORKER_URL}/comments/${encodeURIComponent(commentId)}`, {
-      method: 'DELETE', headers: { Authorization: 'Bearer ' + token },
-    });
-  } catch {}
-}
-
+// Week 28: same cutover as ArticleClient.tsx's createComment -- writes
+// to D1 directly, id generated client-side.
 async function postDiscussionComment(userId: string, authorName: string, commentText: string, parentCommentId: string | null = null) {
-  const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents', {
-    method: 'POST', headers: HJ, credentials: 'include',
-    body: JSON.stringify({
-      documentId: 'unique()',
-      data: { articleId: DISCUSSION_ID, userId, authorName, commentText, parentCommentId, avatarUrl: '', createdAt: new Date().toISOString() }
-    })
+  const token = await getWorkerAuthToken();
+  if (!token) throw new Error('Not authenticated');
+  const id = crypto.randomUUID();
+  const res = await fetch(`${WORKER_URL}/comments`, {
+    method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, articleId: DISCUSSION_ID, parentCommentId, userId, authorName, commentText }),
   });
   if (!res.ok) throw new Error('Failed to post');
-  const doc = await res.json();
-  shadowWriteDiscussionComment(doc.$id, parentCommentId, userId, authorName, commentText);
-  return doc;
+  return { $id: id };
 }
 
 async function deleteDiscussionComment(commentId: string) {
-  await fetch(ENDPOINT + '/databases/' + DB + '/collections/comments/documents/' + commentId, {
-    method: 'DELETE', headers: H, credentials: 'include'
+  const token = await getWorkerAuthToken();
+  if (!token) return;
+  await fetch(`${WORKER_URL}/comments/${encodeURIComponent(commentId)}`, {
+    method: 'DELETE', headers: { Authorization: 'Bearer ' + token },
   });
-  shadowDeleteDiscussionComment(commentId);
 }
 
 async function fetchPinnedCommentId(): Promise<string | null> {

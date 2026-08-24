@@ -1,13 +1,18 @@
 #!/usr/bin/env node
-// Shadow-write validation: compares Appwrite (source of truth) against
-// D1 for the `comments` collection, so drift shows up in a report
-// instead of surfacing later as a bug once something actually depends
-// on D1. Comments aren't a toggle like likes/bookmarks/follows -- they
-// compare by id (Appwrite's real $id, which the shadow-write always
-// reuses) rather than a natural key.
-// Run this periodically during the validation window -- see
-// cloudflare/README.md for what "periodically" means here and what to
-// do if it finds real drift.
+// Post-cutover check (Week 28): comments write to D1 only now, for the
+// three real client call sites (article comments, contest discussion,
+// Hills in Frame) -- Appwrite's comments collection is frozen for those.
+// Different from diff-likes.mjs/diff-bookmarks.mjs/diff-follows.mjs
+// though: the Bhasa Diwas comments POST route is a deliberate, ongoing
+// exclusion (server-side, admin API key, no per-user JWT to reuse -- see
+// cloudflare/README.md) and was never shadow-written or cut over. So:
+//   - "Only in Appwrite" will keep growing, but only from new Bhasa
+//     Diwas comments -- that's expected and fine. A growing count made
+//     up of anything else would be real drift, worth investigating.
+//   - "Only in D1" is the expected, growing bucket for the three real
+//     cut-over call sites.
+// Compares by id (Appwrite's real $id from before the cutover; D1's own
+// generated id for everything after) rather than a natural key.
 //
 // Usage: APPWRITE_API_KEY=xxx node scripts/diff-comments.mjs
 
@@ -67,8 +72,8 @@ async function main() {
   console.log('');
   console.log(`Appwrite (with a userId): ${appwriteIds.size}`);
   console.log(`D1: ${d1Ids.size}`);
-  console.log(`Only in Appwrite (not yet shadow-written, or drift -- Bhasa Diwas comments included, since that write path doesn't shadow-write yet): ${onlyInAppwrite.length}`);
-  console.log(`Only in D1 (shouldn't happen -- investigate): ${onlyInD1.length}`);
+  console.log(`Only in Appwrite (expected to keep growing, but only from new Bhasa Diwas comments -- that write path is still Appwrite-only; growth from anything else is real drift): ${onlyInAppwrite.length}`);
+  console.log(`Only in D1 (expected and growing since Week 28 -- every article/contest/Hills-in-Frame comment since cutover only lands here): ${onlyInD1.length}`);
 
   if (onlyInD1.length > 0) {
     console.log('\nSample of D1-only ids (up to 10):');
