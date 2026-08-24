@@ -13,14 +13,11 @@ import { useRouter } from 'next/navigation';
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
-const HJ = { 'X-Appwrite-Project': PROJECT, 'Content-Type': 'application/json' };
-const DB = 'Khabar_db';
-// Week 8+16+17 of the Cloudflare migration (see cloudflare/README.md):
+// Week 8+16+17+31 of the Cloudflare migration (see cloudflare/README.md):
 // articles, likes, comments, follows, bookmarks, profile,
-// contest_settings, and certificate_state's downloadCount all read from
-// the Worker. certificate_state's docId lookup and the download-count
-// write itself stay on Appwrite for now -- read-only migration this
-// week, per the phased plan (writes move over in a later pass).
+// contest_settings, and certificate_state all read AND write through the
+// Worker now -- certificate downloads (Week 31) no longer need a docId
+// lookup at all, since D1 upserts by the real UNIQUE(user_id) constraint.
 // Notifications still stay on Appwrite entirely -- not exported yet.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
@@ -46,7 +43,7 @@ function getImageUrl(a: any): string {
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [certState, setCertState] = useState<{ live: boolean; myEntry: any; rank: number; downloadCount: number; docId: string | null } | null>(null);
+  const [certState, setCertState] = useState<{ live: boolean; myEntry: any; rank: number; downloadCount: number } | null>(null);
   const [certDownloading, setCertDownloading] = useState(false);
   const [myContestEntries, setMyContestEntries] = useState<Array<{ articleId: string; title: string; score: number; isCounting: boolean }>>([]);
   const [contestEntriesLoaded, setContestEntriesLoaded] = useState(false);
@@ -88,11 +85,11 @@ export default function ProfilePage() {
       const sRes = await fetch(WORKER_URL + '/contest/settings');
       if (!sRes.ok) return;
       const sData = await sRes.json();
-      if (!sData.certificatesLive) { setCertState({ live: false, myEntry: null, rank: 0, downloadCount: 0, docId: null }); return; }
+      if (!sData.certificatesLive) { setCertState({ live: false, myEntry: null, rank: 0, downloadCount: 0 }); return; }
 
       const rankings = await computeContestRankings();
       const myEntry = rankings.find(r => r.submitterId === uid);
-      if (!myEntry) { setCertState({ live: true, myEntry: null, rank: 0, downloadCount: 0, docId: null }); return; }
+      if (!myEntry) { setCertState({ live: true, myEntry: null, rank: 0, downloadCount: 0 }); return; }
 
       let downloadCount = 0;
       const cRes = await fetch(WORKER_URL + '/certificates?userId=' + encodeURIComponent(uid));
@@ -100,16 +97,7 @@ export default function ProfilePage() {
         const cData = await cRes.json();
         downloadCount = cData.downloadCount || 0;
       }
-      // docId is still looked up from Appwrite -- the write below (PATCH by
-      // docId, or POST to create) still targets Appwrite, unchanged.
-      let docId: string | null = null;
-      const dq = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [uid] }));
-      const dRes = await fetch(ENDPOINT + '/databases/' + DB + '/collections/certificate_state/documents?queries[]=' + dq, { headers: H, credentials: 'include' });
-      if (dRes.ok) {
-        const dData = await dRes.json();
-        if (dData.documents && dData.documents[0]) { docId = dData.documents[0].$id; }
-      }
-      setCertState({ live: true, myEntry, rank: myEntry.rank, downloadCount, docId });
+      setCertState({ live: true, myEntry, rank: myEntry.rank, downloadCount });
     } catch (e) { console.error(e); }
   }
 
@@ -122,15 +110,11 @@ export default function ProfilePage() {
       downloadBlob(blob, 'Khabar_Darjeeling_Certificate.png');
 
       const newCount = certState.downloadCount + 1;
-      if (certState.docId) {
-        await fetch(ENDPOINT + '/databases/' + DB + '/collections/certificate_state/documents/' + certState.docId, {
-          method: 'PATCH', headers: HJ, credentials: 'include',
-          body: JSON.stringify({ data: { downloadCount: newCount } })
-        });
-      } else {
-        await fetch(ENDPOINT + '/databases/' + DB + '/collections/certificate_state/documents', {
-          method: 'POST', headers: HJ, credentials: 'include',
-          body: JSON.stringify({ documentId: 'unique()', data: { userId: user.$id, downloadCount: newCount, rank: rank } })
+      const token = await getWorkerAuthToken();
+      if (token) {
+        await fetch(WORKER_URL + '/certificates', {
+          method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.$id, downloadCount: newCount, rank }),
         });
       }
       setCertState({ ...certState, downloadCount: newCount });
