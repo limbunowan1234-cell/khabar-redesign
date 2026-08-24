@@ -1116,6 +1116,62 @@ exclusion, a separate mobile app owns that write path), the
 author-name sync utility (permanent exclusion, one-time tool), and
 Bhasa Diwas photo storage (a real remaining item).
 
+**Status: Week 39 (article image uploads: Appwrite Storage → R2)
+done, unverified end-to-end.** Found while starting the Bhasa Diwas
+photo-storage work, and turned out to matter more: article images
+were never actually cut over on the write side. `/cdn/articles` has
+served reads from R2 since some earlier week, but every upload call
+(`post/page.tsx`, `reporter/post/page.tsx`, `reporter/edit/[id]/
+page.tsx`, `admin/page.tsx`'s main article image) still POSTed
+straight to Appwrite Storage. Reads only worked because something
+outside this repo — an Appwrite Function, by all appearances — has
+been silently mirroring every Storage upload into R2. That's
+invisible to this codebase and would stop the moment Appwrite is
+cancelled, which is the actual point of this whole migration. Asked
+the user how to prioritize this against the planned Bhasa Diwas photo
+work; they chose articles first.
+
+`cloudflare/src/routes/cdn.ts` gains `POST /articles` — multipart
+upload, JWT-gated to any logged-in user (matches `POST /articles`'s
+own boundary, not narrowed to reporters/admins), writing straight to
+the R2 binding with a `crypto.randomUUID()` key. All four upload call
+sites now hit this instead of Appwrite Storage, using the same
+`getWorkerAuthToken()` JWT pattern already used elsewhere for D1
+writes.
+
+Also fixed two read-side helpers that would have broken on any
+article created after this commit: `reporter/edit/[id]/page.tsx`'s
+existing-image preview and `admin/curate/page.tsx`'s thumbnail both
+built an Appwrite Storage view URL directly from `imageFileId` —
+correct only for images that exist in Appwrite Storage, which new
+R2-native uploads never will. Both now build a `/cdn/articles/`
+Worker URL instead, which resolves either kind of image (old,
+mirrored; new, R2-native) through the one bucket that actually has
+both.
+
+**Deliberately not touched**, three separate collections that happen
+to reuse the same `article-image` bucket for their own storage: the
+admin photos gallery (`type='ad'/'story'`, `admin/page.tsx`'s second
+upload handler + `components/AdBanner.tsx`), Hills in Frame
+photography (`hills-in-frame/post/page.tsx`), and profile avatars
+(`HomeClient.tsx`'s profile-completion prompt). Same shape as this
+bug, but distinct collections not yet in scope — flagged as remaining
+items, same footing as Bhasa Diwas photo storage.
+
+**Verification is weaker than usual for a write path this central.**
+Typecheck and full production build (`--webpack`) both clean.
+Confirmed the auth boundary directly against the live Worker (no auth
+and a fake bearer token both 401). Confirmed existing R2-served
+images still serve correctly post-deploy (no regression). Logged-out
+browser smoke test: `/post` correctly redirects to `/auth`,
+`/admin/curate` correctly shows its access-denied state, neither
+crashes. Could not exercise the upload itself end-to-end — needs a
+real logged-in session, the same category of gap Week 33 flagged for
+articles before its own live test caught a real bug — and this time,
+asked the user whether to test live before shipping; they chose to
+skip it and ship as-is. **Treat the actual upload path as unverified
+until someone posts a real image through it.**
+
 ## One-time setup
 
 ```bash
