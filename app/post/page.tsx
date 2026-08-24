@@ -10,21 +10,10 @@ const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
-// Week 22 of the Cloudflare migration (see cloudflare/README.md):
-// publishing also shadow-writes into D1 after the real Appwrite create
-// succeeds. Appwrite stays authoritative.
+// Week 34 of the Cloudflare migration (see cloudflare/README.md):
+// publishing writes to D1 directly now -- Appwrite's articles
+// collection is frozen as of this cutover.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
-
-async function shadowWriteArticle(id: string, data: Record<string, any>, jwt: string | null) {
-  if (!jwt) return;
-  try {
-    await fetch(`${WORKER_URL}/articles`, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, ...data }),
-    });
-  } catch {}
-}
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
@@ -134,16 +123,16 @@ export default function PostPage() {
         publishedAt: new Date().toISOString(),
         views: 0
       };
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
-        method: 'POST', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ documentId: 'unique()', data: articleData })
-      });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Submit failed'); }
-      const doc = await res.json();
       const workerToken = await getWorkerAuthToken();
-      shadowWriteArticle(doc.$id, articleData, workerToken);
+      if (!workerToken) throw new Error('Not authenticated');
+      const id = crypto.randomUUID();
+      const res = await fetch(WORKER_URL + '/articles', {
+        method: 'POST', headers: { Authorization: 'Bearer ' + workerToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...articleData })
+      });
+      if (!res.ok) throw new Error('Submit failed');
       setSuccess('Article published successfully!');
-      setTimeout(() => router.push('/article/' + doc.$id), 1500);
+      setTimeout(() => router.push('/article/' + id), 1500);
     } catch (err: any) { setError(err.message || 'Submit failed'); }
     setSubmitting(false);
   }

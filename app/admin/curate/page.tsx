@@ -11,23 +11,22 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-// Week 19+22 of the Cloudflare migration (see cloudflare/README.md): the
+// Week 19+34 of the Cloudflare migration (see cloudflare/README.md): the
 // article list below reads from the Worker's public /articles route
 // (published-only by default -- curation only ever applies to published
 // content anyway, so no auth needed here unlike the admin dashboard's
-// full-status list). Setting hero/pin flags now also shadow-writes into
-// D1 after the real Appwrite write succeeds.
+// full-status list). Setting hero/pin flags writes to D1 directly now
+// -- Appwrite's articles collection is frozen as of this cutover.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
-async function shadowEditArticle(id: string, data: Record<string, any>, jwt: string | null) {
-  if (!jwt) return;
-  try {
-    await fetch(`${WORKER_URL}/articles/${id}`, {
-      method: 'PATCH',
-      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-  } catch {}
+async function editArticle(id: string, data: Record<string, any>, jwt: string | null) {
+  if (!jwt) throw new Error('Not authenticated');
+  const res = await fetch(`${WORKER_URL}/articles/${id}`, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Update failed');
 }
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
@@ -94,17 +93,9 @@ export default function CuratePage() {
       const workerToken = await getWorkerAuthToken();
       const currentHeroes = articles.filter((a) => a[featField] && a.$id !== articleId);
       for (const h of currentHeroes) {
-        await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + h.$id, {
-          method: 'PATCH', headers: HJ, credentials: 'include',
-          body: JSON.stringify({ data: { [featField]: false } }),
-        });
-        shadowEditArticle(h.$id, { [featField]: false }, workerToken);
+        await editArticle(h.$id, { [featField]: false }, workerToken);
       }
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { [featField]: true } }),
-      });
-      shadowEditArticle(articleId, { [featField]: true }, workerToken);
+      await editArticle(articleId, { [featField]: true }, workerToken);
       await loadArticles();
     } finally {
       setBusyId('');
@@ -115,12 +106,8 @@ export default function CuratePage() {
     setBusyId(articleId);
     const featField = mode === 'genre' ? 'isGenreFeatured' : 'isRegionFeatured';
     try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { [featField]: false } }),
-      });
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(articleId, { [featField]: false }, workerToken);
+      await editArticle(articleId, { [featField]: false }, workerToken);
       await loadArticles();
     } finally {
       setBusyId('');
@@ -136,12 +123,8 @@ export default function CuratePage() {
     }
     setBusyId(articleId);
     try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { [pinField]: !currentlyPinned } }),
-      });
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(articleId, { [pinField]: !currentlyPinned }, workerToken);
+      await editArticle(articleId, { [pinField]: !currentlyPinned }, workerToken);
       await loadArticles();
     } finally {
       setBusyId('');

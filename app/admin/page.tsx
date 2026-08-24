@@ -12,35 +12,31 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-// Week 16+19+22 of the Cloudflare migration (see cloudflare/README.md):
-// contest_settings and the article dashboard list (status=all,
-// reporter/admin-gated) read from the Worker. Publishing a new article,
-// and editing/toggling flags on an existing one, now also shadow-write
-// into D1 after the real Appwrite write succeeds -- Appwrite stays
-// authoritative. Weekly-picks management and delete are not yet wired
-// (still Appwrite-only).
+// Week 16+19+34 of the Cloudflare migration (see cloudflare/README.md):
+// contest_settings, the article dashboard list, and every article write
+// on this page (publish, edit, flag toggles, weekly-picks management,
+// delete) all read/write through the Worker now -- Appwrite's articles
+// collection is frozen as of this cutover.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
-async function shadowWriteArticle(id: string, data: Record<string, any>, jwt: string | null) {
-  if (!jwt) return;
-  try {
-    await fetch(`${WORKER_URL}/articles`, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, ...data }),
-    });
-  } catch {}
+async function writeArticle(id: string, data: Record<string, any>, jwt: string | null) {
+  if (!jwt) throw new Error('Not authenticated');
+  const res = await fetch(`${WORKER_URL}/articles`, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, ...data }),
+  });
+  if (!res.ok) throw new Error('Create failed');
 }
 
-async function shadowEditArticle(id: string, data: Record<string, any>, jwt: string | null) {
-  if (!jwt) return;
-  try {
-    await fetch(`${WORKER_URL}/articles/${id}`, {
-      method: 'PATCH',
-      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-  } catch {}
+async function editArticle(id: string, data: Record<string, any>, jwt: string | null) {
+  if (!jwt) throw new Error('Not authenticated');
+  const res = await fetch(`${WORKER_URL}/articles/${id}`, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Update failed');
 }
 
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
@@ -272,14 +268,9 @@ export default function AdminPage() {
         publishedAt: new Date().toISOString(),
         views: 0
       };
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
-        method: 'POST', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ documentId: 'unique()', data: articleData })
-      });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Failed to post story'); }
-      const doc = await res.json();
       const workerToken = await getWorkerAuthToken();
-      shadowWriteArticle(doc.$id, articleData, workerToken);
+      const id = crypto.randomUUID();
+      await writeArticle(id, articleData, workerToken);
       setSuccess('Photo story posted as article!');
       setSelectedPhotoIds([]); setCoverPhotoId(''); setCoverPhotoId('');
       setStoryTitle('');
@@ -377,14 +368,9 @@ function generateSlug(text: string): string {
         publishedAt: new Date().toISOString(),
         views: 0
       };
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents', {
-        method: 'POST', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ documentId: 'unique()', data: articleData })
-      });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Publish failed'); }
-      const doc = await res.json();
       const workerToken = await getWorkerAuthToken();
-      shadowWriteArticle(doc.$id, articleData, workerToken);
+      const id = crypto.randomUUID();
+      await writeArticle(id, articleData, workerToken);
       setSuccess('Article published!');
       setTitle(''); setContent(''); setYoutubeId(''); setImageFileId(''); setImagePreview('');
       setIsBreaking(false); setIsFeatured(false); setIsContestEntry(false);
@@ -406,12 +392,8 @@ function generateSlug(text: string): string {
         issueNum = highest + 1;
       }
       const weeklyData = { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null, weeklyLive: false, weeklySection: !currentValue ? sectionName : null };
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: weeklyData })
-      });
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(articleId, weeklyData, workerToken);
+      await editArticle(articleId, weeklyData, workerToken);
       await loadArticles();
     } catch { setError('Weekly toggle failed'); }
   }
@@ -421,11 +403,7 @@ function generateSlug(text: string): string {
     try {
       const workerToken = await getWorkerAuthToken();
       for (const a of weeklyPicks) {
-        await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + a.$id, {
-          method: 'PATCH', headers: HJ, credentials: 'include',
-          body: JSON.stringify({ data: { weeklyLive: true } })
-        });
-        shadowEditArticle(a.$id, { weeklyLive: true }, workerToken);
+        await editArticle(a.$id, { weeklyLive: true }, workerToken);
       }
       alert('Issue published!');
       await loadWeeklyPicks();
@@ -448,11 +426,9 @@ function generateSlug(text: string): string {
     const a = weeklyPicks[idx];
     const b = weeklyPicks[swapIdx];
     try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + a.$id, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { weeklyOrder: swapIdx } }) });
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + b.$id, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { weeklyOrder: idx } }) });
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(a.$id, { weeklyOrder: swapIdx }, workerToken);
-      shadowEditArticle(b.$id, { weeklyOrder: idx }, workerToken);
+      await editArticle(a.$id, { weeklyOrder: swapIdx }, workerToken);
+      await editArticle(b.$id, { weeklyOrder: idx }, workerToken);
       await loadWeeklyPicks();
     } catch { setError('Reorder failed'); }
   }
@@ -461,9 +437,8 @@ function generateSlug(text: string): string {
     const newSection = prompt('New section name:', '');
     if (!newSection) return;
     try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { weeklySection: newSection } }) });
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(articleId, { weeklySection: newSection }, workerToken);
+      await editArticle(articleId, { weeklySection: newSection }, workerToken);
       await loadWeeklyPicks();
     } catch { setError('Section change failed'); }
   }
@@ -473,12 +448,10 @@ function generateSlug(text: string): string {
       const workerToken = await getWorkerAuthToken();
       for (const p of weeklyPicks) {
         if (p.isWeeklyLead) {
-          await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + p.$id, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { isWeeklyLead: false } }) });
-          shadowEditArticle(p.$id, { isWeeklyLead: false }, workerToken);
+          await editArticle(p.$id, { isWeeklyLead: false }, workerToken);
         }
       }
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: { isWeeklyLead: true } }) });
-      shadowEditArticle(articleId, { isWeeklyLead: true }, workerToken);
+      await editArticle(articleId, { isWeeklyLead: true }, workerToken);
       await loadWeeklyPicks();
     } catch { setError('Set lead failed'); }
   }
@@ -487,9 +460,8 @@ function generateSlug(text: string): string {
     if (!confirm('Remove this story from the Weekly?')) return;
     try {
       const removeData = { isWeeklyPick: false, weeklyIssue: null, weeklySection: null, isWeeklyLead: false, weeklyOrder: 0 };
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'PATCH', headers: HJ, credentials: 'include', body: JSON.stringify({ data: removeData }) });
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(articleId, removeData, workerToken);
+      await editArticle(articleId, removeData, workerToken);
       await loadWeeklyPicks();
     } catch { setError('Remove failed'); }
   }
@@ -497,11 +469,10 @@ function generateSlug(text: string): string {
   async function handleDelete(articleId: string, title: string) {
     if (!confirm('Delete ' + title + '? This cannot be undone.')) return;
     try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, { method: 'DELETE', headers: H, credentials: 'include' });
       const workerToken = await getWorkerAuthToken();
-      if (workerToken) {
-        fetch(`${WORKER_URL}/articles/${articleId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + workerToken } }).catch(() => {});
-      }
+      if (!workerToken) throw new Error('Not authenticated');
+      const res = await fetch(`${WORKER_URL}/articles/${articleId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + workerToken } });
+      if (!res.ok) throw new Error('Delete failed');
       setArticles(articles.filter((a) => a.$id !== articleId));
       setSuccess('Article deleted!');
     } catch { setError('Delete failed'); }
@@ -543,12 +514,8 @@ function generateSlug(text: string): string {
         trackerData: parseTracker(trackerTitle, trackerLines),
         isBreaking, isFeatured, isContestEntry
       };
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + editingArticle.$id, {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: editData })
-      });
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(editingArticle.$id, editData, workerToken);
+      await editArticle(editingArticle.$id, editData, workerToken);
       setSuccess('Article updated!');
       setEditingArticle(null);
       setTitle(''); setContent(''); setYoutubeId(''); setImageFileId(''); setImagePreview('');
@@ -561,24 +528,16 @@ function generateSlug(text: string): string {
 
   async function toggleFeatured(articleId: string, value: boolean) {
     try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { isFeatured: value } })
-      });
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(articleId, { isFeatured: value }, workerToken);
+      await editArticle(articleId, { isFeatured: value }, workerToken);
       setArticles(articles.map((a) => a.$id === articleId ? { ...a, isFeatured: value } : a));
     } catch { setError('Update failed'); }
   }
 
   async function toggleBreaking(articleId: string, value: boolean) {
     try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: { isBreaking: value } })
-      });
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(articleId, { isBreaking: value }, workerToken);
+      await editArticle(articleId, { isBreaking: value }, workerToken);
       setArticles(articles.map((a) => a.$id === articleId ? { ...a, isBreaking: value } : a));
     } catch { setError('Update failed'); }
   }

@@ -21,21 +21,10 @@ const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json'
 const dbId = 'Khabar_db';
 const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
-// Week 22 of the Cloudflare migration (see cloudflare/README.md): saving
-// an edit also shadow-writes into D1 after the real Appwrite write
-// succeeds. Appwrite stays authoritative.
+// Week 34 of the Cloudflare migration (see cloudflare/README.md):
+// saving an edit writes to D1 directly now -- Appwrite's articles
+// collection is frozen as of this cutover.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
-
-async function shadowEditArticle(id: string, data: Record<string, any>, jwt: string | null) {
-  if (!jwt) return;
-  try {
-    await fetch(`${WORKER_URL}/articles/${id}`, {
-      method: 'PATCH',
-      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-  } catch {}
-}
 const genres = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
 const locationDistricts = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
 
@@ -198,13 +187,13 @@ export default function ReporterEditPage() {
         isFeatured,
         supportingImages: supportingImagesData,
       };
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/articles/documents/' + articleId, {
-        method: 'PATCH', headers: HJ, credentials: 'include',
-        body: JSON.stringify({ data: editData })
-      });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.message || 'Save failed'); }
       const workerToken = await getWorkerAuthToken();
-      shadowEditArticle(articleId, { ...editData, supportingImages: supportingImages.map((img) => ({ fileId: img.fileId, caption: img.caption })) }, workerToken);
+      if (!workerToken) throw new Error('Not authenticated');
+      const res = await fetch(WORKER_URL + '/articles/' + articleId, {
+        method: 'PATCH', headers: { Authorization: 'Bearer ' + workerToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...editData, supportingImages: supportingImages.map((img) => ({ fileId: img.fileId, caption: img.caption })) })
+      });
+      if (!res.ok) throw new Error('Save failed');
       setSuccess('Article updated successfully!');
       setTimeout(() => router.push('/article/' + articleId), 1500);
     } catch (err: any) {

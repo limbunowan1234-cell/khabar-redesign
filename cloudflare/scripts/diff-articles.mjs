@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// Sanity check: articles is the one D1 table that's been "migrated" since
-// Week 1 but is never kept in sync by any write path -- every article
-// write (publish, edit, approve/reject, curate flags, weekly picks) still
-// lands on Appwrite only. Nothing shadow-writes this table (unlike
-// likes/bookmarks/follows/comments/contest_settings). Run this whenever
-// there's reason to suspect drift -- e.g. before leaning on D1 for
-// anything admin-facing -- and re-run scripts/export-appwrite.mjs's
-// article import if it finds real drift.
+// Post-cutover check (Week 34): articles write to D1 only now for every
+// client-side path -- create, edit, delete, flag toggles, weekly-picks
+// management, curate hero/pin. Appwrite's articles collection is frozen
+// for those. All four counts here should stay at zero going forward,
+// with one known exception: the two cron-triggered weekly-publish
+// routes (app/api/publish-weekly, app/api/revalidate-sitemaps's Sunday
+// auto-publish) are a deliberate, documented exclusion -- no per-admin
+// JWT available to a cron job -- and still write weeklyLive/weeklyIssue
+// to Appwrite only. Expect real (small, weekly-fields-only) drift right
+// after those fire; anything else nonzero is a real problem.
 //
 // Usage: APPWRITE_API_KEY=xxx node scripts/diff-articles.mjs
 
