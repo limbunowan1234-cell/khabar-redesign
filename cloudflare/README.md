@@ -1172,6 +1172,50 @@ asked the user whether to test live before shipping; they chose to
 skip it and ship as-is. **Treat the actual upload path as unverified
 until someone posts a real image through it.**
 
+**Status: Week 40 (Bhasa Diwas photo submissions off Appwrite
+Storage) done.** Closes the item flagged at the end of Week 38:
+photo-category Bhasa Diwas submissions still uploaded to a separate
+Appwrite Storage bucket (`6a67a307002f71e8dcf5`), rendered via
+`/api/image-proxy`. Unlike article images (Week 39), this bucket
+never had any R2 mirror at all — no external process was covering
+for it, so this was a real gap the whole time, not a hidden one.
+
+`cloudflare/src/routes/cdn.ts` gains `POST /cdn/bhasa-diwas` (upload)
+and `GET /cdn/bhasa-diwas/:key` (serve), same `IMAGES` bucket as
+articles under a `bhasa-diwas/` key prefix so the two namespaces
+can't collide. Upload is service-secret gated, not JWT — the caller
+is `app/api/bhasa-diwas/submit/route.ts` itself (the browser uploads
+to that Next.js route, which uploads here server-to-server), matching
+that route's D1 write since Week 38, not a browser-direct call like
+`POST /cdn/articles`. Refactored the shared file-validation/
+key-generation logic out of the Week 39 articles upload handler so
+both routes share it.
+
+`submit/route.ts` now uploads through this instead of
+`node-appwrite`'s Storage client. The four display call sites
+(`nepali-bhasa-diwas/[id]` metadata, `BhasaDiwasSubmissionDetail`,
+`SubmissionFeed`, `WinnersGallery`) all switch from the
+image-proxy/Appwrite-bucket URL to `/cdn/bhasa-diwas/<key>` directly.
+
+One existing photo submission's image (pre-migration, an Appwrite
+file id, not an R2 key) will 404 through the new read path — no
+backfill attempted. Confirmed with the user first: that submission
+isn't in active use, so this was an explicit call to skip a migration
+step rather than an oversight.
+
+Verified: typecheck and full production build (`--webpack`) clean.
+Full round-trip against the live Worker: no-auth correctly 401,
+uploaded a real test file with the service secret, read it back
+byte-for-byte with the correct content-type. Browser check of the
+real Bhasa Diwas page: submissions list and leaderboard both load
+cleanly, no new console errors.
+
+With Weeks 39 and 40 both done, every image upload this migration set
+out to move is on R2 except the three collections flagged as
+remaining items back in Week 39 (admin photos/ad gallery, Hills in
+Frame photography, profile avatars) — same shape as this bug, still
+open.
+
 ## One-time setup
 
 ```bash
