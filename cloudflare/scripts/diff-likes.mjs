@@ -1,10 +1,14 @@
 #!/usr/bin/env node
-// Shadow-write validation: compares Appwrite (source of truth) against
-// D1 for the `likes` collection, so drift shows up in a report instead
-// of surfacing later as a bug once something actually depends on D1.
-// Run this periodically during the validation window -- see
-// cloudflare/README.md for what "periodically" means here and what to
-// do if it finds real drift.
+// Post-cutover check (Week 25): likes write to D1 only now -- Appwrite's
+// likes collection is frozen at whatever it held at cutover time, never
+// written to again. That flips what these two counts mean:
+//   - "Only in Appwrite" should now stay flat forever (real drift if it
+//     grows -- would mean something is still writing to Appwrite).
+//   - "Only in D1" is now the EXPECTED, growing bucket -- every like/
+//     unlike since cutover only ever lands in D1. This is normal, not a
+//     bug, unlike every other collection this script's shape is copied
+//     from (see diff-comments.mjs etc., where "only in D1" still means
+//     investigate).
 //
 // Usage: APPWRITE_API_KEY=xxx node scripts/diff-likes.mjs
 
@@ -68,8 +72,8 @@ async function main() {
   console.log('');
   console.log(`Appwrite (deduped, valid rows): ${appwriteKeys.size}`);
   console.log(`D1: ${d1Keys.size}`);
-  console.log(`Only in Appwrite (not yet shadow-written, or drift): ${onlyInAppwrite.length}`);
-  console.log(`Only in D1 (shouldn't happen -- investigate): ${onlyInD1.length}`);
+  console.log(`Only in Appwrite (frozen since Week 25 cutover -- should stay flat; growing = real drift, investigate): ${onlyInAppwrite.length}`);
+  console.log(`Only in D1 (expected and growing since Week 25 -- every like/unlike since cutover only lands here): ${onlyInD1.length}`);
 
   if (onlyInAppwrite.length > 0) {
     console.log('\nSample of Appwrite-only keys (up to 10):');

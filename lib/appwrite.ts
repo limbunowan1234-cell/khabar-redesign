@@ -4,9 +4,12 @@ const dbId = 'Khabar_db';
 
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
-// Week 10 of the Cloudflare migration (see cloudflare/README.md): the
-// read-only helpers below (likes, bookmarks) come from the Worker now.
-// Writes and auth stay on Appwrite.
+// Week 10+25 of the Cloudflare migration (see cloudflare/README.md):
+// likes read AND write through the Worker now -- the first write path
+// actually cut over, not just shadow-written (Appwrite's likes
+// collection is frozen as of Week 25). Bookmarks still read from the
+// Worker but shadow-write to Appwrite as primary. Auth stays on
+// Appwrite permanently.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 // Mints a short-lived (15 min) Appwrite JWT for the currently logged-in
@@ -79,46 +82,30 @@ export async function getArticleLikes(articleId: string) {
   return data.documents || [];
 }
 
-// Shadow-writes the same like/unlike outcome into D1, alongside the real
-// Appwrite write above (which stays authoritative). Fire-and-forget: a
-// D1 failure here must never surface to the user or block their like --
-// this exists purely so the two can be diffed before anything actually
-// depends on D1 for likes. See cloudflare/README.md.
-async function shadowWriteLike(articleId: string, commentId: string | null, userId: string, created: boolean) {
-  try {
-    const token = await getWorkerAuthToken();
-    if (!token) return;
-    const headers = { Authorization: 'Bearer ' + token };
-    if (created) {
-      await fetch(`${WORKER_URL}/likes`, {
-        method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ articleId, commentId, userId }),
-      });
-    } else {
-      const params = new URLSearchParams({ articleId, userId });
-      if (commentId) params.set('commentId', commentId);
-      await fetch(`${WORKER_URL}/likes?${params}`, { method: 'DELETE', headers });
-    }
-  } catch {}
-}
-
+// Week 25 of the Cloudflare migration (see cloudflare/README.md): likes
+// write directly to D1 now -- Appwrite's likes collection is frozen as
+// of this cutover, no longer written to. Every toggle needs a JWT since
+// D1 is the real write target now, not a shadow.
 export async function toggleArticleLike(articleId: string, userId: string) {
-  const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'articleId', values: [articleId] }));
-  const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
-  const listRes = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents?queries[]=${q1}&queries[]=${q2}`, { headers: H, credentials: 'include' });
-  if (!listRes.ok) return false;
-  const { documents } = await listRes.json();
-  const existing = (documents || []).find((l: any) => !l.commentId);
+  const token = await getWorkerAuthToken();
+  if (!token) throw new Error('Not authenticated');
+  const headers = { Authorization: 'Bearer ' + token };
+
+  // /likes?articleId= already scopes to comment_id IS NULL server-side
+  // (see cloudflare/src/routes/likes.ts), so documents[0] is enough --
+  // no client-side filter needed.
+  const checkRes = await fetch(`${WORKER_URL}/likes?articleId=${encodeURIComponent(articleId)}&userId=${encodeURIComponent(userId)}`);
+  const { documents } = checkRes.ok ? await checkRes.json() : { documents: [] };
+  const existing = (documents || [])[0];
+
   if (existing) {
-    await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents/${existing.$id}`, { method: 'DELETE', headers: H, credentials: 'include' });
-    shadowWriteLike(articleId, null, userId, false);
+    await fetch(`${WORKER_URL}/likes?${new URLSearchParams({ articleId, userId })}`, { method: 'DELETE', headers });
     return false;
   } else {
-    await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, {
-      method: 'POST', headers: HJ, credentials: 'include',
-      body: JSON.stringify({ documentId: 'unique()', data: { articleId, userId, commentId: null } })
+    await fetch(`${WORKER_URL}/likes`, {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ articleId, userId }),
     });
-    shadowWriteLike(articleId, null, userId, true);
     return true;
   }
 }
@@ -174,23 +161,23 @@ export async function getCommentLikes(commentId: string) {
   return data.documents || [];
 }
 
+// Week 25: same cutover as toggleArticleLike -- writes to D1 directly.
 export async function toggleCommentLike(commentId: string, userId: string, articleId: string) {
-  const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'commentId', values: [commentId] }));
-  const q2 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [userId] }));
-  const listRes = await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents?queries[]=${q1}&queries[]=${q2}`, { headers: H, credentials: 'include' });
-  if (!listRes.ok) return false;
-  const { documents } = await listRes.json();
+  const token = await getWorkerAuthToken();
+  if (!token) throw new Error('Not authenticated');
+  const headers = { Authorization: 'Bearer ' + token };
+
+  const checkRes = await fetch(`${WORKER_URL}/likes?commentId=${encodeURIComponent(commentId)}&userId=${encodeURIComponent(userId)}`);
+  const { documents } = checkRes.ok ? await checkRes.json() : { documents: [] };
   const existing = (documents || [])[0];
   if (existing) {
-    await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents/${existing.$id}`, { method: 'DELETE', headers: H, credentials: 'include' });
-    shadowWriteLike(articleId, commentId, userId, false);
+    await fetch(`${WORKER_URL}/likes?${new URLSearchParams({ articleId, userId, commentId })}`, { method: 'DELETE', headers });
     return false;
   } else {
-    await fetch(`${endpoint}/databases/${dbId}/collections/likes/documents`, {
-      method: 'POST', headers: HJ, credentials: 'include',
-      body: JSON.stringify({ documentId: 'unique()', data: { articleId, commentId, userId } })
+    await fetch(`${WORKER_URL}/likes`, {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ articleId, commentId, userId }),
     });
-    shadowWriteLike(articleId, commentId, userId, true);
     return true;
   }
 }
