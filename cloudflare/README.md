@@ -711,6 +711,32 @@ change. Could not test an actual comment post/delete or the Hills in
 Frame like fix end-to-end — needs a real logged-in session, same open
 item as every write path this migration.
 
+**Status: Week 29 (fifth write cutover — contest_settings) done.**
+First cutover of an already-both-directions collection: `contest_settings`
+has had real read+write on D1 since Week 16, unlike likes/bookmarks/
+follows/comments where the read side had already been on D1 for weeks
+before their writes existed at all. Cutting over here just means
+removing the still-live Appwrite write from the two admin routes — the
+reads (admin dashboard, `ContestClient`, profile page) were already
+pointed at D1 and don't change.
+
+Both `pin-comment` and `publish-certificates` routes now write to D1
+only, through the same Worker endpoint they were already shadow-writing
+to. Removed the `node-appwrite` client, the update-then-create
+fallback, and `pin-comment`'s attribute-creation dance entirely — that
+last one existed purely to work around Appwrite silently rejecting
+writes to an attribute that didn't exist yet on that collection, moot
+with Appwrite out of the write path.
+
+Verified before freezing: pulled the real Appwrite document one more
+time and confirmed it matches D1 exactly (`certificatesLive: true`, the
+same pinned comment id on both) — safe to stop writing to Appwrite,
+nothing would be lost. Re-verified the Worker's auth boundary (no token
+/ fake token, both 401) since this endpoint is now the sole write
+target rather than a shadow that could fail silently.
+
+Verified: typecheck and full production build clean.
+
 ## One-time setup
 
 ```bash
