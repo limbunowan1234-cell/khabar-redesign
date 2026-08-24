@@ -4,12 +4,11 @@ const dbId = 'Khabar_db';
 
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
-// Week 10+25 of the Cloudflare migration (see cloudflare/README.md):
-// likes read AND write through the Worker now -- the first write path
-// actually cut over, not just shadow-written (Appwrite's likes
-// collection is frozen as of Week 25). Bookmarks still read from the
-// Worker but shadow-write to Appwrite as primary. Auth stays on
-// Appwrite permanently.
+// Week 10+25+26 of the Cloudflare migration (see cloudflare/README.md):
+// likes (Week 25) and bookmarks (Week 26) read AND write through the
+// Worker now -- both fully cut over, not just shadow-written (their
+// Appwrite collections are frozen as of their respective cutovers).
+// Auth stays on Appwrite permanently.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 // Mints a short-lived (15 min) Appwrite JWT for the currently logged-in
@@ -117,39 +116,26 @@ export async function getUserBookmarks(userId: string) {
   return data.documents || [];
 }
 
-// Shadow-writes the same bookmark/unbookmark outcome into D1, same
-// fire-and-forget pattern as shadowWriteLike -- see its comment above.
-async function shadowWriteBookmark(articleId: string, userId: string, created: boolean) {
-  try {
-    const token = await getWorkerAuthToken();
-    if (!token) return;
-    const headers = { Authorization: 'Bearer ' + token };
-    if (created) {
-      await fetch(`${WORKER_URL}/bookmarks`, {
-        method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, articleId }),
-      });
-    } else {
-      await fetch(`${WORKER_URL}/bookmarks?${new URLSearchParams({ userId, articleId })}`, { method: 'DELETE', headers });
-    }
-  } catch {}
-}
-
+// Week 26: same cutover as likes (Week 25) -- bookmarks write to D1
+// directly now. Appwrite's bookmarks collection is frozen as of this
+// cutover.
 export async function toggleBookmark(articleId: string, userId: string) {
-  const listRes = await fetch(`${endpoint}/databases/${dbId}/collections/bookmarks/documents`, { headers: H, credentials: 'include' });
-  if (!listRes.ok) return false;
-  const { documents } = await listRes.json();
-  const existing = documents.find((b: any) => b.articleId === articleId && b.userId === userId);
+  const token = await getWorkerAuthToken();
+  if (!token) throw new Error('Not authenticated');
+  const headers = { Authorization: 'Bearer ' + token };
+
+  const checkRes = await fetch(`${WORKER_URL}/bookmarks?userId=${encodeURIComponent(userId)}&articleId=${encodeURIComponent(articleId)}`);
+  const { documents } = checkRes.ok ? await checkRes.json() : { documents: [] };
+  const existing = (documents || [])[0];
+
   if (existing) {
-    await fetch(`${endpoint}/databases/${dbId}/collections/bookmarks/documents/${existing.$id}`, { method: 'DELETE', headers: H, credentials: 'include' });
-    shadowWriteBookmark(articleId, userId, false);
+    await fetch(`${WORKER_URL}/bookmarks?${new URLSearchParams({ userId, articleId })}`, { method: 'DELETE', headers });
     return false;
   } else {
-    await fetch(`${endpoint}/databases/${dbId}/collections/bookmarks/documents`, {
-      method: 'POST', headers: HJ, credentials: 'include',
-      body: JSON.stringify({ documentId: 'unique()', data: { articleId, userId, savedAt: new Date().toISOString() } })
+    await fetch(`${WORKER_URL}/bookmarks`, {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, articleId }),
     });
-    shadowWriteBookmark(articleId, userId, true);
     return true;
   }
 }

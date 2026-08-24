@@ -6,13 +6,20 @@ import { getWorkerAuthToken } from '@/lib/appwrite';
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
-const DB = 'Khabar_db';
-// Week 8 of the Cloudflare migration (see cloudflare/README.md): the
-// bookmarks list and article reads below come from the Worker. Auth stays
-// on Appwrite. The remove-bookmark write (Week 12) shadow-writes into D1
-// too, same fire-and-forget pattern as lib/appwrite.ts's toggleBookmark --
-// this page has its own separate remove implementation instead of using
-// that shared helper, so it needs its own copy of the shadow-write call.
+// Week 8+26 of the Cloudflare migration (see cloudflare/README.md): the
+// bookmarks list and article reads below come from the Worker; removing
+// a bookmark now writes to D1 directly (Week 26 cutover), same as
+// lib/appwrite.ts's toggleBookmark -- this page has its own separate
+// remove implementation instead of using that shared helper, so it
+// needed its own copy of this change too. Auth stays on Appwrite.
+//
+// This previously called Appwrite's DELETE using bk.$id -- but this
+// page's bookmark list has read from the Worker/D1 since Week 8, so
+// bk.$id was D1's own generated id, never Appwrite's real document id.
+// That Appwrite call had been silently no-op'ing (404, never thrown)
+// since Week 8; only the D1 delete (added Week 13, keyed by
+// userId+articleId, not id) was ever actually removing anything. Moot
+// now that Appwrite isn't called here at all.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(a: any): string {
@@ -64,19 +71,12 @@ export default function BookmarksPage() {
 
   async function removeBookmark(articleId: string) {
     try {
-      const bk = bookmarks.find(b => b.articleId === articleId);
-      if (!bk) return;
-      await fetch(ENDPOINT + '/databases/' + DB + '/collections/bookmarks/documents/' + bk.$id, {
-        method: 'DELETE', headers: H, credentials: 'include'
+      if (!user?.$id) return;
+      const token = await getWorkerAuthToken();
+      if (!token) return;
+      await fetch(`${WORKER_URL}/bookmarks?${new URLSearchParams({ userId: user.$id, articleId })}`, {
+        method: 'DELETE', headers: { Authorization: 'Bearer ' + token },
       });
-      if (user?.$id) {
-        getWorkerAuthToken().then((token) => {
-          if (!token) return;
-          fetch(`${WORKER_URL}/bookmarks?${new URLSearchParams({ userId: user.$id, articleId })}`, {
-            method: 'DELETE', headers: { Authorization: 'Bearer ' + token },
-          }).catch(() => {});
-        }).catch(() => {});
-      }
       setBookmarks(prev => prev.filter(b => b.articleId !== articleId));
       setArticles(prev => prev.filter(a => a.$id !== articleId));
     } catch {}

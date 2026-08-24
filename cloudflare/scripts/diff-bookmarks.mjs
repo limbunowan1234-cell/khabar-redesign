@@ -1,10 +1,18 @@
 #!/usr/bin/env node
-// Shadow-write validation: compares Appwrite (source of truth) against
-// D1 for the `bookmarks` collection, so drift shows up in a report instead
-// of surfacing later as a bug once something actually depends on D1.
-// Run this periodically during the validation window -- see
-// cloudflare/README.md for what "periodically" means here and what to
-// do if it finds real drift.
+// Post-cutover check (Week 26): bookmarks write to D1 only now --
+// Appwrite's bookmarks collection is frozen at whatever it held at
+// cutover time. Same flip as diff-likes.mjs:
+//   - "Only in Appwrite" should now stay flat forever going forward
+//     (growing = real drift). It may already be nonzero at the Week 26
+//     baseline though -- app/bookmarks/page.tsx's own remove-bookmark
+//     had been calling Appwrite's DELETE with D1's row id instead of
+//     Appwrite's real document id since Week 8 (silently no-op'ing,
+//     never thrown), so some bookmarks removed via that page were
+//     deleted from D1 but left orphaned in Appwrite. That's historical,
+//     fixed by this cutover removing the Appwrite call entirely -- not
+//     something to chase down further.
+//   - "Only in D1" is now the expected, growing bucket for everything
+//     that happens from here on.
 //
 // Usage: APPWRITE_API_KEY=xxx node scripts/diff-bookmarks.mjs
 
@@ -68,8 +76,8 @@ async function main() {
   console.log('');
   console.log(`Appwrite (deduped, valid rows): ${appwriteKeys.size}`);
   console.log(`D1: ${d1Keys.size}`);
-  console.log(`Only in Appwrite (not yet shadow-written, or drift): ${onlyInAppwrite.length}`);
-  console.log(`Only in D1 (shouldn't happen -- investigate): ${onlyInD1.length}`);
+  console.log(`Only in Appwrite (frozen since Week 26 cutover -- may be nonzero at baseline from the pre-cutover removeBookmark bug, see header comment; growing after today = real drift): ${onlyInAppwrite.length}`);
+  console.log(`Only in D1 (expected and growing since Week 26 -- every bookmark/unbookmark since cutover only lands here): ${onlyInD1.length}`);
 
   if (onlyInAppwrite.length > 0) {
     console.log('\nSample of Appwrite-only keys (up to 10):');
