@@ -1,13 +1,11 @@
 ﻿'use client';
 import { useState, useEffect } from 'react';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT };
+// Week 42 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(fileId: string): string {
-  return ENDPOINT + '/storage/buckets/article-image/files/' + fileId + '/view?project=' + PROJECT;
+  return WORKER_URL + '/cdn/articles/' + fileId;
 }
 
 export default function AdBanner({ isDarkMode }: { isDarkMode?: boolean }) {
@@ -17,12 +15,7 @@ export default function AdBanner({ isDarkMode }: { isDarkMode?: boolean }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(
-          ENDPOINT + '/databases/' + DB + '/collections/photos/documents?queries[]=' +
-          encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'type', values: ['ad'] })) +
-          '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [50] })),
-          { headers: H, credentials: 'include' }
-        );
+        const res = await fetch(WORKER_URL + '/photos?type=ad&limit=50');
         if (res.ok) {
           const data = await res.json();
           setAds(data.documents || []);

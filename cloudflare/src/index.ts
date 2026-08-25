@@ -12,6 +12,7 @@ import { contest } from './routes/contest';
 import { certificates } from './routes/certificates';
 import { notifications } from './routes/notifications';
 import { pushSubscriptions } from './routes/pushSubscriptions';
+import { photos } from './routes/photos';
 import { analytics } from './routes/analytics';
 import { newsDigest } from './routes/newsDigest';
 
@@ -37,6 +38,7 @@ app.route('/contest', contest);
 app.route('/certificates', certificates);
 app.route('/notifications', notifications);
 app.route('/push-subscriptions', pushSubscriptions);
+app.route('/photos', photos);
 app.route('/analytics', analytics);
 app.route('/news-digest', newsDigest);
 

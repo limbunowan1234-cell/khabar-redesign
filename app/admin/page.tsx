@@ -10,13 +10,13 @@ const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
 const dbId = 'Khabar_db';
-const bucketId = 'article-image';
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 // Week 16+19+34 of the Cloudflare migration (see cloudflare/README.md):
 // contest_settings, the article dashboard list, and every article write
 // on this page (publish, edit, flag toggles, weekly-picks management,
 // delete) all read/write through the Worker now -- Appwrite's articles
-// collection is frozen as of this cutover.
+// collection is frozen as of this cutover. Week 42: the Photos/ad
+// gallery (list, upload, delete) does too.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 async function writeArticle(id: string, data: Record<string, any>, jwt: string | null) {
@@ -183,17 +183,13 @@ export default function AdminPage() {
 
   async function loadPhotos() {
     try {
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/photos/documents?queries[]=' +
-        encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' })) +
-        '&queries[]=' + encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] })),
-        { headers: H, credentials: 'include' }
-      );
+      const res = await fetch(WORKER_URL + '/photos?limit=100');
       if (res.ok) { const d = await res.json(); setPhotos(d.documents || []); }
     } catch {}
   }
 
   function getImageUrl2(fileId: string) {
-    return endpoint + '/storage/buckets/' + bucketId + '/files/' + fileId + '/view?project=' + projectId;
+    return WORKER_URL + '/cdn/articles/' + fileId;
   }
 
   async function handlePhotoUpload(e: any) {
@@ -202,21 +198,22 @@ export default function AdminPage() {
     setUploadingPhotos(true);
     setError('');
     try {
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
+      const authHeaders = { Authorization: 'Bearer ' + token };
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (file.size > 10 * 1024 * 1024) continue;
         setUploadProgress((i+1) + ' of ' + files.length);
         const formData = new FormData();
-        formData.append('fileId', 'unique()');
         formData.append('file', file);
-        const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
+        const res = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: authHeaders, body: formData });
         if (!res.ok) continue;
         const data = await res.json();
-        await fetch(endpoint + '/databases/' + dbId + '/collections/photos/documents', {
+        await fetch(WORKER_URL + '/photos', {
           method: 'POST',
-          headers: { ...H, 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ documentId: 'unique()', data: { imageFileId: data.$id, type: photoType, title: photoTitle, createdAt: new Date().toISOString() } })
+          headers: { ...authHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageFileId: data.fileId, type: photoType, title: photoTitle }),
         });
       }
       setPhotoTitle('');
@@ -229,7 +226,9 @@ export default function AdminPage() {
   async function handleDeletePhoto(photoId: string) {
     if (!confirm('Delete this photo?')) return;
     try {
-      await fetch(endpoint + '/databases/' + dbId + '/collections/photos/documents/' + photoId, { method: 'DELETE', headers: H, credentials: 'include' });
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
+      await fetch(WORKER_URL + '/photos/' + photoId, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
       await loadPhotos();
     } catch {}
   }
