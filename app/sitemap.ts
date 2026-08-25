@@ -8,20 +8,22 @@ const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 async function getArticles(): Promise<any[]> {
   try {
     const res = await fetch(WORKER_URL + '/articles?limit=1000', { next: { revalidate: 3600 } });
-    if (!res.ok) return [];
+    if (!res.ok) { console.error('sitemap: articles fetch returned', res.status); return []; }
     const data = await res.json();
     return data.documents || [];
-  } catch {
+  } catch (err) {
+    console.error('sitemap: articles fetch failed:', err);
     return [];
   }
 }
 async function getBhasaDiwasSubmissions(): Promise<any[]> {
   try {
     const res = await fetch(WORKER_URL + '/bhasa-diwas/submissions?limit=200', { next: { revalidate: 3600 } });
-    if (!res.ok) return [];
+    if (!res.ok) { console.error('sitemap: bhasa-diwas fetch returned', res.status); return []; }
     const data = await res.json();
     return data.documents || [];
-  } catch {
+  } catch (err) {
+    console.error('sitemap: bhasa-diwas fetch failed:', err);
     return [];
   }
 }
@@ -33,10 +35,11 @@ async function getPhotos(): Promise<any[]> {
       headers: { 'X-Appwrite-Project': PROJECT },
       next: { revalidate: 3600 },
     });
-    if (!res.ok) return [];
+    if (!res.ok) { console.error('sitemap: photography fetch returned', res.status); return []; }
     const data = await res.json();
     return data.documents || [];
-  } catch {
+  } catch (err) {
+    console.error('sitemap: photography fetch failed:', err);
     return [];
   }
 }

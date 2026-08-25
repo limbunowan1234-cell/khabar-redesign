@@ -6,19 +6,27 @@ function esc(s: string): string {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-async function getArticles(limit: number): Promise<any[]> {
+// Returns { articles, ok }. ok=false means the Worker call itself failed
+// (not "genuinely zero recent articles") -- callers must not cache that
+// result the same way as a real empty result, or a single transient
+// failure gets frozen into the public response for the full cache window.
+async function getArticles(limit: number): Promise<{ articles: any[]; ok: boolean }> {
   try {
     const res = await fetch(WORKER_URL + '/articles?limit=' + limit, { next: { revalidate: 600 } });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error('news-sitemap: Worker returned', res.status);
+      return { articles: [], ok: false };
+    }
     const data = await res.json();
-    return data.documents || [];
-  } catch {
-    return [];
+    return { articles: data.documents || [], ok: true };
+  } catch (err) {
+    console.error('news-sitemap: fetch failed:', err);
+    return { articles: [], ok: false };
   }
 }
 
 export async function GET() {
-  const articles = await getArticles(100);
+  const { articles, ok } = await getArticles(100);
   const cutoff = Date.now() - 48 * 60 * 60 * 1000;
   const recent = articles.filter((a: any) => new Date(a.publishedAt || a.$createdAt).getTime() >= cutoff);
   const items = recent.map((a: any) => {
@@ -45,7 +53,9 @@ export async function GET() {
   return new Response(xml, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': 's-maxage=600, stale-while-revalidate',
+      // Only cache a result we know is real -- a failed Worker fetch
+      // must never get frozen into the public response for 10 minutes.
+      'Cache-Control': ok ? 's-maxage=600, stale-while-revalidate' : 'no-store',
     },
   });
 }
