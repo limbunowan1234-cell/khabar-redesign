@@ -1268,6 +1268,48 @@ gallery, and Hills in Frame photography — both genuinely bigger
 undertakings (full collection migrations, not just an image-storage
 swap), not started.
 
+**Status: Week 42 (admin photos/ad gallery — reads, writes, images)
+done.** Closes one of the two remaining items. The `photos`
+collection (`admin/page.tsx`'s Photos tab — ad-banner creatives and
+photo-story galleries) was fully untouched: read, write, and images
+were all still Appwrite, despite the D1 `photos` table already
+existing in `schema.sql`, unused.
+
+New `cloudflare/src/routes/photos.ts`: `GET /` (public — `AdBanner`
+shows to logged-out visitors too), `POST /` and `DELETE /:id`
+(reporter/admin only, matching the Photos tab's own access level on
+that page — Weekly/Certificates are the admin-only tabs there, Photos
+isn't). Image upload reuses Week 39's `POST /cdn/articles` verbatim,
+same bucket, no new upload code.
+
+Converted `admin/page.tsx`'s `loadPhotos`/`handlePhotoUpload`/
+`handleDeletePhoto`/`getImageUrl2`, and `AdBanner.tsx`'s fetch + image
+URL.
+
+**Backfilled real data before cutting over** — unlike every prior
+collection this session, D1's `photos` table had never been touched
+at all. Confirmed live first: 10 real photos in Appwrite (all
+`type='story'`, used for photo-story article creation), zero
+`type='ad'` (the ad banner shows nothing today regardless of this
+migration — confirmed before assuming it was safe to cut over). All
+10 images already existed in R2 under their original Appwrite file
+ids (same already-mirrored `article-image` bucket Week 39 found), so
+only the 10 metadata rows needed backfilling, not the image bytes
+themselves — verified each one resolves through `/cdn/articles`
+before writing the `INSERT`.
+
+Verified: typecheck and full production build (`--webpack`) clean.
+Confirmed the auth boundary against the live Worker (no auth 401 on
+both `POST` and `DELETE`). Verified the `type` filter directly
+against real D1 with a scratch row: present with no filter and
+`type=ad`, correctly absent with `type=story`. Browser check:
+homepage's `AdBanner` fetch confirmed returning real (empty,
+correctly) data with no errors, `/admin` correctly shows its
+logged-out state, no crashes.
+
+One item left: Hills in Frame photography — the bigger of the two,
+still not started.
+
 ## One-time setup
 
 ```bash
