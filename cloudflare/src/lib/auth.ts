@@ -57,6 +57,13 @@ export function isReporterOrAdmin(user: AppwriteUser | null): boolean {
   return isAdmin(user) || (user.labels || []).includes('reporter');
 }
 
+// Matches app/hills-in-frame/post/page.tsx's own gate -- a separate role
+// from reporter/admin, for Hills in Frame photo submissions specifically.
+export function isPhotographer(user: AppwriteUser | null): boolean {
+  if (!user) return false;
+  return (user.labels || []).includes('photographer');
+}
+
 // For requests that aren't on behalf of the caller's own account at all --
 // app/api/send-notification/route.ts creates notifications for, and reads
 // push subscriptions for, whichever user triggered some *other* user's

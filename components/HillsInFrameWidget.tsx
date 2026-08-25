@@ -4,14 +4,10 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
-const H = { 'X-Appwrite-Project': PROJECT };
 // Week 2 of the Cloudflare migration (see cloudflare/README.md): these
-// photos live in the same article-image bucket already fully copied to
-// R2, even though `photography` itself (the data/collection) hasn't
-// moved to D1 yet — only the image source changes here.
+// photos live in the same article-image bucket, already on R2. Week 43:
+// the photography collection's data (not just its images) moved to D1
+// too.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(fileId: string): string {
@@ -25,9 +21,7 @@ export default function HillsInFrameWidget() {
   useEffect(() => {
     async function load() {
       try {
-        const q1 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-        const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [4] }));
-        const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/photography/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H });
+        const res = await fetch(WORKER_URL + '/photography?limit=4');
         if (res.ok) {
           const data = await res.json();
           setPhotos(data.documents || []);

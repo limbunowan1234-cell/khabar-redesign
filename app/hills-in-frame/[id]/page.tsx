@@ -2,24 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import HillsInFrameSwipeClient from '@/components/HillsInFrameSwipeClient';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';
-const BUCKET = 'article-image';
+// Week 43 of the Cloudflare migration (see cloudflare/README.md).
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(fileId: string): string {
-  return ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + fileId + '/view?project=' + PROJECT;
+  return WORKER_URL + '/cdn/articles/' + fileId;
 }
 
 async function fetchAllPhotos(): Promise<any[]> {
   try {
-    const q1 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-    const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] }));
-    const res = await fetch(
-      ENDPOINT + '/databases/' + DB + '/collections/photography/documents?queries[]=' + q1 + '&queries[]=' + q2,
-      { headers: { 'X-Appwrite-Project': PROJECT }, next: { revalidate: 300 } }
-    );
+    const res = await fetch(WORKER_URL + '/photography?limit=100', { next: { revalidate: 300 } });
     if (!res.ok) return [];
     const data = await res.json();
     return data.documents || [];

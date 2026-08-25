@@ -13,6 +13,7 @@ import { certificates } from './routes/certificates';
 import { notifications } from './routes/notifications';
 import { pushSubscriptions } from './routes/pushSubscriptions';
 import { photos } from './routes/photos';
+import { photography } from './routes/photography';
 import { analytics } from './routes/analytics';
 import { newsDigest } from './routes/newsDigest';
 
@@ -39,6 +40,7 @@ app.route('/certificates', certificates);
 app.route('/notifications', notifications);
 app.route('/push-subscriptions', pushSubscriptions);
 app.route('/photos', photos);
+app.route('/photography', photography);
 app.route('/analytics', analytics);
 app.route('/news-digest', newsDigest);
 

@@ -6,15 +6,13 @@ import { toggleCommentLike, getCommentLikes, getArticleLikes, toggleArticleLike,
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const BUCKET = 'article-image';
-// Week 15+28 of the Cloudflare migration (see cloudflare/README.md):
+// Week 15+28+43 of the Cloudflare migration (see cloudflare/README.md):
 // these comments reuse the shared `comments` table (articleId = the
 // Hills in Frame photo id), same as article/contest/Bhasa Diwas
 // comments -- reads come from the Worker, and posts write to D1
 // directly now (Week 28 cutover). No delete UI exists for these
-// comments, so there was never a delete call site to cut over.
+// comments, so there was never a delete call site to cut over. Week 43:
+// the photo's own image URL moved off Appwrite Storage too.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 const COMMENT_COLORS = [
@@ -26,7 +24,7 @@ const COMMENT_COLORS = [
   { bg: '#fff7ed', border: '#fed7aa', avatar: '#ea580c' },
 ];
 function getImageUrl(fileId: string): string {
-  return ENDPOINT + '/storage/buckets/' + BUCKET + '/files/' + fileId + '/view?project=' + PROJECT;
+  return WORKER_URL + '/cdn/articles/' + fileId;
 }
 
 interface Photo {

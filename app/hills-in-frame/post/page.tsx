@@ -2,26 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
-const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
-const dbId = 'Khabar_db';
-const bucketId = 'article-image';
+// Week 43 of the Cloudflare migration (see cloudflare/README.md): the
+// photography collection (list, create, update, delete) and image
+// upload all go through the Worker/D1/R2 now -- Appwrite's photography
+// collection is frozen as of this cutover.
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 function getImageUrl(fileId: string) {
-  return endpoint + '/storage/buckets/' + bucketId + '/files/' + fileId + '/view?project=' + projectId;
+  return WORKER_URL + '/cdn/articles/' + fileId;
 }
 
-async function uploadFileToStorage(file: File): Promise<string> {
+async function uploadFileToStorage(file: File, token: string): Promise<string> {
   const formData = new FormData();
-  formData.append('fileId', 'unique()');
   formData.append('file', file);
-  const res = await fetch(endpoint + '/storage/buckets/' + bucketId + '/files', { method: 'POST', headers: H, credentials: 'include', body: formData });
+  const res = await fetch(WORKER_URL + '/cdn/articles', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: formData });
   if (!res.ok) throw new Error('Upload failed');
   const data = await res.json();
-  return data.$id;
+  return data.fileId;
 }
 
 interface BatchItem {
@@ -90,9 +92,7 @@ export default function HillsInFramePostPage() {
   async function loadMyPhotos(userId: string) {
     setLoadingPhotos(true);
     try {
-      const q1 = encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'submitterId', values: [userId] }));
-      const q2 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-      const res = await fetch(endpoint + '/databases/' + dbId + '/collections/photography/documents?queries[]=' + q1 + '&queries[]=' + q2, { headers: H, credentials: 'include' });
+      const res = await fetch(WORKER_URL + '/photography?submitterId=' + encodeURIComponent(userId) + '&limit=200');
       if (res.ok) {
         const data = await res.json();
         setMyPhotos(data.documents || []);
@@ -131,7 +131,9 @@ export default function HillsInFramePostPage() {
     if (!file) return;
     setUploading(true);
     try {
-      const fileId = await uploadFileToStorage(file);
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
+      const fileId = await uploadFileToStorage(file, token);
       setImageFileId(fileId);
       setImagePreview(getImageUrl(fileId));
     } catch {
@@ -147,17 +149,15 @@ export default function HillsInFramePostPage() {
       setSubmitError('Title, caption, and photo are all required.');
       return;
     }
-    if (!user) return;
+    if (!user || !editingId) return;
     setSubmitting(true);
     try {
-      const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
-      const jwtData = await jwtRes.json();
-      const body: any = { title: title.trim(), caption: caption.trim(), location: location.trim() || null, imageFileId, jwt: jwtData.jwt, id: editingId };
-      const res = await fetch('/api/hills-in-frame/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body)
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch(WORKER_URL + '/photography/' + editingId, {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title.trim(), caption: caption.trim(), location: location.trim() || null, imageFileId }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Save failed'); }
       setSubmitSuccess('Photo updated!');
@@ -171,7 +171,7 @@ export default function HillsInFramePostPage() {
 
   // ---- Batch upload (new photos) ----
 
-  function handleFilesSelected(e: any) {
+  async function handleFilesSelected(e: any) {
     const files: File[] = Array.from(e.target.files || []);
     e.target.value = '';
     if (files.length === 0) return;
@@ -189,9 +189,15 @@ export default function HillsInFramePostPage() {
     }));
     setBatch((prev) => [...prev, ...newItems]);
 
+    const token = await getWorkerAuthToken();
+    if (!token) {
+      setBatch((prev) => prev.map((b) => newItems.some((n) => n.localId === b.localId) ? { ...b, status: 'error' } : b));
+      return;
+    }
+
     files.forEach((file, i) => {
       const localId = newItems[i].localId;
-      uploadFileToStorage(file)
+      uploadFileToStorage(file, token)
         .then((fileId) => {
           setBatch((prev) => prev.map((b) => b.localId === localId ? { ...b, imageFileId: fileId, status: 'ready' } : b));
         })
@@ -227,21 +233,19 @@ export default function HillsInFramePostPage() {
     setPublishingBatch(true);
     setBatchSummary('');
     try {
-      const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
-      const jwtData = await jwtRes.json();
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
 
       const results = await Promise.all(readyItems.map(async (item) => {
         try {
-          const res = await fetch('/api/hills-in-frame/create', {
+          const res = await fetch(WORKER_URL + '/photography', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
+            headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
             body: JSON.stringify({
               title: item.title.trim(),
               caption: item.caption.trim(),
               location: item.location.trim() || null,
               imageFileId: item.imageFileId,
-              jwt: jwtData.jwt,
             }),
           });
           if (!res.ok) {
@@ -282,13 +286,11 @@ export default function HillsInFramePostPage() {
     if (!confirm('Delete this photo? This cannot be undone.')) return;
     setDeletingId(photoId);
     try {
-      const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
-      const jwtData = await jwtRes.json();
-      const res = await fetch('/api/hills-in-frame/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: photoId, jwt: jwtData.jwt })
+      const token = await getWorkerAuthToken();
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch(WORKER_URL + '/photography/' + photoId, {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + token },
       });
       if (res.ok) {
         setMyPhotos(prev => prev.filter(p => p.$id !== photoId));

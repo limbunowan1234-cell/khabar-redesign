@@ -1,9 +1,6 @@
 import type { MetadataRoute } from 'next';
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
-const PROJECT = 'khabardarjeeling';
-const DB = 'Khabar_db';
 const SITE = 'https://khabardarjeeling.in';
-// Week 6 of the Cloudflare migration (see cloudflare/README.md).
+// Week 6+43 of the Cloudflare migration (see cloudflare/README.md).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 async function getArticles(): Promise<any[]> {
   try {
@@ -29,12 +26,7 @@ async function getBhasaDiwasSubmissions(): Promise<any[]> {
 }
 async function getPhotos(): Promise<any[]> {
   try {
-    const q1 = encodeURIComponent(JSON.stringify({ method: 'orderDesc', attribute: '$createdAt' }));
-    const q2 = encodeURIComponent(JSON.stringify({ method: 'limit', values: [500] }));
-    const res = await fetch(ENDPOINT + '/databases/' + DB + '/collections/photography/documents?queries[]=' + q1 + '&queries[]=' + q2, {
-      headers: { 'X-Appwrite-Project': PROJECT },
-      next: { revalidate: 3600 },
-    });
+    const res = await fetch(WORKER_URL + '/photography?limit=200', { next: { revalidate: 3600 } });
     if (!res.ok) { console.error('sitemap: photography fetch returned', res.status); return []; }
     const data = await res.json();
     return data.documents || [];
