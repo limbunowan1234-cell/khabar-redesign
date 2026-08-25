@@ -1310,6 +1310,60 @@ logged-out state, no crashes.
 One item left: Hills in Frame photography — the bigger of the two,
 still not started.
 
+**Status: Week 43 (Hills in Frame photography — the last full
+collection) done.** The last named collection with zero Cloudflare
+presence: `photography` (list, create, update, delete) was entirely
+Appwrite — three dedicated Next.js API routes
+(`app/api/hills-in-frame/{create,update,delete}`) doing the writes
+with their own hand-rolled JWT-based photographer-role check, and
+every read (list page, detail page, homepage widget, post-page's "my
+photos") querying Appwrite directly. Images already lived in R2 since
+Week 2 (same `article-image` bucket, already mirrored) — only the
+collection's own data had never moved.
+
+New `cloudflare/src/lib/auth.ts`: `isPhotographer()`, matching the
+role check the three old API routes each duplicated. New
+`cloudflare/src/routes/photography.ts`: `GET /` (public, with an
+optional `submitterId` filter for "my photos"), `POST /`
+(photographer-role JWT, server-generates the id), `PATCH /:id` and
+`DELETE /:id` (own-photo only). Image upload reuses Week 39's `POST
+/cdn/articles` verbatim.
+
+Converted every read call site (`hills-in-frame/page.tsx`,
+`hills-in-frame/[id]/page.tsx`, `HillsInFrameWidget.tsx`,
+`HillsInFrameSwipeClient.tsx`'s image URL, `sitemap.ts`) and every
+write call site (`hills-in-frame/post/page.tsx`'s load/edit/
+batch-upload/publish/delete, all now calling the Worker directly with
+a JWT instead of a Next.js API route holding an Appwrite key).
+Deleted the three now-superseded API routes entirely.
+
+**Backfilled real data before cutting over, same as Week 42**:
+confirmed live first — 13 real photos in Appwrite, all from one
+photographer, submitted 2026-08-15. All 13 images already resolved
+through `/cdn/articles` (verified a sample before writing the
+backfill), so only the 13 metadata rows needed copying. Also
+spot-checked the shared `comments` table already keyed correctly by
+these same photo ids (0 comments currently, but no id-compatibility
+issue either way).
+
+Verified: typecheck and full production build (`--webpack`) clean —
+confirms the three deleted API routes are gone from the route list
+too. Full round-trip against the live Worker: list (13, matching
+Appwrite), `submitterId` filter (13 for the real user, 0 for a
+nonexistent one), no-auth 403 on `POST` and `DELETE`. Browser check
+of all four real pages: gallery grid, swipe detail view (title,
+location, likes, comments UI all correct), homepage widget, and the
+post page's logged-out state — all render real backfilled data
+correctly, no crashes, no new console errors.
+
+**With this, every named collection in the original migration scope —
+including the two found along the way (admin photos/ads, Hills in
+Frame) — is off Appwrite for both reads and writes.** What remains is
+the deliberately-scoped-out list: `fcm_tokens` and the author-name
+sync utility (permanent exclusions), and the article image upload
+path from Week 39, which works in production but was never
+live-tested end to end by choice.
+
 ## One-time setup
 
 ```bash
