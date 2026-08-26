@@ -235,6 +235,7 @@ export default function ReporterPostPage() {
 
           <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Content *</label>
           <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write the full article content..." rows={12} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '6px', fontSize: '15px', lineHeight: 1.6, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
+          <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#888' }}>Formatting: <code>## </code> for a subheading, <code>**bold**</code> for bold, <code>&gt; </code> for a pull-quote, or a table as <code>| Col A | Col B |</code> rows.</p>
           <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '18px' }}>{content.length} characters (minimum 100)</p>
 
           <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '10px' }}>Supporting Photos (with captions)</label>

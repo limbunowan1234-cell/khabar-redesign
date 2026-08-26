@@ -684,6 +684,7 @@ function generateSlug(text: string): string {
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Content * (min 100 chars)</label>
                 <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write your article here..." rows={12} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.6' }} />
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#888' }}>Formatting: <code>## </code> for a subheading, <code>**bold**</code> for bold, <code>&gt; </code> for a pull-quote, or a table as <code>| Col A | Col B |</code> rows.</p>
                 <div style={{ textAlign: 'right', fontSize: '12px', color: content.length < 100 ? '#c41e3a' : '#999', marginTop: '4px' }}>{content.length} characters</div>
               </div>
               <div>
@@ -892,6 +893,7 @@ function generateSlug(text: string): string {
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Content * (min 100 chars)</label>
                 <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write your article here..." rows={12} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.6' }} />
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#888' }}>Formatting: <code>## </code> for a subheading, <code>**bold**</code> for bold, <code>&gt; </code> for a pull-quote, or a table as <code>| Col A | Col B |</code> rows.</p>
                 <div style={{ textAlign: 'right', fontSize: '12px', color: content.length < 100 ? '#c41e3a' : '#999', marginTop: '4px' }}>{content.length} characters</div>
               </div>
               <div>

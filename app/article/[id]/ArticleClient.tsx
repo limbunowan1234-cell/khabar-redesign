@@ -72,57 +72,140 @@ function extractTags(title: string, category: string, location: string): string[
   return deduped.slice(0, 3);
 }
 
+// Inline **bold** support, used inside paragraphs, headings, quotes, and
+// table cells. Anything else in article content is still plain text --
+// no italics/links/etc, matching the plain-textarea input this comes from.
+function renderInline(text: string): any[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**')
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : part
+  );
+}
+
+// A markdown-style table: a run of consecutive lines each starting with
+// "|". The first is the header row; a "|---|---|" separator row (if
+// present) is dropped rather than rendered as data.
+function renderTable(tableLines: string[], key: string, isDarkMode: boolean) {
+  const isSeparatorRow = (cells: string[]) => cells.every((c) => /^:?-+:?$/.test(c));
+  const rows = tableLines
+    .map((line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim()))
+    .filter((cells) => !isSeparatorRow(cells));
+  if (rows.length === 0) return null;
+  const [headerRow, ...bodyRows] = rows;
+
+  return (
+    <div key={key} style={{ margin: '28px 0', overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+        <thead>
+          <tr>
+            {headerRow.map((cell, ci) => (
+              <th key={ci} style={{ textAlign: 'left', padding: '10px 14px', background: isDarkMode ? '#2a2a2a' : '#f5f0e8', borderBottom: '2px solid #c41e3a', fontWeight: 800, color: isDarkMode ? '#fff' : '#1a1a1a' }}>
+                {renderInline(cell)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bodyRows.map((row, ri) => (
+            <tr key={ri} style={{ borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#eee') }}>
+              {row.map((cell, ci) => (
+                <td key={ci} style={{ padding: '10px 14px', verticalAlign: 'top', color: isDarkMode ? '#ddd' : '#333' }}>
+                  {renderInline(cell)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function renderContent(content: string, isDarkMode: boolean, supportingImages?: string[]) {
   if (!content) return null;
-  const paragraphs = content.split(/\n+/).filter(p => p.trim().length > 0);
+  const lines = content.split(/\n+/).filter(p => p.trim().length > 0);
   const images = (supportingImages || []).map((raw) => {
     try { return JSON.parse(raw); } catch { return null; }
   }).filter((img) => img && img.fileId);
   let firstParaDone = false;
   let imageIdx = 0;
+  let blockCount = 0;
   const output: any[] = [];
-  paragraphs.forEach((para, i) => {
-    const trimmed = para.trim();
+
+  const maybeInsertImage = (key: string) => {
+    blockCount++;
+    if (blockCount % 3 === 0 && imageIdx < images.length) {
+      const img = images[imageIdx];
+      imageIdx++;
+      output.push(
+        <figure key={'img' + key} style={{ margin: '24px 0' }}>
+          <img src={getImageUrl({ imageFileId: img.fileId })} alt={img.caption || ''} style={{ width: '100%', borderRadius: '10px', display: 'block' }} />
+          {img.caption && <figcaption style={{ fontSize: '13px', color: isDarkMode ? '#999' : '#777', marginTop: '8px', fontStyle: 'italic', textAlign: 'center' as const }}>{img.caption}</figcaption>}
+        </figure>
+      );
+    }
+  };
+
+  let i = 0;
+  while (i < lines.length) {
+    const trimmed = lines[i].trim();
+
+    // Table: a run of consecutive lines that each start with "|".
+    if (trimmed.startsWith('|')) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      const table = renderTable(tableLines, 'table' + i, isDarkMode);
+      if (table) output.push(table);
+      maybeInsertImage('t' + i);
+      continue;
+    }
+
+    // Subheading: a line starting with one or more "#".
+    if (/^#{1,6}\s+/.test(trimmed)) {
+      const headingText = trimmed.replace(/^#{1,6}\s+/, '');
+      output.push(
+        <h2 key={'h' + i} style={{ fontSize: '24px', fontWeight: 800, margin: '36px 0 16px', lineHeight: 1.3, color: isDarkMode ? '#fff' : '#111', fontFamily: 'Georgia, serif' }}>
+          {renderInline(headingText)}
+        </h2>
+      );
+      i++;
+      maybeInsertImage('h' + i);
+      continue;
+    }
+
+    // Blockquote (unchanged, now with inline bold support).
     if (trimmed.startsWith('>')) {
       const quoteText = trimmed.replace(/^>+\s*/, '');
       output.push(
         <blockquote key={'p' + i} style={{ margin: '28px 0', padding: '4px 0 4px 20px', borderLeft: '4px solid #c41e3a', fontStyle: 'italic', fontSize: '21px', lineHeight: '1.6', color: isDarkMode ? '#f0c0c0' : '#7a1020', fontFamily: 'Georgia, serif' }}>
-          {quoteText}
+          {renderInline(quoteText)}
         </blockquote>
       );
-    } else if (!firstParaDone) {
+      i++;
+      maybeInsertImage('q' + i);
+      continue;
+    }
+
+    // Paragraph, with the drop-cap on the first one (unchanged).
+    if (!firstParaDone) {
       firstParaDone = true;
       const firstChar = trimmed.charAt(0);
       const rest = trimmed.slice(1);
       output.push(
         <p key={'p' + i} style={{ margin: '0 0 20px' }}>
           <span style={{ float: 'left', fontSize: '64px', lineHeight: '52px', fontWeight: '800', paddingRight: '8px', paddingTop: '4px', color: '#c41e3a', fontFamily: 'Georgia, serif' }}>{firstChar}</span>
-          {rest}
+          {renderInline(rest)}
         </p>
       );
     } else {
-      output.push(<p key={'p' + i} style={{ margin: '0 0 20px' }}>{trimmed}</p>);
+      output.push(<p key={'p' + i} style={{ margin: '0 0 20px' }}>{renderInline(trimmed)}</p>);
     }
-    if ((i + 1) % 3 === 0 && imageIdx < images.length) {
-      const img = images[imageIdx];
-      imageIdx++;
-      output.push(
-        <figure key={'img' + i} style={{ margin: '24px 0' }}>
-          <img src={getImageUrl({ imageFileId: img.fileId })} alt={img.caption || ''} style={{ width: '100%', borderRadius: '10px', display: 'block' }} />
-          {img.caption && <figcaption style={{ fontSize: '13px', color: isDarkMode ? '#999' : '#777', marginTop: '8px', fontStyle: 'italic', textAlign: 'center' as const }}>{img.caption}</figcaption>}
-        </figure>
-      );
-    }
-  });
-  while (imageIdx < images.length) {
-    const img = images[imageIdx];
-    imageIdx++;
-    output.push(
-      <figure key={'imgend' + imageIdx} style={{ margin: '24px 0' }}>
-        <img src={getImageUrl({ imageFileId: img.fileId })} alt={img.caption || ''} style={{ width: '100%', borderRadius: '10px', display: 'block' }} />
-        {img.caption && <figcaption style={{ fontSize: '13px', color: isDarkMode ? '#999' : '#777', marginTop: '8px', fontStyle: 'italic', textAlign: 'center' as const }}>{img.caption}</figcaption>}
-      </figure>
-    );
+    i++;
+    maybeInsertImage('p' + i);
   }
   return output;
 }

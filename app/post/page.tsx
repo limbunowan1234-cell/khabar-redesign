@@ -215,6 +215,7 @@ export default function PostPage() {
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: isDarkMode ? '#ddd' : '#333' }}>Content * <span style={{ color: content.length < 100 ? '#c41e3a' : '#2e7d32', fontSize: '12px', fontWeight: '500' }}>({content.length} characters{content.length < 100 ? ', need ' + (100 - content.length) + ' more' : ''})</span></label>
               <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write your article here... minimum 100 characters" rows={12} style={{ width: '100%', padding: '12px 14px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), borderRadius: '8px', fontSize: '15px', backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', color: isDarkMode ? '#fff' : '#1a1a1a', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.6', outline: 'none' }} />
+              <p style={{ margin: '6px 0 0', fontSize: '12px', color: isDarkMode ? '#999' : '#888' }}>Formatting: start a line with <code>## </code> for a subheading, wrap text in <code>**bold**</code>, start a line with <code>&gt; </code> for a pull-quote, or write a table as <code>| Col A | Col B |</code> rows.</p>
             </div>
 
             <div>
