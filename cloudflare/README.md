@@ -1,8 +1,27 @@
-# khabar-worker — Phase 1 + 2
+# khabar-worker
 
-Read-only D1-backed API for `articles` (Phase 1), plus an R2-backed CDN
-route for article images (Phase 2). Everything else still lives on
-Appwrite until later phases.
+**Migration complete (Week 43).** Every named collection this migration
+set out to move — articles, likes, bookmarks, follows, comments,
+contest_settings, news_digest, certificate_state, analytics_events,
+notifications, push_subscriptions, Bhasa Diwas, profiles, admin
+photos/ad gallery, and Hills in Frame photography — is off Appwrite for
+both reads and writes, backed by this Worker (D1 + R2), with Appwrite
+kept only for auth (a permanent, deliberate decision from the start).
+
+Three items remain, all deliberate rather than oversights:
+- **`fcm_tokens`** — permanent exclusion. A separate mobile app writes
+  push tokens straight to Appwrite; migrating the read side would have
+  silently broken push for that app.
+- **The author-name sync utility** — permanent exclusion, a one-time
+  per-user tool, out of scope from the start.
+- **Week 39's article image upload path** (Appwrite Storage → R2) —
+  works in production; the auth boundary and build were verified, but
+  the upload itself was never exercised end-to-end through a real
+  logged-in session, by choice.
+
+The full week-by-week log below is kept as the historical record of how
+this happened — start from Week 1 if you want the whole story, or jump
+to whichever collection you're curious about.
 
 **Status: Week 1 (Phase 1) complete.** Real remote D1 database is live
 (`khabar-d1`, `991e6a3d-1aca-4c2a-bbdf-5b8d374d45b8`) with the full schema
@@ -1430,18 +1449,17 @@ Worker at its own `*.workers.dev` URL (or a custom domain you attach
 later). Nothing in the live site reads from it until a future phase
 explicitly points a fetch call here instead of Appwrite.
 
-## What's deliberately not done yet
+## What's deliberately still on Appwrite
 
-- **No writes except view-count.** Publishing, editing, comments, likes —
-  all still go through Appwrite. Wiring those up is a Worker-side task,
-  not a schema one; the tables already exist.
-- **No auth verification in the Worker.** Every route here is public
-  reads. The first write endpoint that needs to know *who's* asking
-  (anything gated today by Appwrite's `$permissions`) is where the
-  Appwrite session-check bridge described in the migration plan needs to
-  get built — deliberately deferred until a write path actually needs it,
-  rather than building it speculatively.
-- **Only the homepage's default view has been swapped.** The other ~70
-  Appwrite call sites (article detail pages, search/filter results,
-  weekly digest, admin, profile, contest, etc.) are untouched. Each is
-  its own future increment, same pattern as this one.
+(This section used to track "not done yet" during the migration. It's a
+short, final list now — see the banner at the top of this file for the
+full picture.)
+
+- **Auth.** Permanent, decided before Week 1 — every JWT-gated route in
+  this Worker verifies against Appwrite's `/account`, same as the very
+  first auth-bridging work in Week 9.
+- **`fcm_tokens`** and the **author-name sync utility** — both permanent
+  exclusions, see the top banner for why.
+- **The Week 39 article image upload path** — code-complete and
+  deployed, just never live-tested end-to-end. Worth doing before
+  leaning on it hard.
