@@ -22,6 +22,8 @@ export default function BhasaDiwasAdminPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState('all');
+  const [winners, setWinners] = useState<any[]>([]);
+  const [finalizing, setFinalizing] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -36,6 +38,7 @@ export default function BhasaDiwasAdminPage() {
           }
           setUser(data);
           await loadSubmissions();
+          await loadWinners();
         } else {
           setError('Please log in.');
         }
@@ -56,6 +59,34 @@ export default function BhasaDiwasAdminPage() {
       console.error('Failed to load submissions:', err);
     }
   }
+  async function loadWinners() {
+    try {
+      const res = await fetch('/api/bhasa-diwas/winners-full', { credentials: 'include' });
+      const data = await res.json();
+      setWinners(data.documents || []);
+    } catch (err) {
+      console.error('Failed to load winners:', err);
+    }
+  }
+
+  async function handleFinalizeWinners() {
+    if (!confirm('Lock in the top 3 poetry and essay entries as winners, based on current votes? This can be re-run later if needed (it always re-derives from current votes).')) return;
+    setFinalizing(true);
+    try {
+      const res = await fetch('/api/bhasa-diwas/finalize-winners', { method: 'POST', credentials: 'include' });
+      if (res.ok) {
+        await loadWinners();
+      } else {
+        alert('Failed to finalize winners');
+      }
+    } catch (err) {
+      console.error('Finalize winners failed:', err);
+      alert('Failed to finalize winners');
+    } finally {
+      setFinalizing(false);
+    }
+  }
+
   async function handleDelete(id: string, title: string) {
     if (!confirm('Delete this submission: ' + title + '?')) return;
     setDeletingId(id);
@@ -117,6 +148,45 @@ export default function BhasaDiwasAdminPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#b91c1c', margin: 0 }}>Nepali Bhasa Diwas - Moderation</h1>
           <Link href="/admin" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none' }}>← Admin Panel</Link>
+        </div>
+
+        <div style={{ background: 'white', borderRadius: '8px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '12px', marginBottom: winners.length > 0 ? '16px' : 0 }}>
+            <div>
+              <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>🏆 Winners (Poetry & Essay, Top 3 each)</h2>
+              <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
+                {winners.length === 0 ? 'Not finalized yet — winners are ranked by current votes.' : `${winners.length} winners locked in. Re-finalizing re-ranks from current votes.`}
+              </p>
+            </div>
+            <button
+              onClick={handleFinalizeWinners}
+              disabled={finalizing}
+              style={{ background: '#b91c1c', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', opacity: finalizing ? 0.6 : 1, whiteSpace: 'nowrap' as const }}
+            >
+              {finalizing ? 'Finalizing...' : winners.length === 0 ? 'Finalize Top 3' : 'Re-Finalize'}
+            </button>
+          </div>
+
+          {winners.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+              {winners.map((w) => (
+                <div key={w.$id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '10px 12px', background: '#f9fafb', borderRadius: '6px', flexWrap: 'wrap' as const }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
+                      #{w.winnerRank} · {CATEGORY_LABELS[w.category] || w.category} · {w.title} — {w.submitterName}
+                    </div>
+                    {w.addressSubmittedAt ? (
+                      <div style={{ fontSize: '12px', color: '#065f46', marginTop: '4px' }}>
+                        📦 {w.winnerFullName} · {w.winnerAddress} · {w.winnerPhone}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px' }}>⏳ Address not submitted yet</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' as const }}>

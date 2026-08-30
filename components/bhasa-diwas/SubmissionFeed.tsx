@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/authStore';
 import Link from 'next/link';
+import { isBhasaDiwasClosed } from '@/lib/bhasaDiwas';
 
 // Week 40 of the Cloudflare migration (see cloudflare/README.md): photo
 // submissions read from R2 through the Worker now.
@@ -38,8 +39,8 @@ function filterBtn(active: boolean) {
   };
 }
 
-function voteBtn(voted: boolean) {
-  return { background: 'none', border: 'none', fontWeight: 600, cursor: voted ? 'default' : 'pointer', color: voted ? '#b91c1c' : '#6b7280', fontSize: '15px' };
+function voteBtn(voted: boolean, closed: boolean) {
+  return { background: 'none', border: 'none', fontWeight: 600, cursor: (voted || closed) ? 'default' : 'pointer', color: voted ? '#b91c1c' : '#6b7280', fontSize: '15px' };
 }
 
 export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: number }) {
@@ -65,9 +66,12 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
     fetchSubmissions();
   }, [refreshTrigger, selectedCategory]);
 
+  const votingClosed = isBhasaDiwasClosed();
+
   const handleVote = async (submissionId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (votingClosed) { alert('मतदान अवधि समाप्त भएको छ।'); return; }
     if (!isAuthenticated || !user) { alert('कृपया मत दिन लगिन गर्नुहोस्।'); return; }
     try {
       const res = await fetch('/api/bhasa-diwas/vote', {
@@ -142,8 +146,8 @@ export default function SubmissionFeed({ refreshTrigger }: { refreshTrigger: num
                     <p style={S.cardText}>{submission.description}</p>
                   </div>
                   <div style={S.cardFooter}>
-                    <button onClick={(e) => handleVote(submission.$id, e)} disabled={userVotes.has(submission.$id)} style={voteBtn(userVotes.has(submission.$id))}>
-                      👍 {submission.votes || 0} मत
+                    <button onClick={(e) => handleVote(submission.$id, e)} disabled={userVotes.has(submission.$id) || votingClosed} style={voteBtn(userVotes.has(submission.$id), votingClosed)}>
+                      👍 {submission.votes || 0} मत{votingClosed ? ' (मतदान बन्द)' : ''}
                     </button>
                   </div>
                 </div>
