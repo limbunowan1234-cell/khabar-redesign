@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
 const endpoint = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
@@ -61,7 +62,8 @@ export default function BhasaDiwasAdminPage() {
   }
   async function loadWinners() {
     try {
-      const res = await fetch('/api/bhasa-diwas/winners-full', { credentials: 'include' });
+      const jwt = await getWorkerAuthToken();
+      const res = await fetch('/api/bhasa-diwas/winners-full', { headers: jwt ? { 'x-admin-jwt': jwt } : {} });
       const data = await res.json();
       setWinners(data.documents || []);
     } catch (err) {
@@ -73,7 +75,8 @@ export default function BhasaDiwasAdminPage() {
     if (!confirm('Lock in the top 3 poetry and essay entries as winners, based on current votes? This can be re-run later if needed (it always re-derives from current votes).')) return;
     setFinalizing(true);
     try {
-      const res = await fetch('/api/bhasa-diwas/finalize-winners', { method: 'POST', credentials: 'include' });
+      const jwt = await getWorkerAuthToken();
+      const res = await fetch('/api/bhasa-diwas/finalize-winners', { method: 'POST', headers: jwt ? { 'x-admin-jwt': jwt } : {} });
       if (res.ok) {
         await loadWinners();
       } else {

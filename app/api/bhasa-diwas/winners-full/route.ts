@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Admin-only: the finalized winners WITH mailing address/phone, so the
-// admin panel can actually address and send each memento. Same
-// admin-cookie-check-then-proxy pattern as admin-feature/route.ts.
+// admin panel can actually address and send each memento.
+//
+// JWT-based admin check (X-Appwrite-JWT) -- see the comment on
+// finalize-winners/route.ts's checkAdminJwt for why this replaced the
+// cookie-forwarding pattern (it was silently failing: the incoming
+// request's `cookie` header never carries the Appwrite session cookie,
+// which is scoped to a different domain).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '' };
 
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 
-async function checkAdmin(req: NextRequest): Promise<boolean> {
-  const cookieHeader = req.headers.get('cookie') || '';
+async function checkAdminJwt(jwt: string | null): Promise<boolean> {
+  if (!jwt) return false;
   try {
     const res = await fetch('https://nyc.cloud.appwrite.io/v1/account', {
       headers: {
         'X-Appwrite-Project': 'khabardarjeeling',
-        'cookie': cookieHeader
-      }
+        'X-Appwrite-JWT': jwt,
+      },
     });
     if (!res.ok) return false;
     const user = await res.json();
@@ -27,7 +32,8 @@ async function checkAdmin(req: NextRequest): Promise<boolean> {
 
 export async function GET(req: NextRequest) {
   try {
-    const isAdmin = await checkAdmin(req);
+    const jwt = req.headers.get('x-admin-jwt');
+    const isAdmin = await checkAdminJwt(jwt);
     if (!isAdmin) {
       return NextResponse.json({ error: 'Admin only' }, { status: 403 });
     }

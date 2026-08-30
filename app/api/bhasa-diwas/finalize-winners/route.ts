@@ -2,21 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Admin action: ranks the top 3 (by votes) in poetry and essay and marks
 // them as winners, so their submitter can then see the "you won" banner
-// and submit an address for the memento. Same admin-cookie-check-then-
-// proxy-to-Worker pattern as admin-feature/route.ts in this same folder.
+// and submit an address for the memento.
+//
+// Admin check is JWT-based (X-Appwrite-JWT), matching
+// app/api/admin/contest/publish-certificates/route.ts -- NOT the
+// cookie-forwarding pattern admin-feature/route.ts uses. That pattern
+// reads the *incoming* request's `cookie` header and re-sends it to
+// Appwrite, but the browser only attaches cookies scoped to this
+// request's own domain (khabardarjeeling.in); the real Appwrite session
+// cookie is scoped to api.khabardarjeeling.in, a different origin, so it
+// was never present to forward in the first place -- confirmed live
+// (every call landed a 403, checkAdmin silently returning false). A JWT
+// minted client-side via lib/appwrite.ts's getWorkerAuthToken() and sent
+// as a plain header sidesteps that entirely.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '', 'Content-Type': 'application/json' };
 
 const ADMIN_EMAIL = 'nowanad@gmail.com';
 
-async function checkAdmin(req: NextRequest): Promise<boolean> {
-  const cookieHeader = req.headers.get('cookie') || '';
+async function checkAdminJwt(jwt: string | null): Promise<boolean> {
+  if (!jwt) return false;
   try {
     const res = await fetch('https://nyc.cloud.appwrite.io/v1/account', {
       headers: {
         'X-Appwrite-Project': 'khabardarjeeling',
-        'cookie': cookieHeader
-      }
+        'X-Appwrite-JWT': jwt,
+      },
     });
     if (!res.ok) return false;
     const user = await res.json();
@@ -28,7 +39,8 @@ async function checkAdmin(req: NextRequest): Promise<boolean> {
 
 export async function POST(req: NextRequest) {
   try {
-    const isAdmin = await checkAdmin(req);
+    const jwt = req.headers.get('x-admin-jwt');
+    const isAdmin = await checkAdminJwt(jwt);
     if (!isAdmin) {
       return NextResponse.json({ error: 'Admin only' }, { status: 403 });
     }
