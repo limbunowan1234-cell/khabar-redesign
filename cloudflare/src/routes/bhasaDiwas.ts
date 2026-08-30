@@ -180,11 +180,25 @@ bhasaDiwas.post('/finalize-winners', async (c) => {
 
   const winners: Record<string, any[]> = {};
   for (const category of WINNER_CATEGORIES) {
-    const { results } = await c.env.DB
-      .prepare('SELECT id FROM bhasa_diwas_submissions WHERE category = ? ORDER BY votes DESC, created_at ASC LIMIT ?')
-      .bind(category, WINNERS_PER_CATEGORY)
+    // One prize per person per category -- a submitter with two entries
+    // in the same category (e.g. two essays) shouldn't be able to take
+    // two of the three winner slots. Fetch every entry ranked within the
+    // category (votes DESC, created_at ASC as the tiebreak), then walk
+    // that ranking and keep only the first (i.e. highest-ranked) entry
+    // per submitter_id -- everyone's *best* entry competes, but only
+    // once each, until WINNERS_PER_CATEGORY distinct people are picked.
+    const { results: ranked } = await c.env.DB
+      .prepare('SELECT id, submitter_id FROM bhasa_diwas_submissions WHERE category = ? ORDER BY votes DESC, created_at ASC')
+      .bind(category)
       .all();
-    const ids = (results || []).map((r: any) => r.id);
+    const seenSubmitters = new Set<string>();
+    const ids: string[] = [];
+    for (const row of (ranked || []) as any[]) {
+      if (seenSubmitters.has(row.submitter_id)) continue;
+      seenSubmitters.add(row.submitter_id);
+      ids.push(row.id);
+      if (ids.length === WINNERS_PER_CATEGORY) break;
+    }
 
     // Clear stale winner flags in this category first (anything not in the
     // fresh top-N), then stamp the current top-N with their rank.
