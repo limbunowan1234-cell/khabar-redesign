@@ -2,6 +2,7 @@
 
 import StoryCard from './StoryCard';
 import { selectHeroPool } from '@/lib/homepageSelection';
+import { truncateChars } from '@/lib/textPreview';
 
 // Week 2 of the Cloudflare migration (see cloudflare/README.md): images
 // read from the R2 CDN route instead of Appwrite.
@@ -18,9 +19,7 @@ function genreOf(a: any): string {
 }
 
 function deckOf(a: any): string {
-  const text = (a?.content || a?.summary || '').trim();
-  if (!text) return '';
-  return text.length > 130 ? text.slice(0, 130).trim() + '...' : text;
+  return truncateChars(a?.content || a?.summary || '', 130);
 }
 
 function readingTimeOf(a: any): string {

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import StoryCard from '@/components/StoryCard';
 import SiteFooter from '@/components/SiteFooter';
+import { truncateChars } from '@/lib/textPreview';
 
 const SITE = 'https://khabardarjeeling.in';
 // Week 4 of the Cloudflare migration (see cloudflare/README.md).
@@ -40,7 +41,7 @@ function toStory(a: any) {
     $id: a.$id,
     slug: a.slug,
     title: a.title,
-    deck: (a.content || a.summary || '').trim().slice(0, 130),
+    deck: truncateChars(a.content || a.summary || '', 130),
     imageUrl: imgOf(a),
     genre: a.genre || a.category,
     authorName: a.submitterName || a.authorName || 'Staff Reporter',

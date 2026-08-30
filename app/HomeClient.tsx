@@ -18,6 +18,7 @@ import LatestSection from '@/components/LatestSection';
 import DistrictSection from '@/components/DistrictSection';
 import HillsInFrameWidget from '@/components/HillsInFrameWidget';
 import SidebarTabs from '@/components/SidebarTabs';
+import { truncateWords } from '@/lib/textPreview';
 import ContestResultsBanner from '@/components/ContestResultsBanner';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
@@ -55,11 +56,10 @@ function getThumbUrl(article: any, _width: number): string {
   return WORKER_URL + '/cdn/articles/' + article.imageFileId;
 }
 
-function truncateText(text: string, words: number): string {
-  if (!text) return '';
-  const w = text.split(' ').slice(0, words).join(' ');
-  return text.split(' ').length > words ? w + '...' : w;
-}
+// See lib/textPreview.ts -- strips the markdown syntax article content
+// can contain (## headings, **bold**, tables, etc.) before truncating,
+// so a card preview never shows it literally.
+const truncateText = truncateWords;
 
 function readingTime(content: string): string {
   if (!content) return '1 min';
@@ -416,7 +416,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
               </div>
             </div>
             <div style={{ padding: '14px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: '0 0 10px' }}>{article.title}</h3>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', lineHeight: '1.4', margin: '0 0 10px' }}>{article.title}</h3>
               {/* NEW: 30-word preview for mobile */}
               <p style={{ fontSize: '13px', color: isDarkMode ? '#bbb' : '#666', lineHeight: '1.4', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -438,7 +438,7 @@ function MobileCard({ article, isDarkMode, index }: any) {
                 <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', padding: '3px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' }}>{article.category}</span>
                 {article.isBreaking && <span style={{ backgroundColor: '#f5c518', color: '#1a1a1a', padding: '3px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700' }}>BREAKING</span>}
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '900', color: 'white', lineHeight: '1.35', margin: '0 0 12px', textShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>{article.title}</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'white', lineHeight: '1.35', margin: '0 0 12px', textShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>{article.title}</h3>
               {/* NEW: 30-word preview for mobile gradient card */}
               <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5', margin: '0 0 16px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{preview}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

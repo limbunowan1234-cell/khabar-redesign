@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { stripMarkdown, truncateChars } from '@/lib/textPreview';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const PROJECT = 'khabardarjeeling';
@@ -201,7 +202,7 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
             )}
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '26px', fontWeight: 500, lineHeight: 1.3, margin: '0 0 10px', color: '#1a1a1a' }}>{lead.title}</h2>
             <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>
-              {(pdfMode || expandedId === lead.$id) ? (lead.content || '').replace(/<[^>]*>/g, '') : (lead.content || '').replace(/<[^>]*>/g, '').slice(0, 160) + '...'}
+              {(pdfMode || expandedId === lead.$id) ? stripMarkdown((lead.content || '').replace(/<[^>]*>/g, '')) : truncateChars((lead.content || '').replace(/<[^>]*>/g, ''), 160)}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#888' }}>
@@ -253,7 +254,7 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
                             </div>
                             {(pdfMode || expandedId === a.$id) && (
                               <div style={{ marginTop: '10px', paddingLeft: '18px' }}>
-                                <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, margin: '0 0 8px', whiteSpace: 'pre-wrap' }}>{(a.content || '').replace(/<[^>]*>/g, '')}</p>
+                                <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, margin: '0 0 8px', whiteSpace: 'pre-wrap' }}>{stripMarkdown((a.content || '').replace(/<[^>]*>/g, ''))}</p>
 {!pdfMode && (                                <Link href={'/article/' + (a.slug || a.$id)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', textDecoration: 'none' }}>Comments &amp; more -&gt;</Link>)}
                               </div>
                             )}
