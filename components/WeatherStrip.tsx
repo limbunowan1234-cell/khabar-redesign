@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import WeatherWidget, { CITIES } from '@/components/WeatherWidget';
 import WeatherWarning from '@/components/WeatherWarning';
+import WeatherAllTowns from '@/components/WeatherAllTowns';
 
 const WMO_ICONS: { [key: number]: string } = {
   0: '\u2600\uFE0F', 1: '\uD83C\uDF24', 2: '\u26C5', 3: '\u2601\uFE0F',
@@ -15,7 +16,14 @@ const WMO_ICONS: { [key: number]: string } = {
 export default function WeatherStrip({ isDarkMode, defaultCity }: { isDarkMode?: boolean; defaultCity?: string }) {
   const [open, setOpen] = useState(false);
   const [temp, setTemp] = useState<number | null>(null);
-  const city = CITIES.find((c) => c.name === defaultCity) || CITIES[0];
+  // Owns the selected city for both children below (WeatherWidget's
+  // dropdown and WeatherWarning's alert panel) so switching cities in one
+  // updates the other -- see the comment on WeatherWidget's props.
+  const [cityIndex, setCityIndex] = useState(() => {
+    const idx = CITIES.findIndex((c) => c.name === defaultCity);
+    return idx === -1 ? 0 : idx;
+  });
+  const city = CITIES[cityIndex];
   const [icon, setIcon] = useState('\u26C5');
 
   useEffect(() => {
@@ -66,8 +74,16 @@ export default function WeatherStrip({ isDarkMode, defaultCity }: { isDarkMode?:
       {open && (
         <div style={{ marginTop: '10px', animation: 'wsFadeIn 0.25s ease' }}>
           <style>{`@keyframes wsFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-          <WeatherWidget variant="banner" isDarkMode={isDarkMode} defaultCity={defaultCity} />
-          <WeatherWarning isDarkMode={isDarkMode} defaultCity={defaultCity} />
+          <WeatherWidget variant="banner" isDarkMode={isDarkMode} cityIndex={cityIndex} onCityChange={setCityIndex} />
+          <WeatherWarning isDarkMode={isDarkMode} defaultCity={city.name} />
+          <WeatherAllTowns
+            isDarkMode={isDarkMode}
+            selectedCity={city.name}
+            onSelectCity={(name) => {
+              const idx = CITIES.findIndex((c) => c.name === name);
+              if (idx !== -1) setCityIndex(idx);
+            }}
+          />
         </div>
       )}
     </div>

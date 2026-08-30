@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
 import imageCompression from 'browser-image-compression';
+import { isBhasaDiwasClosed } from '@/lib/bhasaDiwas';
 
 const CATEGORIES = [
   { value: 'poetry', label: '✍️ काव्य', maxWords: 2000, minWords: 0 },
@@ -49,6 +50,16 @@ export default function SubmissionForm({ onSuccess }: { onSuccess: () => void })
   const [error, setError] = useState('');
   const [compressionProgress, setCompressionProgress] = useState('');
   const isSubmittingRef = useRef(false);
+
+  if (isBhasaDiwasClosed()) return (
+    <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+      <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔒</div>
+      <p style={{ color: '#111827', fontSize: '20px', fontWeight: 700, marginBottom: '10px' }}>सबमिशन अवधि समाप्त भएको छ</p>
+      <p style={{ color: '#4b5563', fontSize: '15px', lineHeight: 1.7, maxWidth: '480px', margin: '0 auto' }}>
+        सहभागिता जनाउनुभएकोमा हार्दिक धन्यवाद! विजेताहरूको नतिजा हेर्न "विजेता" ट्याबमा जानुहोस्।
+      </p>
+    </div>
+  );
 
   if (authLoading) return <div style={{ textAlign: 'center', padding: '48px' }}>लोड हो रहेको छ...</div>;
   if (!isAuthenticated || !user) return (

@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
 import { headers } from 'next/headers';
+import { truncateChars } from '@/lib/textPreview';
 
 const SITE = 'https://khabardarjeeling.in';
 // Week 6 of the Cloudflare migration (see cloudflare/README.md).
@@ -14,8 +15,7 @@ export const metadata: Metadata = {
 
 function clean(text: string, max = 160): string {
   if (!text) return '';
-  const t = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  return t.length > max ? t.slice(0, max).trim() + '...' : t;
+  return truncateChars(text.replace(/<[^>]*>/g, ' '), max);
 }
 
 async function fetchLatestArticles(): Promise<any[]> {

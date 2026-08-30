@@ -7,6 +7,7 @@ import SubmissionForm from '@/components/bhasa-diwas/SubmissionForm';
 import SubmissionFeed from '@/components/bhasa-diwas/SubmissionFeed';
 import Leaderboard from '@/components/bhasa-diwas/Leaderboard';
 import WinnersGallery from '@/components/bhasa-diwas/WinnersGallery';
+import { isBhasaDiwasClosed } from '@/lib/bhasaDiwas';
 
 const S = {
   page: { minHeight: '100vh', background: '#f9fafb', fontFamily: 'system-ui, -apple-system, sans-serif' },
@@ -58,7 +59,9 @@ function tabBtn(active: boolean) {
 }
 
 export default function BhasaDivasHub() {
-  const [activeTab, setActiveTab] = useState('submit');
+  // Once the contest has closed, opening straight to the now-irrelevant
+  // submit tab is the wrong default -- send people to the winners instead.
+  const [activeTab, setActiveTab] = useState(() => (isBhasaDiwasClosed() ? 'winners' : 'submit'));
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [leaderboard, setLeaderboard] = useState<any>({});
 
@@ -80,7 +83,7 @@ export default function BhasaDivasHub() {
     setActiveTab('browse');
   };
 
-  const winnersAnnounced = new Date() >= new Date('2026-08-30T00:00:00+05:30');
+  const winnersAnnounced = isBhasaDiwasClosed();
   const tabs = [
     { id: 'submit', label: '📝 सबमिट' },
     { id: 'browse', label: '🔍 सबमिशन' },

@@ -13,8 +13,8 @@ database_id = "991e6a3d-1aca-4c2a-bbdf-5b8d374d45b8"
 binding = "IMAGES"
 bucket_name = "khabar-article-images"
 
-# Two schedules, both handled by scheduled() in src/index.ts (branches on
-# event.cron), no HTTP auth needed for either:
+# Three schedules, all handled by scheduled() in src/index.ts (branches on
+# event.cron), no HTTP auth needed for any of them:
 #   "0 1 * * *"  -- daily, 30-day analytics_events retention (Week 32).
 #   "0 0 * * SUN"  -- weekly (Sunday 00:00 UTC), publishes pending weekly
 #                   picks (Week 35). Replaces two Vercel-cron routes that
@@ -24,8 +24,14 @@ bucket_name = "khabar-article-images"
 #                   app/api/revalidate-sitemaps -- neither of which could
 #                   keep writing to Appwrite once articles froze there
 #                   in Week 34.
+#   "0 */3 * * *"  -- every 3 hours: [weather-alerts feature] pushes a
+#                   notification to users in a hill town whose forecast
+#                   just crossed into RED/ORANGE alert territory. Same
+#                   "no Vercel cron slot" reasoning as the other two --
+#                   Vercel Hobby caps at 2, this Worker isn't capped the
+#                   same way.
 [triggers]
-crons = ["0 1 * * *", "0 0 * * SUN"]
+crons = ["0 1 * * *", "0 0 * * SUN", "0 */3 * * *"]
 
 # APK downloads are staying on Appwrite permanently (explicit decision —
 # not a deferral). Only 2 files, no bandwidth pressure, not worth the

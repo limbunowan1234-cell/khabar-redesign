@@ -72,15 +72,34 @@ function extractTags(title: string, category: string, location: string): string[
   return deduped.slice(0, 3);
 }
 
-// Inline **bold** support, used inside paragraphs, headings, quotes, and
-// table cells. Anything else in article content is still plain text --
-// no italics/links/etc, matching the plain-textarea input this comes from.
+// Inline **bold** and link support, used inside paragraphs, headings,
+// quotes, and table cells. Links can be written either as markdown
+// [text](url) or as a bare https://... URL -- both get made clickable.
+// Anything else in article content is still plain text -- no italics/etc,
+// matching the plain-textarea input this comes from.
 function renderInline(text: string): any[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith('**') && part.endsWith('**')
-      ? <strong key={i}>{part.slice(2, -2)}</strong>
-      : part
-  );
+  return text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s]+)/g).map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    const mdLink = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (mdLink) {
+      return <a key={i} href={mdLink[2]} target="_blank" rel="noopener noreferrer" style={{ color: '#c41e3a', textDecoration: 'underline' }}>{mdLink[1]}</a>;
+    }
+    if (/^https?:\/\//.test(part)) {
+      // Trailing sentence punctuation (a period, a closing paren, etc.)
+      // right after a bare URL belongs to the sentence, not the link.
+      const trailing = (part.match(/[.,!?;:'")\]]+$/) || [''])[0];
+      const url = trailing ? part.slice(0, -trailing.length) : part;
+      return (
+        <span key={i}>
+          <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#c41e3a', textDecoration: 'underline' }}>{url}</a>
+          {trailing}
+        </span>
+      );
+    }
+    return part;
+  });
 }
 
 // A markdown-style table: a run of consecutive lines each starting with
@@ -168,7 +187,7 @@ function renderContent(content: string, isDarkMode: boolean, supportingImages?: 
     if (/^#{1,6}\s+/.test(trimmed)) {
       const headingText = trimmed.replace(/^#{1,6}\s+/, '');
       output.push(
-        <h2 key={'h' + i} style={{ fontSize: '24px', fontWeight: 800, margin: '36px 0 16px', lineHeight: 1.3, color: isDarkMode ? '#fff' : '#111', fontFamily: 'Georgia, serif' }}>
+        <h2 key={'h' + i} style={{ fontSize: 'clamp(19px, 5vw, 24px)', fontWeight: 800, margin: '36px 0 16px', lineHeight: 1.3, color: isDarkMode ? '#fff' : '#111', fontFamily: 'Georgia, serif' }}>
           {renderInline(headingText)}
         </h2>
       );
@@ -181,7 +200,7 @@ function renderContent(content: string, isDarkMode: boolean, supportingImages?: 
     if (trimmed.startsWith('>')) {
       const quoteText = trimmed.replace(/^>+\s*/, '');
       output.push(
-        <blockquote key={'p' + i} style={{ margin: '28px 0', padding: '4px 0 4px 20px', borderLeft: '4px solid #c41e3a', fontStyle: 'italic', fontSize: '21px', lineHeight: '1.6', color: isDarkMode ? '#f0c0c0' : '#7a1020', fontFamily: 'Georgia, serif' }}>
+        <blockquote key={'p' + i} style={{ margin: '28px 0', padding: '4px 0 4px 20px', borderLeft: '4px solid #c41e3a', fontStyle: 'italic', fontSize: 'clamp(17px, 4.5vw, 21px)', lineHeight: '1.6', color: isDarkMode ? '#f0c0c0' : '#7a1020', fontFamily: 'Georgia, serif' }}>
           {renderInline(quoteText)}
         </blockquote>
       );
@@ -197,7 +216,7 @@ function renderContent(content: string, isDarkMode: boolean, supportingImages?: 
       const rest = trimmed.slice(1);
       output.push(
         <p key={'p' + i} style={{ margin: '0 0 20px' }}>
-          <span style={{ float: 'left', fontSize: '64px', lineHeight: '52px', fontWeight: '800', paddingRight: '8px', paddingTop: '4px', color: '#c41e3a', fontFamily: 'Georgia, serif' }}>{firstChar}</span>
+          <span style={{ float: 'left', fontSize: 'clamp(44px, 12vw, 64px)', lineHeight: 'clamp(38px, 10.5vw, 52px)', fontWeight: '800', paddingRight: '8px', paddingTop: '4px', color: '#c41e3a', fontFamily: 'Georgia, serif' }}>{firstChar}</span>
           {renderInline(rest)}
         </p>
       );
@@ -586,8 +605,14 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
       {/* HERO IMAGE */}
       {imgUrl && (
         <>
-          <div style={{ position: 'relative', width: '100%', maxWidth: '900px', margin: '0 auto', aspectRatio: '4 / 3', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
-            <img src={imgUrl} alt={article.imageCaption || article.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          {/* maxHeight is a hard defensive ceiling, not the sizing mechanism --
+              aspect-ratio already derives height purely from width (900px max
+              * 3/4 = 675px), independent of the source image's own dimensions.
+              The cap just guarantees that stays true even if some browser/
+              engine fails to honor aspect-ratio for a given image, instead of
+              silently trusting a single CSS property with no fallback. */}
+          <div style={{ position: 'relative', width: '100%', maxWidth: '900px', margin: '0 auto', aspectRatio: '4 / 3', maxHeight: '675px', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
+            <img src={imgUrl} alt={article.imageCaption || article.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', maxHeight: '675px', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.7) 100%)' }} />
             {(article.genre || article.category) && <div style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: '#c41e3a', color: 'white', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>{article.genre || article.category}</div>}
             {article.isBreaking && <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: '#f5c518', color: '#1a1a1a', padding: '6px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: '700' }}>&#128308; BREAKING</div>}
@@ -683,7 +708,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
 
         {/* CONTENT */}
         <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '28px', borderTop: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0'), borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
-          <div style={{ fontSize: '19px', lineHeight: '1.7', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', maxWidth: '700px', marginLeft: 'auto', marginRight: 'auto', fontFamily: 'Georgia, serif' }}>
+          <div style={{ fontSize: 'clamp(16px, 4vw, 19px)', lineHeight: '1.7', color: isDarkMode ? '#ddd' : '#2a2a2a', whiteSpace: 'pre-wrap', maxWidth: '700px', marginLeft: 'auto', marginRight: 'auto', fontFamily: 'Georgia, serif' }}>
             {article.category === 'Photo Story' ? '' : renderContent(isTranslated ? translatedContent : (article.content || article.summary), isDarkMode, article.supportingImages)}
           </div>
 

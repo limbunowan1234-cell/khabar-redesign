@@ -1,6 +1,27 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { CITIES } from '@/components/WeatherWidget';
+
+const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+// Keyword match against recent article titles, not a real search index --
+// good enough for "is there a live flood/landslide story to point this
+// alert at", not meant to be exhaustive. Deliberately conservative (only
+// disaster-specific words, not generic ones like "weather") so this
+// doesn't mislink an alert to an unrelated story just because it says
+// "rain" in passing.
+const COVERAGE_KEYWORDS = ['flood', 'landslide', 'flash flood', 'cyclone', 'disaster', 'cloudburst', 'glacial'];
+
+function findCoverageArticle(articles: any[]): { title: string; href: string } | null {
+  for (const a of articles) {
+    const title = (a.title || '').toLowerCase();
+    if (COVERAGE_KEYWORDS.some((kw) => title.includes(kw))) {
+      return { title: a.title, href: '/article/' + (a.slug || a.$id) };
+    }
+  }
+  return null;
+}
 
 
 
@@ -29,6 +50,11 @@ function getSeverity(precip: number, code: number): { level: string; color: stri
 
 export default function WeatherWarning({ isDarkMode, defaultCity }: { isDarkMode?: boolean; defaultCity?: string }) {
   const [data, setData] = useState<any>(null);
+  // undefined = not checked yet, null = checked, no match, object = matched.
+  // Distinguishing "not checked" from "checked, nothing found" is what
+  // stops this from re-fetching forever on every render when there's no
+  // matching article.
+  const [coverage, setCoverage] = useState<{ title: string; href: string } | null | undefined>(undefined);
   const city = CITIES.find((c) => c.name === defaultCity) || CITIES[0];
 
   useEffect(() => {
@@ -41,6 +67,22 @@ export default function WeatherWarning({ isDarkMode, defaultCity }: { isDarkMode
       .catch(() => {});
     return () => { alive = false; };
   }, [city.name]);
+
+  const hasSeverity = !!data?.daily?.precipitation_sum?.some((p: number, i: number) => getSeverity(p || 0, data.daily.weather_code[i]));
+
+  // Only bother looking for coverage once there's an actual alert to
+  // attach it to -- most page loads never reach this. See
+  // findCoverageArticle()'s comment on why this is keyword matching, not
+  // a real search.
+  useEffect(() => {
+    if (!hasSeverity || coverage !== undefined) return;
+    let alive = true;
+    fetch(WORKER_URL + '/articles?limit=15')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive) setCoverage(findCoverageArticle(d?.documents || [])); })
+      .catch(() => { if (alive) setCoverage(null); });
+    return () => { alive = false; };
+  }, [hasSeverity, coverage]);
 
   if (!data || !data.daily) return null;
 
@@ -79,6 +121,12 @@ export default function WeatherWarning({ isDarkMode, defaultCity }: { isDarkMode
             </div>
           </div>
         ))}
+        {coverage && (
+          <Link href={coverage.href} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', padding: '10px 12px', borderRadius: '8px', backgroundColor: isDarkMode ? '#2a1518' : '#fdf0f2', border: '1px solid ' + (isDarkMode ? '#4a2530' : '#f5d0d8'), marginBottom: '10px' }}>
+            <span style={{ fontSize: '14px' }}>📰</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#c41e3a', lineHeight: 1.4 }}>Read our coverage: {coverage.title}</span>
+          </Link>
+        )}
         <div style={{ marginTop: '10px', padding: '10px 12px', backgroundColor: isDarkMode ? '#332a15' : '#fff8e1', borderRadius: '8px' }}>
           <p style={{ margin: 0, fontSize: '11px', color: isDarkMode ? '#e0c060' : '#7a5c00', lineHeight: '1.5' }}>
             Avoid unnecessary travel in hill areas, stay away from steep slopes and rivers, and keep emergency contacts ready. Source: Open-Meteo forecast data.
