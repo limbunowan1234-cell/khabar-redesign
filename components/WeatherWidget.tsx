@@ -44,22 +44,18 @@ const DEG = '\u00B0';
 interface WeatherWidgetProps {
   isDarkMode?: boolean;
   variant?: 'card' | 'banner';
-  defaultCity?: string;
+  // Controlled by the parent (WeatherStrip) so the city picked here can
+  // also drive sibling components like WeatherWarning -- previously this
+  // was local state, so switching cities in this dropdown never reached
+  // the alert panel rendered alongside it, which stayed stuck on whatever
+  // city it was first given.
+  cityIndex: number;
+  onCityChange: (index: number) => void;
 }
 
-export default function WeatherWidget({ isDarkMode = false, variant = 'card', defaultCity }: WeatherWidgetProps) {
-  const [cityIndex, setCityIndex] = useState(0);
+export default function WeatherWidget({ isDarkMode = false, variant = 'card', cityIndex, onCityChange }: WeatherWidgetProps) {
   const [data, setData] = useState<any>(null);
   const [failed, setFailed] = useState(false);
-  const [appliedDefault, setAppliedDefault] = useState(false);
-
-  useEffect(() => {
-    if (defaultCity && !appliedDefault) {
-      const idx = CITIES.findIndex((c) => c.name === defaultCity);
-      if (idx !== -1) setCityIndex(idx);
-      setAppliedDefault(true);
-    }
-  }, [defaultCity, appliedDefault]);
   const [loading, setLoadingState] = useState(true);
 
   const city = CITIES[cityIndex];
@@ -92,7 +88,7 @@ export default function WeatherWidget({ isDarkMode = false, variant = 'card', de
   const citySelector = (
     <select
       value={cityIndex}
-      onChange={(e) => setCityIndex(Number(e.target.value))}
+      onChange={(e) => onCityChange(Number(e.target.value))}
       style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 700, padding: '3px 6px', cursor: 'pointer', outline: 'none' }}
     >
       {CITIES.map((c, i) => (

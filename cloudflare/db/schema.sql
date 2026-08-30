@@ -194,7 +194,18 @@ CREATE TABLE bhasa_diwas_submissions (
   submitter_name TEXT,
   votes          INTEGER NOT NULL DEFAULT 0,  -- denormalized counter, see bhasa_diwas_votes
   is_featured    INTEGER NOT NULL DEFAULT 0,  -- added Week 38, via ALTER TABLE on the live DB
-  created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  -- Below: added Week 44, via ALTER TABLE on the live DB. winner_rank is
+  -- 1/2/3 within the submission's own category (NULL = not a winner), set
+  -- by POST /bhasa-diwas/finalize-winners. The winner_* address fields are
+  -- filled in later, directly by the winner themselves, for memento
+  -- delivery -- never exposed on the public submissions/winners read, only
+  -- via the admin-only GET /bhasa-diwas/winners/full.
+  winner_rank         INTEGER,
+  winner_full_name    TEXT,
+  winner_address      TEXT,
+  winner_phone        TEXT,
+  address_submitted_at TEXT
 );
 CREATE INDEX idx_bhasa_submitter ON bhasa_diwas_submissions(submitter_id);
 
@@ -265,6 +276,21 @@ CREATE TABLE fcm_tokens (
   token    TEXT NOT NULL
 );
 CREATE INDEX idx_fcm_tokens_user ON fcm_tokens(user_id);
+
+-- Added [weather-alerts feature]. One row per (city, forecast date,
+-- severity) that has already triggered a push, so the cron in
+-- src/index.ts scheduled() can re-check every few hours without
+-- re-notifying everyone each time -- the UNIQUE constraint is what
+-- makes "have we sent this one yet" an atomic INSERT ... ON CONFLICT
+-- DO NOTHING instead of a check-then-write race.
+CREATE TABLE weather_alert_log (
+  id           TEXT PRIMARY KEY,
+  city         TEXT NOT NULL,
+  alert_date   TEXT NOT NULL,
+  severity     TEXT NOT NULL,
+  sent_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(city, alert_date, severity)
+);
 
 -- ─── Analytics & admin utilities ────────────────────────────────────────
 
