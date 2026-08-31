@@ -74,6 +74,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script id="infolinks-config" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: "var infolinks_pid = 3446930; var infolinks_wsid = 0;" }} />
         <Script async src="//resources.infolinks.com/js/infolinks_main.js" strategy="afterInteractive" />
         <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5223539471824662" crossOrigin="anonymous" strategy="afterInteractive" />
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-0RGSS346WD" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive" dangerouslySetInnerHTML={{
+          __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-0RGSS346WD');
+          `,
+        }} />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
