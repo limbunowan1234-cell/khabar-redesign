@@ -83,6 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', 'G-0RGSS346WD');
           `,
         }} />
+        <Script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ec8c61ed03644636941380a15af04747"}' strategy="afterInteractive" />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
