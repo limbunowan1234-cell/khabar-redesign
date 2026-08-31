@@ -1,0 +1,47 @@
+import { NextResponse } from 'next/server';
+
+// Darjeeling only -- this widget is location-fixed by design (see
+// components/WeatherAirWidget.tsx), not a general-purpose weather API.
+const LAT = 27.041;
+const LON = 88.2663;
+
+// Server-side proxy so the OpenWeatherMap key never reaches the client
+// bundle, matching how every other external call in this app goes
+// through a Next.js API route rather than being fetched directly from
+// the browser.
+export async function GET() {
+  try {
+    const owmKey = process.env.OPENWEATHER_API_KEY;
+    if (!owmKey) return NextResponse.json({ error: 'OPENWEATHER_API_KEY not set' }, { status: 503 });
+
+    // AQICN's public "demo" token works for testing but is rate-limited
+    // and shared across everyone using it -- get a real free token at
+    // https://aqicn.org/data-platform/token/ and set AQICN_API_KEY.
+    const [weatherRes, aqiRes] = await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&units=metric&appid=${owmKey}`),
+      fetch(`https://api.waqi.info/feed/geo:${LAT};${LON}/?token=${process.env.AQICN_API_KEY || 'demo'}`),
+    ]);
+
+    if (!weatherRes.ok) return NextResponse.json({ error: 'Weather unavailable' }, { status: 502 });
+    const weather = await weatherRes.json();
+
+    // AQI is best-effort -- a down/rate-limited AQICN shouldn't take the
+    // weather half of the widget down with it.
+    let aqi: number | null = null;
+    if (aqiRes.ok) {
+      const aqiData = await aqiRes.json().catch(() => null);
+      if (aqiData?.status === 'ok' && typeof aqiData.data?.aqi === 'number') aqi = aqiData.data.aqi;
+    }
+
+    return NextResponse.json({
+      temp: Math.round(weather.main?.temp),
+      condition: weather.weather?.[0]?.main || '',
+      description: weather.weather?.[0]?.description || '',
+      icon: weather.weather?.[0]?.icon || '',
+      aqi,
+    });
+  } catch (error) {
+    console.error('weather-aqi error:', error);
+    return NextResponse.json({ error: 'Failed to fetch weather/AQI' }, { status: 500 });
+  }
+}
