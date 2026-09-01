@@ -90,8 +90,13 @@ const BHASA_DIWAS_NAME_MAX_WIDTH = 200; // the blank gap is ~215px wide now
 const BHASA_DIWAS_RANK_X = 1063;
 const BHASA_DIWAS_RANK_Y = 508;
 const BHASA_DIWAS_TEXT_COLOR = '#1a1a1a';
+// "Noto Serif Devanagari" is the site's own loaded Devanagari face (see
+// app/layout.tsx's next/font/google setup) -- using it here, not a
+// generic system-font fallback, is what actually matches the template
+// art's own printed Devanagari instead of visibly clashing with it.
+// Georgia still covers the Latin characters in an English name.
 const BHASA_DIWAS_FONT = (weight: string, size: number) =>
-  `${weight} ${size}px Georgia, "Noto Sans Devanagari", "Nirmala UI", sans-serif`;
+  `${weight} ${size}px Georgia, "Noto Serif Devanagari", "Noto Sans Devanagari", "Nirmala UI", serif`;
 
 export async function generateBhasaDiwasCertificateBlob(name: string, rank: CertRank): Promise<Blob> {
   const img = await loadImage(BHASA_DIWAS_TEMPLATE_PATH);
@@ -107,9 +112,12 @@ export async function generateBhasaDiwasCertificateBlob(name: string, rank: Cert
   ctx.fillStyle = BHASA_DIWAS_TEXT_COLOR;
 
   // Winner's name on the blank line, shrinking to fit if it's long.
+  // Regular weight, not bold -- matches the template's own printed text,
+  // which is regular throughout (bold read as a mismatched font, not
+  // just a different weight, next to the template's actual typeface).
   let nameSize = 32;
   do {
-    ctx.font = BHASA_DIWAS_FONT('bold', nameSize);
+    ctx.font = BHASA_DIWAS_FONT('normal', nameSize);
     if (ctx.measureText(name).width <= BHASA_DIWAS_NAME_MAX_WIDTH || nameSize <= 16) break;
     nameSize -= 1;
   } while (true);
