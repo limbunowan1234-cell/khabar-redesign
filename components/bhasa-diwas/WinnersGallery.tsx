@@ -4,9 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/authStore';
 import { getWorkerAuthToken } from '@/lib/appwrite';
-// Certificate download is disabled for now -- see MyWinBanner below --
-// until the real template art (coming tomorrow) replaces the interim
-// code-drawn design in lib/certGenerator.ts.
+import { generateBhasaDiwasCertificateBlob, downloadBlob, CertRank } from '@/lib/certGenerator';
 
 // Week 40 of the Cloudflare migration (see cloudflare/README.md): photo
 // submissions read from R2 through the Worker now.
@@ -20,6 +18,7 @@ const CATS: Record<string, { emoji: string; nepali: string; color: string }> = {
 const MEDALS = ['🏆', '🥈', '🥉'];
 const MEDAL_LABELS = ['प्रथम', 'दोस्रो', 'तेस्रो'];
 const BORDER = ['#facc15', '#9ca3af', '#fb923c'];
+const CERT_RANKS: CertRank[] = ['1st', '2nd', '3rd'];
 
 const S = {
   headerWrap: { textAlign: 'center' as const, marginBottom: '48px' },
@@ -64,6 +63,20 @@ function MyWinBanner({ entry, onAddressSaved }: { entry: any; onAddressSaved: (i
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [certDownloading, setCertDownloading] = useState(false);
+
+  async function handleDownloadCertificate() {
+    setCertDownloading(true);
+    try {
+      const rank = CERT_RANKS[(entry.winnerRank || 1) - 1] || '1st';
+      const blob = await generateBhasaDiwasCertificateBlob(entry.submitterName || fullName, rank);
+      downloadBlob(blob, 'Bhasa_Diwas_Certificate.png');
+    } catch {
+      setError('प्रमाणपत्र डाउनलोड गर्न असफल भयो।');
+    } finally {
+      setCertDownloading(false);
+    }
+  }
 
   async function handleSubmitAddress() {
     if (!fullName.trim() || !address.trim() || !phone.trim()) {
@@ -93,7 +106,7 @@ function MyWinBanner({ entry, onAddressSaved }: { entry: any; onAddressSaved: (i
     <div style={S.winnerBanner}>
       <h3 style={S.bannerTitle}>{MEDALS[(entry.winnerRank || 1) - 1]} बधाई छ! तपाईं {CATS[entry.category]?.nepali || entry.category} मा {MEDAL_LABELS[(entry.winnerRank || 1) - 1]} भएको छ!</h3>
       <p style={S.bannerText}>
-        स्मृति चिन्ह पठाउन आफ्नो ठेगाना तल पेस गर्नुहोस्। प्रमाणपत्र चाँडै उपलब्ध हुनेछ।
+        तलबाट आफ्नो प्रमाणपत्र डाउनलोड गर्नुहोस्, र स्मृति चिन्ह पठाउन आफ्नो ठेगाना पेस गर्नुहोस्।
       </p>
 
       {entry.addressSubmitted ? (
@@ -121,9 +134,9 @@ function MyWinBanner({ entry, onAddressSaved }: { entry: any; onAddressSaved: (i
         </>
       )}
       <div style={S.btnRow}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 20px', borderRadius: '20px', fontWeight: 700, fontSize: '14px', color: '#1f2937', border: '2px dashed rgba(31,41,55,0.4)' }}>
-          🎓 प्रमाणपत्र चाँडै आउँदैछ
-        </span>
+        <button style={S.secondaryBtn} disabled={certDownloading} onClick={handleDownloadCertificate}>
+          {certDownloading ? 'बन्दैछ...' : '🎓 प्रमाणपत्र डाउनलोड गर्नुहोस्'}
+        </button>
       </div>
     </div>
   );
