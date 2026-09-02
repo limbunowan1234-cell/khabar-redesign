@@ -962,6 +962,12 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             {!searchQuery && selectedCategory === 'All' && <AdSlot placement={AD_PLACEMENTS.homepageHeroBanner} />}
             {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
+            {/* Mobile has no sidebar, so this is its only AdBanner slot on the
+                default "All" view -- desktop gets its unconditional one in
+                the <aside> further down. Placed after LatestSection so it
+                reads as a natural break in the scroll, not stacked right
+                under the hero's own AdSlot banner. */}
+            {!searchQuery && selectedCategory === 'All' && <AdBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget />}
             {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget />}
