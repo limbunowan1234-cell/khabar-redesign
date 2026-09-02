@@ -33,11 +33,21 @@ export async function GET() {
     const weather = await weatherRes.json();
 
     // AQI is best-effort -- a down/rate-limited AQICN shouldn't take the
-    // weather half of the widget down with it.
+    // weather half of the widget down with it. Diagnostic logging here
+    // too: silently returning null on any of the 3 ways this can fail
+    // (HTTP error, malformed body, wrong-shape JSON) makes "why is AQI
+    // always missing" unanswerable otherwise.
     let aqi: number | null = null;
-    if (aqiRes.ok) {
-      const aqiData = await aqiRes.json().catch(() => null);
-      if (aqiData?.status === 'ok' && typeof aqiData.data?.aqi === 'number') aqi = aqiData.data.aqi;
+    if (!aqiRes.ok) {
+      const body = await aqiRes.text().catch(() => '');
+      console.error('weather-aqi: AQICN request failed', aqiRes.status, body.slice(0, 500));
+    } else {
+      const aqiData = await aqiRes.json().catch((e) => { console.error('weather-aqi: AQICN body not JSON', e); return null; });
+      if (aqiData?.status === 'ok' && typeof aqiData.data?.aqi === 'number') {
+        aqi = aqiData.data.aqi;
+      } else {
+        console.error('weather-aqi: AQICN response not usable', JSON.stringify(aqiData).slice(0, 500));
+      }
     }
 
     return NextResponse.json({
