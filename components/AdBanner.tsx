@@ -8,9 +8,24 @@ function getImageUrl(fileId: string): string {
   return WORKER_URL + '/cdn/articles/' + fileId;
 }
 
+// Ad creative arrives in whatever shape the advertiser sent it -- wide
+// banner, near-square, or a tall poster-style flyer. A fixed 200px-tall
+// box with objectFit:cover only works for the first case; anything
+// taller crops most of the image away. Instead this measures each
+// image's real aspect ratio (via onLoad) and sizes the box to match --
+// cover then never crops, since the box IS the image's own shape.
+// Only a very tall poster (aspect < 0.65, e.g. a phone-screenshot flyer)
+// gets capped, so one ad can't take over the whole sidebar; capped
+// posters switch to objectFit:contain so nothing gets cut off, just
+// letterboxed on a dark ground.
+const FALLBACK_RATIO = 16 / 9; // used only until the real image loads
+const MAX_HEIGHT = 420;
+const TALL_POSTER_RATIO = 0.65;
+
 export default function AdBanner({ isDarkMode }: { isDarkMode?: boolean }) {
   const [ads, setAds] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [ratio, setRatio] = useState(FALLBACK_RATIO);
 
   useEffect(() => {
     (async () => {
@@ -32,11 +47,18 @@ export default function AdBanner({ isDarkMode }: { isDarkMode?: boolean }) {
     return () => clearInterval(interval);
   }, [ads.length]);
 
+  // Reset to the fallback ratio whenever the visible ad changes, so a
+  // slow-loading image doesn't briefly inherit the previous ad's shape.
+  useEffect(() => { setRatio(FALLBACK_RATIO); }, [currentIndex]);
+
   if (ads.length === 0) return null;
 
   const currentAd = ads[currentIndex];
   const goPrev = () => setCurrentIndex((prev) => (prev - 1 + ads.length) % ads.length);
   const goNext = () => setCurrentIndex((prev) => (prev + 1) % ads.length);
+
+  const isTallPoster = ratio < TALL_POSTER_RATIO;
+  const boxHeight = isTallPoster ? MAX_HEIGHT : undefined;
 
   return (
     <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', marginBottom: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
@@ -44,13 +66,18 @@ export default function AdBanner({ isDarkMode }: { isDarkMode?: boolean }) {
         Sponsored
       </div>
 
-      <div style={{ position: 'relative', width: '100%', height: '200px', backgroundColor: '#1a1a1a' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: isTallPoster ? undefined : ratio, height: boxHeight, maxHeight: MAX_HEIGHT, backgroundColor: '#1a1a1a' }}>
         <img
+          key={currentAd.$id}
           src={getImageUrl(currentAd.imageFileId)}
           alt={currentAd.title || 'Advertisement'}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            if (img.naturalWidth && img.naturalHeight) setRatio(img.naturalWidth / img.naturalHeight);
+          }}
+          style={{ width: '100%', height: '100%', objectFit: isTallPoster ? 'contain' : 'cover', display: 'block' }}
         />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(0,0,0,0.75) 100%)' }} />
+        {!isTallPoster && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(0,0,0,0.75) 100%)' }} />}
 
         {currentAd.title && (
           <div style={{ position: 'absolute', bottom: '14px', left: '16px', right: '16px', zIndex: 2 }}>

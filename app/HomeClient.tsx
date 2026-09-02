@@ -12,6 +12,8 @@ import TopCreators from '@/components/TopCreators';
 import AdBanner from '@/components/AdBanner';
 import GenreNav from '@/components/GenreNav';
 import MagazineHero from '@/components/MagazineHero';
+import AdSlot from '@/components/AdSlot';
+import { AD_PLACEMENTS } from '@/lib/adConfig';
 import GenreColumns from '@/components/GenreColumns';
 import BhasaDiwasWidget from '@/components/BhasaDiwasWidget';
 import LatestSection from '@/components/LatestSection';
@@ -957,8 +959,15 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
         <div style={{ padding: '4px 16px 16px' }}>
           {/* HERO SECTION ON MOBILE */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <AdSlot placement={AD_PLACEMENTS.homepageHeroBanner} />}
             {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
+            {/* Mobile has no sidebar, so this is its only AdBanner slot on the
+                default "All" view -- desktop gets its unconditional one in
+                the <aside> further down. Placed after LatestSection so it
+                reads as a natural break in the scroll, not stacked right
+                under the hero's own AdSlot banner. */}
+            {!searchQuery && selectedCategory === 'All' && <AdBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget />}
             {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget />}
@@ -983,6 +992,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
           <main>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <AdSlot placement={AD_PLACEMENTS.homepageHeroBanner} />}
             {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
@@ -1014,6 +1024,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
           <aside style={{ position: 'sticky', top: '90px', alignSelf: 'start', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto', minWidth: 0, overflowX: 'hidden' }}>
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
             <WeatherStrip isDarkMode={isDarkMode} defaultCity={userDistrict || undefined} />
+              <AdSlot placement={AD_PLACEMENTS.homepageSidebar} />
               <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
             <SidebarTabs articles={articles} isDarkMode={isDarkMode} topTen={<TopTen articles={articles} isDarkMode={isDarkMode} />} breaking={<BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />} />

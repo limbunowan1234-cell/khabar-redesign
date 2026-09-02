@@ -312,6 +312,7 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
   const [readProgress, setReadProgress] = useState(0);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [postingReply, setPostingReply] = useState(false);
 
   const isAdmin = (user as any)?.labels?.includes("admin") || user?.email === "nowanad@gmail.com";
@@ -462,6 +463,18 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Keyboard nav for the photo-story lightbox: arrows to browse, Escape to close.
+  useEffect(() => {
+    if (!lightboxOpen || !article?.galleryImageIds?.length) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setLightboxOpen(false);
+      if (e.key === 'ArrowLeft') setGalleryIndex((i: number) => Math.max(i - 1, 0));
+      if (e.key === 'ArrowRight') setGalleryIndex((i: number) => Math.min(i + 1, article.galleryImageIds.length - 1));
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightboxOpen, article?.galleryImageIds?.length]);
 
   async function handleLike() {
     if (!user) { window.location.href = '/auth'; return; }
@@ -721,9 +734,16 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
           </div>
           {article.galleryImageIds && article.galleryImageIds.length > 0 && (
             <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '20px 28px 28px', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', marginBottom: '14px' }}>Photo Gallery ({article.galleryImageIds.length + 1})</h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', margin: 0 }}>Photo Gallery</h3>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: isDarkMode ? '#aaa' : '#888', backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5', padding: '3px 11px', borderRadius: '20px' }}>
+                  {article.galleryImageIds.length} photo{article.galleryImageIds.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
               <div
-                style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#000', aspectRatio: '16/10', maxHeight: '480px' }}
+                style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#000', aspectRatio: '4/3', maxHeight: '560px', cursor: 'zoom-in', boxShadow: '0 10px 28px rgba(0,0,0,0.2)' }}
+                onClick={() => setLightboxOpen(true)}
                 onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
                 onTouchEnd={(e) => {
                   const diff = touchStartX - e.changedTouches[0].clientX;
@@ -731,21 +751,63 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
                   if (diff < -50) setGalleryIndex((i) => Math.max(i - 1, 0));
                 }}
               >
-                <img src={getImageUrl({ imageFileId: article.galleryImageIds[galleryIndex] })} alt={'Gallery photo ' + (galleryIndex + 1)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', backgroundColor: '#000' }} />
+                <img key={galleryIndex} src={getImageUrl({ imageFileId: article.galleryImageIds[galleryIndex] })} alt={'Gallery photo ' + (galleryIndex + 1)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', backgroundColor: '#000', animation: 'fadeIn 0.25s ease' }} />
                 {galleryIndex > 0 && (
-                  <button onClick={() => setGalleryIndex((i) => Math.max(i - 1, 0))} style={{ position: 'absolute', top: '50%', left: '10px', transform: 'translateY(-50%)', width: '38px', height: '38px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&lsaquo;</button>
+                  <button onClick={(e) => { e.stopPropagation(); setGalleryIndex((i) => Math.max(i - 1, 0)); }} style={{ position: 'absolute', top: '50%', left: '12px', transform: 'translateY(-50%)', width: '40px', height: '40px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&lsaquo;</button>
                 )}
                 {galleryIndex < article.galleryImageIds.length - 1 && (
-                  <button onClick={() => setGalleryIndex((i) => Math.min(i + 1, article.galleryImageIds.length - 1))} style={{ position: 'absolute', top: '50%', right: '10px', transform: 'translateY(-50%)', width: '38px', height: '38px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&rsaquo;</button>
+                  <button onClick={(e) => { e.stopPropagation(); setGalleryIndex((i) => Math.min(i + 1, article.galleryImageIds.length - 1)); }} style={{ position: 'absolute', top: '50%', right: '12px', transform: 'translateY(-50%)', width: '40px', height: '40px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&rsaquo;</button>
                 )}
-                <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '700' }}>
+                <div style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: 'rgba(0,0,0,0.55)', color: '#fff', padding: '4px 11px', borderRadius: '12px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.3px' }}>
                   {galleryIndex + 1} / {article.galleryImageIds.length}
                 </div>
-                <div style={{ position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '5px' }}>
-                  {article.galleryImageIds.map((_: string, i: number) => (
-                    <div key={i} onClick={() => setGalleryIndex(i)} style={{ width: '6px', height: '6px', borderRadius: '50%', cursor: 'pointer', backgroundColor: i === galleryIndex ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                <div style={{ position: 'absolute', bottom: '12px', right: '12px', backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
+                  ⤢ Tap to enlarge
+                </div>
+              </div>
+
+              {article.galleryImageIds.length > 1 && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '10px', overflowX: 'auto', paddingBottom: '2px' }}>
+                  {article.galleryImageIds.map((fileId: string, i: number) => (
+                    <img
+                      key={i}
+                      src={getImageUrl({ imageFileId: fileId })}
+                      alt={'Thumbnail ' + (i + 1)}
+                      onClick={() => setGalleryIndex(i)}
+                      style={{
+                        width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', flexShrink: 0,
+                        border: i === galleryIndex ? '2px solid #c41e3a' : '2px solid transparent',
+                        opacity: i === galleryIndex ? 1 : 0.6, transition: 'opacity 0.15s ease',
+                      }}
+                    />
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* PHOTO STORY LIGHTBOX */}
+          {lightboxOpen && article.galleryImageIds && article.galleryImageIds.length > 0 && (
+            <div
+              onClick={() => setLightboxOpen(false)}
+              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.92)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', animation: 'fadeIn 0.2s ease' }}
+            >
+              <button onClick={() => setLightboxOpen(false)} aria-label="Close" style={{ position: 'absolute', top: '16px', right: '16px', width: '40px', height: '40px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&times;</button>
+              {galleryIndex > 0 && (
+                <button onClick={(e) => { e.stopPropagation(); setGalleryIndex((i) => Math.max(i - 1, 0)); }} aria-label="Previous photo" style={{ position: 'absolute', top: '50%', left: '16px', transform: 'translateY(-50%)', width: '46px', height: '46px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&lsaquo;</button>
+              )}
+              {galleryIndex < article.galleryImageIds.length - 1 && (
+                <button onClick={(e) => { e.stopPropagation(); setGalleryIndex((i) => Math.min(i + 1, article.galleryImageIds.length - 1)); }} aria-label="Next photo" style={{ position: 'absolute', top: '50%', right: '16px', transform: 'translateY(-50%)', width: '46px', height: '46px', borderRadius: '50%', border: 'none', backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&rsaquo;</button>
+              )}
+              <img
+                key={galleryIndex}
+                src={getImageUrl({ imageFileId: article.galleryImageIds[galleryIndex] })}
+                alt={'Gallery photo ' + (galleryIndex + 1)}
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: '100%', maxHeight: '88vh', objectFit: 'contain', borderRadius: '6px', animation: 'fadeIn 0.2s ease' }}
+              />
+              <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.85)', fontSize: '13px', fontWeight: '600' }}>
+                {galleryIndex + 1} / {article.galleryImageIds.length}
               </div>
             </div>
           )}
