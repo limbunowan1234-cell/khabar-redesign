@@ -803,9 +803,6 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
           <button onClick={() => setShowBanner(false)} style={{ backgroundColor: 'transparent', border: 'none', color: '#c41e3a', cursor: 'pointer', fontSize: '20px', flexShrink: 0, padding: '0', width: '30px', height: '30px' }}>X</button>
         </div>
       )}
-      <div style={{ background: "linear-gradient(135deg, #b91c1c, #7f1d1d)", color: "white", padding: "14px 20px", textAlign: "center", borderBottom: "3px solid #facc15" }}>
-        <span style={{ fontSize: isMobile ? "14px" : "16px", fontWeight: 700 }}>नेपाली भाषा दिवस सबमिशन खुला भयो! आफ्नो काव्य, निबन्ध र फोटो सबमिट गर्नुहोस्</span>
-      </div>
 
       {isMobile && showMenu && (
         <>
