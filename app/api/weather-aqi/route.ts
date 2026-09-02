@@ -22,7 +22,14 @@ export async function GET() {
       fetch(`https://api.waqi.info/feed/geo:${LAT};${LON}/?token=${process.env.AQICN_API_KEY || 'demo'}`),
     ]);
 
-    if (!weatherRes.ok) return NextResponse.json({ error: 'Weather unavailable' }, { status: 502 });
+    if (!weatherRes.ok) {
+      // Diagnostic only -- OpenWeatherMap's status/body is the one thing
+      // that actually says *why* (bad key, key not yet activated, rate
+      // limit, wrong plan) instead of just "something failed upstream".
+      const body = await weatherRes.text().catch(() => '');
+      console.error('weather-aqi: OpenWeatherMap request failed', weatherRes.status, body.slice(0, 500));
+      return NextResponse.json({ error: 'Weather unavailable' }, { status: 502 });
+    }
     const weather = await weatherRes.json();
 
     // AQI is best-effort -- a down/rate-limited AQICN shouldn't take the
