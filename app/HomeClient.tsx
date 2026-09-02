@@ -14,6 +14,7 @@ import GenreNav from '@/components/GenreNav';
 import MagazineHero from '@/components/MagazineHero';
 import AdSlot from '@/components/AdSlot';
 import { AD_PLACEMENTS } from '@/lib/adConfig';
+import WeatherAirWidget from '@/components/WeatherAirWidget';
 import GenreColumns from '@/components/GenreColumns';
 import BhasaDiwasWidget from '@/components/BhasaDiwasWidget';
 import LatestSection from '@/components/LatestSection';
@@ -959,6 +960,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
         <div style={{ padding: '4px 16px 16px' }}>
           {/* HERO SECTION ON MOBILE */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <WeatherAirWidget isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <AdSlot placement={AD_PLACEMENTS.homepageHeroBanner} />}
             {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
@@ -992,6 +994,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
           <main>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
+            {!searchQuery && selectedCategory === 'All' && <WeatherAirWidget isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <AdSlot placement={AD_PLACEMENTS.homepageHeroBanner} />}
             {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
@@ -999,7 +1002,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget />}
             {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget />}
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
-            
+
             {(selectedCategory !== 'All' || searchQuery) && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
