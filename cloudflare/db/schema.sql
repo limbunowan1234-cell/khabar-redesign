@@ -292,6 +292,40 @@ CREATE TABLE weather_alert_log (
   UNIQUE(city, alert_date, severity)
 );
 
+-- ─── Advertising ────────────────────────────────────────────────────────
+
+-- One row per advertiser campaign. `active` is the master kill switch --
+-- AdSlot.tsx (see lib/adConfig.ts) refuses to render anything for a
+-- campaign unless both this row AND the campaign's own config entry say
+-- active. Defaults to 0 deliberately: a campaign exists in the system
+-- (trackable, billable) without being live on the site until someone
+-- explicitly flips it on.
+CREATE TABLE ad_campaigns (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  advertiser  TEXT NOT NULL,
+  active      INTEGER NOT NULL DEFAULT 0,
+  start_date  TEXT,
+  end_date    TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Impression/click events, one row each -- deliberately not deduplicated
+-- or aggregated at write time (matches analytics_events' own pattern);
+-- GET /ads/analytics aggregates on read.
+CREATE TABLE ad_events (
+  id            TEXT PRIMARY KEY,
+  campaign_id   TEXT NOT NULL,
+  placement_id  TEXT NOT NULL,
+  event_type    TEXT NOT NULL,  -- 'impression' | 'click'
+  device_type   TEXT,
+  visitor_id    TEXT,
+  page_url      TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_ad_events_campaign ON ad_events(campaign_id, event_type, created_at);
+CREATE INDEX idx_ad_events_placement ON ad_events(placement_id, event_type, created_at);
+
 -- ─── Analytics & admin utilities ────────────────────────────────────────
 
 CREATE TABLE analytics_events (

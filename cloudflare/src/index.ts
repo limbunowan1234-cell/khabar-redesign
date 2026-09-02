@@ -16,6 +16,7 @@ import { photos } from './routes/photos';
 import { photography } from './routes/photography';
 import { analytics } from './routes/analytics';
 import { newsDigest } from './routes/newsDigest';
+import { ads } from './routes/ads';
 
 type Bindings = { DB: D1Database; IMAGES: R2Bucket };
 
@@ -66,6 +67,7 @@ app.route('/photos', photos);
 app.route('/photography', photography);
 app.route('/analytics', analytics);
 app.route('/news-digest', newsDigest);
+app.route('/ads', ads);
 
 export default {
   fetch: app.fetch,
