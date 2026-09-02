@@ -108,7 +108,17 @@ export async function GET(req: NextRequest) {
       if (!e.articleId) continue;
       viewsByArticle.set(e.articleId, (viewsByArticle.get(e.articleId) || 0) + 1);
     }
-    const articleById = new Map(articles.map((a) => [a.$id, a]));
+    // Keyed by both id and slug: trackPageView() (lib/analyticsTracker.ts)
+    // records whatever's in the /article/[id] URL param, which is the
+    // slug for most articles (see how they're linked throughout this
+    // app: '/article/' + (story.slug || story.$id)) -- looking up by
+    // $id alone made every tracked view resolve to "(deleted article)",
+    // even for genuinely popular, still-published articles.
+    const articleById = new Map<string, any>();
+    for (const a of articles) {
+      articleById.set(a.$id, a);
+      if (a.slug) articleById.set(a.slug, a);
+    }
     const topArticles = Array.from(viewsByArticle.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
