@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { AdPlacement } from '@/lib/adConfig';
 
 // Renders one ad placement, or nothing at all. Nothing is the default:
+// - a placement must actually be passed (lib/adConfig.ts's AD_PLACEMENTS
+//   is empty until a real, verified advertiser exists -- call sites like
+//   HomeClient.tsx's <AdSlot placement={AD_PLACEMENTS.homepageHeroBanner} />
+//   then pass undefined, which this must handle rather than crash on), AND
 // - placement.active must be true (the config-level kill switch), AND
 // - the D1 ad_campaigns row must also say active (server-side kill
 //   switch -- catches a stale deployed config without needing a redeploy
@@ -12,7 +16,7 @@ import type { AdPlacement } from '@/lib/adConfig';
 // Any of those failing hides the slot entirely -- no broken-image icon,
 // no placeholder box, same "fail gracefully" convention as every other
 // best-effort widget in this app (WeatherAirWidget, etc.).
-export default function AdSlot({ placement }: { placement: AdPlacement }) {
+export default function AdSlot({ placement }: { placement?: AdPlacement }) {
   const [serverActive, setServerActive] = useState<boolean | null>(null);
   const [imgFailed, setImgFailed] = useState(false);
   const [visitorId, setVisitorId] = useState('');
@@ -31,14 +35,14 @@ export default function AdSlot({ placement }: { placement: AdPlacement }) {
   }, []);
 
   useEffect(() => {
-    if (!placement.active) return; // config says off -- don't even ask the server
+    if (!placement?.active) return; // no placement configured, or config says off -- don't even ask the server
     fetch('https://khabar-worker.limbunowan1234.workers.dev/ads/campaign/' + encodeURIComponent(placement.campaignId))
       .then((r) => (r.ok ? r.json() : { active: false }))
       .then((d) => setServerActive(!!d.active))
       .catch(() => setServerActive(false));
-  }, [placement.active, placement.campaignId]);
+  }, [placement?.active, placement?.campaignId]);
 
-  const live = placement.active && serverActive === true && !imgFailed;
+  const live = !!placement?.active && serverActive === true && !imgFailed;
 
   function deviceType(): string {
     if (typeof window === 'undefined') return 'desktop';
@@ -47,6 +51,7 @@ export default function AdSlot({ placement }: { placement: AdPlacement }) {
   }
 
   function track(eventType: 'impression' | 'click') {
+    if (!placement) return; // can't happen when live, but keeps this typesafe on its own
     fetch('/api/ads/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -79,7 +84,7 @@ export default function AdSlot({ placement }: { placement: AdPlacement }) {
     return () => observer.disconnect();
   }, [live]);
 
-  if (!live) return null;
+  if (!live || !placement) return null;
 
   return (
     <a
