@@ -26,9 +26,13 @@ function getImageUrl(fileId: string): string {
   return '/api/image-proxy?id=' + fileId;
 }
 
-export default function WeeklyClient({ initialArticles = [], initialAllIssues = [], initialCurrentIssue = null }: { initialArticles?: any[]; initialAllIssues?: number[]; initialCurrentIssue?: number | null }) {
-  const [allIssues, setAllIssues] = useState<number[]>(initialAllIssues);
-  const [currentIssue, setCurrentIssue] = useState<number | null>(initialCurrentIssue);
+// weeklyIssue is a string everywhere it actually comes from (weekly_issue is
+// a TEXT column in D1) -- typed that way here too now, not as `number`, so a
+// string/number comparison mismatch like the one this file used to have
+// (see the effect below) would be a type error instead of a silent no-op.
+export default function WeeklyClient({ initialArticles = [], initialAllIssues = [], initialCurrentIssue = null }: { initialArticles?: any[]; initialAllIssues?: string[]; initialCurrentIssue?: string | null }) {
+  const [allIssues, setAllIssues] = useState<string[]>(initialAllIssues);
+  const [currentIssue, setCurrentIssue] = useState<string | null>(initialCurrentIssue);
   const [articles, setArticles] = useState<any[]>(initialArticles);
   const [loading, setLoading] = useState(initialArticles.length === 0);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -112,13 +116,20 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
         const data = await res.json();
         const docs = (data.documents || []).filter((d: any) => d[liveField]);
 
-        const issueNumbers = Array.from(new Set(docs.map((d: any) => d.weeklyIssue).filter(Boolean))).sort((a: any, b: any) => b - a) as number[];
+        const issueNumbers = Array.from(new Set(docs.map((d: any) => d.weeklyIssue).filter(Boolean))).sort((a: any, b: any) => Number(b) - Number(a)) as string[];
         if (issueNumbers.length > 0) setAllIssues(issueNumbers);
 
-        const targetIssue = issueParam ? parseInt(issueParam) : issueNumbers[0];
+        // weeklyIssue comes back from the Worker as a string (weekly_issue is
+        // a TEXT column in D1). parseInt()-ing issueParam here used to compare
+        // that string against a number -- d.weeklyIssue === targetIssue was
+        // "7" === 7, always false -- so clicking a back issue updated the
+        // "Issue No." label (targetIssue is still truthy) but silently kept
+        // showing whichever issue's articles were already loaded, since the
+        // `issueArticles.length > 0` guard below never saw a match to apply.
+        const targetIssue = issueParam || issueNumbers[0];
         if (targetIssue) setCurrentIssue(targetIssue);
 
-        const issueArticles = docs.filter((d: any) => d.weeklyIssue === targetIssue);
+        const issueArticles = docs.filter((d: any) => String(d.weeklyIssue) === String(targetIssue));
         if (issueArticles.length > 0) setArticles(issueArticles);
       } catch (e) {
         console.error(e);

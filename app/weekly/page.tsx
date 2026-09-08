@@ -6,14 +6,16 @@ const SITE = 'https://khabardarjeeling.in';
 // Week 5 of the Cloudflare migration (see cloudflare/README.md).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
-async function fetchWeeklyData(): Promise<{ articles: any[]; allIssues: number[]; currentIssue: number | null }> {
+// weeklyIssue is a string (weekly_issue is a TEXT column in D1) -- typed
+// that way here, matching WeeklyClient.tsx's props.
+async function fetchWeeklyData(): Promise<{ articles: any[]; allIssues: string[]; currentIssue: string | null }> {
   try {
     const res = await fetch(WORKER_URL + '/articles?limit=500', { next: { revalidate: 300 } });
     if (!res.ok) return { articles: [], allIssues: [], currentIssue: null };
     const data = await res.json();
     const docs = (data.documents || []).filter((d: any) => d.weeklyLive);
 
-    const issueNumbers = Array.from(new Set(docs.map((d: any) => d.weeklyIssue).filter(Boolean))).sort((a: any, b: any) => b - a) as number[];
+    const issueNumbers = Array.from(new Set(docs.map((d: any) => d.weeklyIssue).filter(Boolean))).sort((a: any, b: any) => Number(b) - Number(a)) as string[];
     const currentIssue = issueNumbers[0] || null;
     const articles = docs.filter((d: any) => d.weeklyIssue === currentIssue);
 
