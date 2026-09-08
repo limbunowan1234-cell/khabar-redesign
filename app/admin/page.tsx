@@ -382,14 +382,18 @@ function generateSlug(text: string): string {
 
   async function toggleWeeklyPick(articleId: string, currentValue: boolean) {
     try {
-      let issueNum = null;
+      let issueNum: string | null = null;
       let sectionName = '';
       if (!currentValue) {
         sectionName = prompt('Section name for this story (e.g. Community Voices, Ground Reports):', '') || 'Community Voices';
         const res = await fetch(WORKER_URL + '/articles?weeklyLive=1&sort=weeklyIssueDesc&limit=1');
         const data = await res.json();
         const highest = Number(data.documents?.[0]?.weeklyIssue) || 0;
-        issueNum = highest + 1;
+        // weekly_issue is a TEXT column (see cloudflare/src/routes/articles.ts) --
+        // binding a raw JS number here gets D1/SQLite's TEXT-affinity coercion,
+        // which stringifies it as "8.0" (a float), not "8". Stringify explicitly
+        // so new issues match the plain "7", "6", "5"... format of existing ones.
+        issueNum = String(highest + 1);
       }
       const weeklyData = { isWeeklyPick: !currentValue, weeklyIssue: !currentValue ? issueNum : null, weeklyLive: false, weeklySection: !currentValue ? sectionName : null };
       const workerToken = await getWorkerAuthToken();
