@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const bookmarks = new Hono<{ Bindings: Bindings }>();
 
@@ -37,7 +37,7 @@ bookmarks.get('/', async (c) => {
 
 // POST /bookmarks  { userId, articleId }
 bookmarks.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   const body = await c.req.json().catch(() => null);
   if (!body?.userId || !body?.articleId) return c.json({ error: 'userId and articleId are required' }, 400);
   if (!user || user.$id !== body.userId) return c.json({ error: 'Unauthorized' }, 401);
@@ -52,7 +52,7 @@ bookmarks.post('/', async (c) => {
 
 // DELETE /bookmarks?userId=X&articleId=Y
 bookmarks.delete('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   const q = c.req.query();
   if (!q.userId || !q.articleId) return c.json({ error: 'userId and articleId are required' }, 400);
   if (!user || user.$id !== q.userId) return c.json({ error: 'Unauthorized' }, 401);

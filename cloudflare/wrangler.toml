@@ -33,13 +33,31 @@ bucket_name = "khabar-article-images"
 [triggers]
 crons = ["0 1 * * *", "0 0 * * SUN", "0 */3 * * *"]
 
+# api.khabardarjeeling.in used to be Appwrite's own custom domain (a CNAME
+# to nyc.cloud.appwrite.io) -- the one thing lib/appwrite.ts's `endpoint`
+# constant pointed at. Repointed here at this Worker instead, now that
+# auth (the only thing that domain was ever used for) lives here. Wrangler
+# manages the DNS record + SSL cert for this automatically on deploy.
+[[routes]]
+pattern = "api.khabardarjeeling.in"
+custom_domain = true
+
 # APK downloads are staying on Appwrite permanently (explicit decision —
 # not a deferral). Only 2 files, no bandwidth pressure, not worth the
 # extra bucket/route/script surface.
 
 # Secrets (set via `wrangler secret put NAME`, never committed here):
-#   APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID  — used to verify sessions against
-#     Appwrite's /account endpoint, since auth stays there (see migration plan).
+#   AUTH_JWT_SECRET — signs/verifies the short-lived access JWTs issued by
+#     POST /auth/token (see src/routes/auth.ts, src/lib/jwt.ts). Also held
+#     as a Vercel env var of the same name for the ~9 Next.js admin API
+#     routes that verify these tokens locally without a round-trip through
+#     this Worker (see lib/serverAuth.ts on the Next.js side). Auth was
+#     migrated off Appwrite entirely after Appwrite Cloud's Storage quota
+#     was exceeded and put the whole project (including auth) behind a
+#     billing_limit_exceeded 402 — see the migration plan.
+#   RESEND_API_KEY — sends password-reset emails via Resend's HTTP API
+#     (see src/lib/email.ts). Optional: POST /auth/request-password-reset
+#     no-ops the send (but still returns 200) if this isn't set.
 #   SERVICE_SECRET — shared with Vercel's WORKER_SERVICE_SECRET env var.
 #     Lets app/api/send-notification/route.ts create notifications and read
 #     push subscriptions for arbitrary recipients (not its own JWT identity)

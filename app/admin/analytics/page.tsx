@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 const ADMIN_EMAIL = 'nowanad@gmail.com';
@@ -70,7 +71,7 @@ export default function AdminAnalyticsPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const res = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
+        const res = await fetch(ENDPOINT + '/auth/me', { headers: H, credentials: 'include' });
         if (!res.ok) {
           router.push('/auth');
           return;
@@ -94,9 +95,8 @@ export default function AdminAnalyticsPage() {
       setLoadingData(true);
       setLoadError('');
       try {
-        const jwtRes = await fetch(ENDPOINT + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
-        if (!jwtRes.ok) throw new Error('Could not verify admin session.');
-        const { jwt } = await jwtRes.json();
+        const jwt = await getWorkerAuthToken();
+      if (!jwt) throw new Error('Could not verify admin session.');
         const res = await fetch('/api/admin/analytics', { headers: { 'x-admin-jwt': jwt } });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Failed to load analytics.');

@@ -5,7 +5,7 @@ import { computeContestRankings, rankToCertRank, RankedEntry } from '@/lib/certR
 import { generateCertificateBlob, downloadBlob } from '@/lib/certGenerator';
 import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const endpoint = 'https://api.khabardarjeeling.in/v1';
+const endpoint = 'https://api.khabardarjeeling.in';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
@@ -91,9 +91,8 @@ export default function AdminPage() {
     setPublishing2(true);
     try {
       const newVal = !certificatesLive;
-      const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
-      if (!jwtRes.ok) throw new Error('Could not verify admin session.');
-      const { jwt } = await jwtRes.json();
+      const jwt = await getWorkerAuthToken();
+      if (!jwt) throw new Error('Could not verify admin session.');
       const res = await fetch('/api/admin/contest/publish-certificates', {
         method: 'POST',
         headers: { 'x-admin-jwt': jwt, 'Content-Type': 'application/json' },
@@ -139,7 +138,7 @@ export default function AdminPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
+        const res = await fetch(endpoint + '/auth/me', { headers: H, credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           const labels = (data as any).labels || [];

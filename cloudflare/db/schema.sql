@@ -151,9 +151,66 @@ CREATE TABLE bookmarks (
 );
 CREATE INDEX idx_bookmarks_user ON bookmarks(user_id);
 
+-- ─── Auth ───────────────────────────────────────────────────────────────
+-- Replaces Appwrite Auth entirely (Appwrite Cloud's free-tier Storage quota
+-- was exceeded, which put the whole project — including Auth — behind a
+-- blanket billing_limit_exceeded 402; not paying to fix a billing cap on a
+-- migration that was already ~complete everywhere except auth). See the
+-- migration plan for the full design. id is preserved as the original
+-- Appwrite $id for every migrated user, so it keeps lining up with
+-- profiles.user_id and every other user_id/submitter_id-shaped column
+-- already in this schema. New signups after cutover get a fresh
+-- crypto.randomUUID() instead.
+
+CREATE TABLE users (
+  id                    TEXT PRIMARY KEY,
+  email                 TEXT NOT NULL,
+  password_hash         TEXT,                       -- NULL until a migrated account completes its first reset
+  name                  TEXT NOT NULL,
+  labels                TEXT NOT NULL DEFAULT '[]',  -- JSON array, e.g. ["admin"] — mirrors Appwrite's labels shape 1:1
+  needs_password_reset  INTEGER NOT NULL DEFAULT 0,
+  created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX idx_users_email ON users(email COLLATE NOCASE);
+
+-- One row per active login session (refresh token). The raw token is never
+-- stored, only its SHA-256 hash — a DB read alone can't be replayed as a
+-- session. Deleting/marking revoked_at is what "logout" does; the
+-- short-lived access JWT minted per-use from a session is not itself
+-- revocable before its own ~15 min expiry (see src/lib/jwt.ts) — an
+-- accepted simplification matching Appwrite's own JWT exposure window.
+CREATE TABLE sessions (
+  id           TEXT PRIMARY KEY,
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  refresh_hash TEXT NOT NULL,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at   TEXT NOT NULL,
+  revoked_at   TEXT,
+  user_agent   TEXT
+);
+CREATE INDEX idx_sessions_user ON sessions(user_id);
+CREATE INDEX idx_sessions_refresh_hash ON sessions(refresh_hash);
+
+-- One row per outstanding password-reset link. token_hash is
+-- SHA-256(raw token) — the raw token only ever exists in the emailed URL
+-- and briefly in the client's memory, never at rest here.
+CREATE TABLE password_reset_tokens (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL,
+  expires_at  TEXT NOT NULL,
+  used_at     TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_reset_tokens_hash ON password_reset_tokens(token_hash);
+
 -- ─── People ─────────────────────────────────────────────────────────────
 
--- user_id is the Appwrite account id (auth stays on Appwrite — see plan).
+-- user_id = users.id above (own table since it long predates this Auth
+-- section and every other table already references "user_id" loosely by
+-- convention rather than a hard FK — kept that way here too, for
+-- consistency with the rest of this schema).
 CREATE TABLE profiles (
   user_id       TEXT PRIMARY KEY,
   display_name  TEXT,

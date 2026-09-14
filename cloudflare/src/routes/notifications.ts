@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, verifyService } from '../lib/auth';
 
-type Bindings = { DB: D1Database; SERVICE_SECRET: string };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; SERVICE_SECRET: string };
 
 export const notifications = new Hono<{ Bindings: Bindings }>();
 
@@ -28,7 +28,7 @@ notifications.get('/', async (c) => {
   const userId = c.req.query('userId');
   if (!userId) return c.json({ error: 'userId is required' }, 400);
 
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user || user.$id !== userId) return c.json({ error: 'Unauthorized' }, 401);
 
   const unreadOnly = c.req.query('unreadOnly') === '1';
@@ -71,7 +71,7 @@ notifications.post('/', async (c) => {
 // NotificationBell.tsx's markRead/markAllRead (one call per notification).
 notifications.patch('/:id', async (c) => {
   const id = c.req.param('id');
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
   const row = await c.env.DB.prepare('SELECT user_id FROM notifications WHERE id = ?').bind(id).first();

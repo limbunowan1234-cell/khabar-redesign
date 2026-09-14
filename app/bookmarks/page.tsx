@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 // Week 8+26 of the Cloudflare migration (see cloudflare/README.md): the
@@ -44,7 +44,7 @@ export default function BookmarksPage() {
   useEffect(() => {
     async function load() {
       try {
-        const userRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
+        const userRes = await fetch(ENDPOINT + '/auth/me', { headers: H, credentials: 'include' });
         if (!userRes.ok) { window.location.href = '/auth'; return; }
         const userData = await userRes.json();
         setUser(userData);

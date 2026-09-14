@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const follows = new Hono<{ Bindings: Bindings }>();
 
@@ -42,7 +42,7 @@ follows.get('/', async (c) => {
 
 // POST /follows  { followerId, followerName, followingId, followingName }
 follows.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   const body = await c.req.json().catch(() => null);
   if (!body?.followerId || !body?.followingId) return c.json({ error: 'followerId and followingId are required' }, 400);
   if (!user || user.$id !== body.followerId) return c.json({ error: 'Unauthorized' }, 401);
@@ -57,7 +57,7 @@ follows.post('/', async (c) => {
 
 // DELETE /follows?followerId=X&followingId=Y
 follows.delete('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   const q = c.req.query();
   if (!q.followerId || !q.followingId) return c.json({ error: 'followerId and followingId are required' }, 400);
   if (!user || user.$id !== q.followerId) return c.json({ error: 'Unauthorized' }, 401);

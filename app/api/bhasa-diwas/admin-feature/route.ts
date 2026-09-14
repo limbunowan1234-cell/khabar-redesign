@@ -1,34 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkAdminJwt } from '@/lib/serverAuth';
 
 // Week 38 of the Cloudflare migration (see cloudflare/README.md): the
-// isFeatured write moves to D1. Admin identity is still verified against
-// Appwrite (auth stays there permanently) via the forwarded session
-// cookie, exactly as before -- only the database write moved.
+// isFeatured write moves to D1. Admin identity used to be checked via a
+// forwarded session cookie -- that pattern never actually worked (the
+// incoming request's cookie header never carried the session cookie,
+// scoped to a different domain; see finalize-winners/route.ts's own
+// history of the same bug) and the outage that took Appwrite auth down
+// entirely made it moot either way. Now uses the same x-admin-jwt header
+// pattern as every other admin route (see lib/serverAuth.ts).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '', 'Content-Type': 'application/json' };
 
-const ADMIN_EMAIL = 'nowanad@gmail.com';
-
-async function checkAdmin(req: NextRequest): Promise<boolean> {
-  const cookieHeader = req.headers.get('cookie') || '';
-  try {
-    const res = await fetch('https://nyc.cloud.appwrite.io/v1/account', {
-      headers: {
-        'X-Appwrite-Project': 'khabardarjeeling',
-        'cookie': cookieHeader
-      }
-    });
-    if (!res.ok) return false;
-    const user = await res.json();
-    return user.email?.toLowerCase() === ADMIN_EMAIL || (user.labels || []).includes('admin');
-  } catch {
-    return false;
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const isAdmin = await checkAdmin(req);
+    const jwt = req.headers.get('x-admin-jwt');
+    const isAdmin = await checkAdminJwt(jwt);
     if (!isAdmin) {
       return NextResponse.json({ error: 'Admin only' }, { status: 403 });
     }

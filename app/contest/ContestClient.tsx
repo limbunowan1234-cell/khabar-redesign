@@ -5,7 +5,7 @@ import { CONTEST_VOTE_CUTOFF_MS } from '@/lib/certRanking';
 import { timeAgo } from '@/components/Byline';
 import { getCommentLikes, toggleCommentLike, getWorkerAuthToken } from '@/lib/appwrite';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 const ADMIN_EMAIL = 'nowanad@gmail.com';
@@ -108,7 +108,7 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
     async function load() {
       let loadedUser: any = null;
       try {
-        const userRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
+        const userRes = await fetch(ENDPOINT + '/auth/me', { headers: H, credentials: 'include' });
         if (userRes.ok) { loadedUser = await userRes.json(); setUser(loadedUser); }
       } catch {}
 
@@ -204,9 +204,8 @@ export default function ContestClient({ initialEntries = [] }: { initialEntries?
     setPinning(true);
     try {
       const newPinnedId = pinnedCommentId === commentId ? null : commentId;
-      const jwtRes = await fetch(ENDPOINT + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
-      if (!jwtRes.ok) throw new Error();
-      const { jwt } = await jwtRes.json();
+      const jwt = await getWorkerAuthToken();
+      if (!jwt) throw new Error();
       const res = await fetch('/api/admin/contest/pin-comment', {
         method: 'POST',
         headers: { 'x-admin-jwt': jwt, 'Content-Type': 'application/json' },

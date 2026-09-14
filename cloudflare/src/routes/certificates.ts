@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const certificates = new Hono<{ Bindings: Bindings }>();
 
@@ -27,7 +27,7 @@ certificates.get('/', async (c) => {
 //
 // POST /certificates  { userId, downloadCount, rank }
 certificates.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   const body = await c.req.json().catch(() => null);
   if (!body?.userId || body?.downloadCount === undefined) {
     return c.json({ error: 'userId and downloadCount are required' }, 400);

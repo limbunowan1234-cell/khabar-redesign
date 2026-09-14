@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { stripMarkdown, truncateChars } from '@/lib/textPreview';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 // Week 5 of the Cloudflare migration (see cloudflare/README.md).
@@ -103,7 +103,7 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
         const wantsPreview = params.get('preview') === 'true';
         const issueParam = params.get('issue');
 
-        const authRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
+        const authRes = await fetch(ENDPOINT + '/auth/me', { headers: H, credentials: 'include' });
         const authData = authRes.ok ? await authRes.json() : null;
         const adminCheck = authData?.labels?.includes('admin') || authData?.email === 'nowanad@gmail.com';
         setIsAdmin(!!adminCheck);

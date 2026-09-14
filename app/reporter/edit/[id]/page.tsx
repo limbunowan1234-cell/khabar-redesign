@@ -14,7 +14,7 @@ async function toUploadableJpeg(file: File): Promise<File> {
   return new File([compressed], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
 }
 
-const endpoint = 'https://api.khabardarjeeling.in/v1';
+const endpoint = 'https://api.khabardarjeeling.in';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
@@ -66,7 +66,7 @@ export default function ReporterEditPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
+        const res = await fetch(endpoint + '/auth/me', { headers: H, credentials: 'include' });
         if (!res.ok) { setError('Please log in.'); setLoading(false); return; }
         const data = await res.json();
         const labels = (data as any).labels || [];

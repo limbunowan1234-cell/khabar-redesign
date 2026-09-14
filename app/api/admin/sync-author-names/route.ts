@@ -1,32 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client, Databases, Users, Query } from 'node-appwrite';
+import { checkAdminJwt } from '@/lib/serverAuth';
 
-const ADMIN_EMAIL = 'nowanad@gmail.com';
-
-async function checkAdmin(jwt: string): Promise<{ ok: boolean }> {
-  if (!jwt) return { ok: false };
-  try {
-    const res = await fetch('https://nyc.cloud.appwrite.io/v1/account', {
-      headers: {
-        'X-Appwrite-Project': 'khabardarjeeling',
-        'X-Appwrite-JWT': jwt
-      }
-    });
-    if (!res.ok) return { ok: false };
-    const user = await res.json();
-    const labels = user.labels || [];
-    const isAdmin = user.email?.toLowerCase() === ADMIN_EMAIL || labels.includes('admin');
-    return { ok: isAdmin };
-  } catch {
-    return { ok: false };
-  }
-}
-
+// Deliberately excluded from the Cloudflare migration -- a one-time tool
+// against Appwrite's OWN Databases API (Khabar_db/articles), not D1, so
+// it's untouched by every other cutover in this app. The admin check
+// below is repointed at the new JWT system for consistency with every
+// other admin route, but the sync operation itself still targets
+// Appwrite's Databases/Users API directly -- which is unreachable now
+// that the whole Appwrite project is behind the billing_limit_exceeded
+// 402 this migration exists because of (see the migration plan). This
+// route will 403/500 in practice until/unless Appwrite access is
+// restored; not rewritten against D1 since that was an explicit,
+// separate decision from the start, not something this migration should
+// silently reverse.
 export async function POST(req: NextRequest) {
   try {
     const { jwt } = await req.json();
-    const auth = await checkAdmin(jwt);
-    if (!auth.ok) {
+    const isAdmin = await checkAdminJwt(jwt);
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 

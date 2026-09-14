@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const endpoint = 'https://api.khabardarjeeling.in/v1';
+const endpoint = 'https://api.khabardarjeeling.in';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 // Week 43 of the Cloudflare migration (see cloudflare/README.md): the
@@ -67,7 +67,7 @@ export default function HillsInFramePostPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
+        const res = await fetch(endpoint + '/auth/me', { headers: H, credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           const labels = (data as any).labels || [];

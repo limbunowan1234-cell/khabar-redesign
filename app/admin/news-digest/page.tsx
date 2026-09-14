@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const endpoint = 'https://api.khabardarjeeling.in/v1';
+const endpoint = 'https://api.khabardarjeeling.in';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const ADMIN_EMAIL = 'nowanad@gmail.com';
@@ -178,10 +179,7 @@ export default function NewsDigestAdminPage() {
   const [refreshError, setRefreshError] = useState('');
 
   async function getAdminJwt(): Promise<string | null> {
-    const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
-    if (!jwtRes.ok) return null;
-    const { jwt } = await jwtRes.json();
-    return jwt;
+    return getWorkerAuthToken();
   }
 
   async function handleRefresh() {
@@ -216,7 +214,7 @@ export default function NewsDigestAdminPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const res = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
+        const res = await fetch(endpoint + '/auth/me', { headers: H, credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           const labels = (data as any).labels || [];
@@ -240,9 +238,8 @@ export default function NewsDigestAdminPage() {
     }
     async function loadLiveDigest() {
       try {
-        const jwtRes = await fetch(endpoint + '/account/jwt', { method: 'POST', headers: H, credentials: 'include' });
-        if (!jwtRes.ok) return;
-        const { jwt } = await jwtRes.json();
+        const jwt = await getWorkerAuthToken();
+      if (!jwt) return;
         const res = await fetch('/api/admin/news-digest', { headers: { 'x-admin-jwt': jwt } });
         if (!res.ok) return;
         const { digest: stored } = await res.json();
