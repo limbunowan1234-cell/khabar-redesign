@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, isAdmin } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const newsDigest = new Hono<{ Bindings: Bindings }>();
 
@@ -18,7 +18,7 @@ export const newsDigest = new Hono<{ Bindings: Bindings }>();
 // migrates.
 
 newsDigest.get('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!isAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
 
   const row = await c.env.DB.prepare('SELECT sections_json, last_verified, updated_at FROM news_digest WHERE id = 1').first();
@@ -33,7 +33,7 @@ newsDigest.get('/', async (c) => {
 });
 
 newsDigest.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!isAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
 
   const body = await c.req.json().catch(() => null);

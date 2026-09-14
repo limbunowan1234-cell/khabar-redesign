@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, verifyService } from '../lib/auth';
 
-type Bindings = { IMAGES: R2Bucket; SERVICE_SECRET: string };
+type Bindings = { IMAGES: R2Bucket; AUTH_JWT_SECRET: string; SERVICE_SECRET: string };
 
 export const cdn = new Hono<{ Bindings: Bindings }>();
 
@@ -54,7 +54,7 @@ cdn.get('/articles/:key', (c) => serve(c, c.env.IMAGES, c.req.param('key')));
 // happens as part of article/photo-story creation, open to any logged-in
 // contributor, not just reporters/admins.
 cdn.post('/articles', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
   const file = await readUploadedFile(c);

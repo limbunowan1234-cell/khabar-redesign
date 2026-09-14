@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, isPhotographer } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const photography = new Hono<{ Bindings: Bindings }>();
 
@@ -37,7 +37,7 @@ photography.get('/', async (c) => {
 // photographer-role only, matches hills-in-frame/post/page.tsx's own
 // gate (a separate role from reporter/admin).
 photography.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user || !isPhotographer(user)) return c.json({ error: 'Photographer access required' }, 403);
   const body = await c.req.json().catch(() => null);
   if (!body?.title || !body?.caption || !body?.imageFileId) {
@@ -59,7 +59,7 @@ photography.post('/', async (c) => {
 // own-photo only.
 photography.patch('/:id', async (c) => {
   const id = c.req.param('id');
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user || !isPhotographer(user)) return c.json({ error: 'Photographer access required' }, 403);
 
   const row = await c.env.DB.prepare('SELECT submitter_id FROM photography WHERE id = ?').bind(id).first();
@@ -81,7 +81,7 @@ photography.patch('/:id', async (c) => {
 // DELETE /photography/:id -- own-photo only.
 photography.delete('/:id', async (c) => {
   const id = c.req.param('id');
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user || !isPhotographer(user)) return c.json({ error: 'Photographer access required' }, 403);
 
   const row = await c.env.DB.prepare('SELECT submitter_id FROM photography WHERE id = ?').bind(id).first();

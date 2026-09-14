@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, isAdmin } from '../lib/auth';
 
-type Bindings = { DB: D1Database; SERVICE_SECRET: string };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; SERVICE_SECRET: string };
 
 export const ads = new Hono<{ Bindings: Bindings }>();
 
@@ -43,7 +43,7 @@ ads.post('/track', async (c) => {
 // against the caller's own Appwrite session, not a shared secret only
 // the Next.js server holds).
 ads.get('/analytics', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!isAdmin(user)) return c.json({ error: 'Admin access required' }, 403);
 
   const campaignId = c.req.query('campaignId');

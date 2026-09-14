@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, isAdmin } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const comments = new Hono<{ Bindings: Bindings }>();
 
@@ -58,7 +58,7 @@ comments.get('/', async (c) => {
 // (not generated here) -- comments/replies get deleted by that id later,
 // on both sides, so the two systems need to agree on it from the start.
 comments.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   const body = await c.req.json().catch(() => null);
   if (!body?.id || !body?.articleId || !body?.userId || !body?.commentText) {
     return c.json({ error: 'id, articleId, userId, and commentText are required' }, 400);
@@ -76,7 +76,7 @@ comments.post('/', async (c) => {
 // (matches the canDelete = user.$id === c.userId || isAdmin check every
 // client component already applies before even showing the button).
 comments.delete('/:id', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
   const id = c.req.param('id');

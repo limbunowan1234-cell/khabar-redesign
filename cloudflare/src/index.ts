@@ -17,8 +17,9 @@ import { photography } from './routes/photography';
 import { analytics } from './routes/analytics';
 import { newsDigest } from './routes/newsDigest';
 import { ads } from './routes/ads';
+import { auth } from './routes/auth';
 
-type Bindings = { DB: D1Database; IMAGES: R2Bucket };
+type Bindings = { DB: D1Database; IMAGES: R2Bucket; AUTH_JWT_SECRET: string };
 
 // Mirrors components/WeatherWidget.tsx's CITIES and components/
 // WeatherWarning.tsx's getSeverity() in the Next.js app -- duplicated
@@ -45,12 +46,20 @@ function weatherSeverity(precip: number, code: number): { level: string; headlin
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// Everything served here is public read-only data (no auth, no secrets),
-// so allowing localhost costs nothing and keeps local dev/testing honest
-// against the real Worker instead of a mock.
-app.use('*', cors({ origin: ['https://khabardarjeeling.in', 'https://www.khabardarjeeling.in', 'http://localhost:3000'] }));
+// Most of this is public read-only data (no auth, no secrets), so
+// allowing localhost costs nothing and keeps local dev/testing honest
+// against the real Worker instead of a mock. `credentials: true` is
+// required now that /auth sets and reads an HttpOnly session cookie
+// (browsers refuse to send/accept cookies cross-origin without it, even
+// with an explicit origin allow-list) -- every other route here still
+// only ever receives a Bearer JWT, never the cookie itself.
+app.use('*', cors({
+  origin: ['https://khabardarjeeling.in', 'https://www.khabardarjeeling.in', 'http://localhost:3000'],
+  credentials: true,
+}));
 
 app.get('/', (c) => c.json({ ok: true, service: 'khabar-worker', phase: 2 }));
+app.route('/auth', auth);
 app.route('/articles', articles);
 app.route('/cdn', cdn);
 app.route('/likes', likes);

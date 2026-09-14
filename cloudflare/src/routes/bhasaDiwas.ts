@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyService, verifyUser } from '../lib/auth';
 
-type Bindings = { DB: D1Database; SERVICE_SECRET: string };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; SERVICE_SECRET: string };
 
 export const bhasaDiwas = new Hono<{ Bindings: Bindings }>();
 
@@ -142,7 +142,7 @@ submissions.delete('/:id', async (c) => {
 // so a random logged-in user can't plant their address on someone else's
 // entry, and no one can submit an address before finalize-winners has run.
 submissions.patch('/:id/winner-address', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
   const body = await c.req.json().catch(() => null);

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, isReporterOrAdmin } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const photos = new Hono<{ Bindings: Bindings }>();
 
@@ -36,7 +36,7 @@ photos.get('/', async (c) => {
 // reporter, not just admins -- Weekly/Certificates are the admin-only
 // tabs on that page).
 photos.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user || !isReporterOrAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
   const body = await c.req.json().catch(() => null);
   if (!body?.imageFileId) return c.json({ error: 'imageFileId is required' }, 400);
@@ -51,7 +51,7 @@ photos.post('/', async (c) => {
 
 // DELETE /photos/:id -- reporter/admin only.
 photos.delete('/:id', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user || !isReporterOrAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
   await c.env.DB.prepare('DELETE FROM photos WHERE id = ?').bind(c.req.param('id')).run();
   return c.json({ ok: true });

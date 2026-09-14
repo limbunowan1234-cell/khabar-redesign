@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, isAdmin } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const contest = new Hono<{ Bindings: Bindings }>();
 
@@ -26,7 +26,7 @@ contest.get('/settings', async (c) => {
 // POST /contest/settings  { certificatesLive?, pinnedCommentId? }
 // Only the fields present in the body are updated.
 contest.post('/settings', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!isAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
 
   const body = await c.req.json().catch(() => null);

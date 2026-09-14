@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, isReporterOrAdmin } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const articles = new Hono<{ Bindings: Bindings }>();
 
@@ -89,7 +89,7 @@ articles.get('/', async (c) => {
   // Anyone else, or no/invalid JWT, silently gets published-only instead
   // of a 401 that would leak "yes, that's a valid user id."
   if (q.status === 'all' && q.submitterId) {
-    const user = await verifyUser(c.req.raw);
+    const user = await verifyUser(c.req.raw, c.env);
     if (user && user.$id === q.submitterId) {
       // no status filter at all -- every status for this one author
     } else {
@@ -97,7 +97,7 @@ articles.get('/', async (c) => {
       params.push('published');
     }
   } else if (q.status === 'all') {
-    const user = await verifyUser(c.req.raw);
+    const user = await verifyUser(c.req.raw, c.env);
     if (user && isReporterOrAdmin(user)) {
       // no status filter at all -- every status, every author
     } else {
@@ -224,7 +224,7 @@ articles.patch('/:id/views', async (c) => {
 // UI's own tighter gating is enforced client-side only, not something
 // this migration should silently invent).
 articles.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   const body = await c.req.json().catch(() => null);
   if (!body?.id || !body?.title || !body?.submitterId) {
     return c.json({ error: 'id, title, and submitterId are required' }, 400);
@@ -313,7 +313,7 @@ const BOOL_FIELDS = new Set([
 // broader edit capability over any article).
 articles.patch('/:id', async (c) => {
   const id = c.req.param('id');
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
   const row = await c.env.DB.prepare('SELECT submitter_id FROM articles WHERE id = ?').bind(id).first();
@@ -372,7 +372,7 @@ articles.patch('/:id', async (c) => {
 // admin can invoke on any article today).
 articles.delete('/:id', async (c) => {
   const id = c.req.param('id');
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   if (!user || !isReporterOrAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
 
   await c.env.DB.prepare('DELETE FROM articles WHERE id = ?').bind(id).run();

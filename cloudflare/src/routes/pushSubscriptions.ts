@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser, verifyService } from '../lib/auth';
 
-type Bindings = { DB: D1Database; SERVICE_SECRET: string };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; SERVICE_SECRET: string };
 
 export const pushSubscriptions = new Hono<{ Bindings: Bindings }>();
 
@@ -14,7 +14,7 @@ function toSubJson(row: any) {
 // uniqueness enforced on endpoint (matches the Appwrite-era behavior this
 // replaces) -- a re-registered device just adds a harmless duplicate row.
 pushSubscriptions.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   const body = await c.req.json().catch(() => null);
   if (!body?.userId || !body?.endpoint || !body?.p256dh || !body?.auth) {
     return c.json({ error: 'userId, endpoint, p256dh, and auth are required' }, 400);

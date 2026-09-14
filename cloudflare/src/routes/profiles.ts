@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { verifyUser } from '../lib/auth';
 
-type Bindings = { DB: D1Database };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
 export const profiles = new Hono<{ Bindings: Bindings }>();
 
@@ -43,7 +43,7 @@ const PROFILE_FIELD_MAP: Record<string, string> = {
   homeDistrict: 'home_district',
 };
 profiles.post('/', async (c) => {
-  const user = await verifyUser(c.req.raw);
+  const user = await verifyUser(c.req.raw, c.env);
   const body = await c.req.json().catch(() => null);
   if (!body?.userId) return c.json({ error: 'userId is required' }, 400);
   if (!user || user.$id !== body.userId) return c.json({ error: 'Unauthorized' }, 401);
