@@ -1,14 +1,15 @@
 # khabar-worker
 
-**Migration complete (Week 43).** Every named collection this migration
-set out to move — articles, likes, bookmarks, follows, comments,
-contest_settings, news_digest, certificate_state, analytics_events,
-notifications, push_subscriptions, Bhasa Diwas, profiles, admin
-photos/ad gallery, and Hills in Frame photography — is off Appwrite for
-both reads and writes, backed by this Worker (D1 + R2), with Appwrite
-kept only for auth (a permanent, deliberate decision from the start).
+**Migration complete, including auth (Week 44).** Every named
+collection this migration set out to move — articles, likes,
+bookmarks, follows, comments, contest_settings, news_digest,
+certificate_state, analytics_events, notifications,
+push_subscriptions, Bhasa Diwas, profiles, admin photos/ad gallery,
+Hills in Frame photography, and (unplanned, forced by an Appwrite
+billing outage — see Week 44) auth itself — is off Appwrite for both
+reads and writes, backed by this Worker (D1 + R2).
 
-Three items remain, all deliberate rather than oversights:
+What's left on Appwrite is genuinely inert, not deferred:
 - **`fcm_tokens`** — permanent exclusion. A separate mobile app writes
   push tokens straight to Appwrite; migrating the read side would have
   silently broken push for that app.
@@ -18,6 +19,10 @@ Three items remain, all deliberate rather than oversights:
   works in production; the auth boundary and build were verified, but
   the upload itself was never exercised end-to-end through a real
   logged-in session, by choice.
+- **`app/api/bhasa-diwas/comments/route.ts`'s `POST` handler** and
+  **`app/admin/reels.tsx`** — found during Week 44's cleanup, not
+  migrated, currently broken (both still call Appwrite directly).
+  Flagged, not fixed — separate from the auth cutover.
 
 The full week-by-week log below is kept as the historical record of how
 this happened — start from Week 1 if you want the whole story, or jump
@@ -1383,6 +1388,72 @@ sync utility (permanent exclusions), and the article image upload
 path from Week 39, which works in production but was never
 live-tested end to end by choice.
 
+**Status: Week 44 (auth — the thing that was "permanent" is gone too)
+done.** Not a planned phase. Appwrite Cloud's Storage quota was
+exceeded (2.34GB/2GB, almost entirely legacy `article-image` files
+already copied to R2 back in Week 2 and never deleted from Appwrite
+afterward) and Appwrite put the **entire project** behind a blanket
+`402 billing_limit_exceeded` — confirmed via direct curl on
+`GET /account`, Storage list, and Storage delete, plus the server API
+key and even the Console's own dashboard. Every visitor's login and
+signup was broken sitewide, with no self-service fix available (can't
+even delete the offending files to get back under quota without
+paying). The site owner won't pay Appwrite again for this to be a
+recurring risk, so auth — the one thing this migration had deliberately
+left behind since Week 1 — got the same D1+Worker treatment as
+everything else.
+
+New `cloudflare/src/lib/password.ts` (PBKDF2-HMAC-SHA256 via Web
+Crypto, no external deps) and `cloudflare/src/lib/jwt.ts` (HS256,
+fully local sign/verify, no more live-fetching Appwrite's `/account`
+on every single request). New D1 tables: `users`, `sessions`,
+`password_reset_tokens`. New `cloudflare/src/routes/auth.ts`:
+`/auth/signup`, `/login`, `/me`, `/token`, `/logout`,
+`/request-password-reset`, `/reset-password` — same two-tier session
+shape (long-lived refresh cookie + short-lived bearer JWT) the old
+Appwrite-bridge used, to minimize churn across the ~44 files that
+touch auth. `lib/auth.ts`'s exports (`verifyUser`, `isAdmin`,
+`isReporterOrAdmin`, `isPhotographer`) kept byte-identical in
+signature — only `verifyUser` needed `c.req.raw` → `c.req.raw, c.env`
+everywhere. `api.khabardarjeeling.in` (Appwrite's own custom domain)
+repointed at this Worker via Wrangler's Custom Domain routing, so the
+session cookie keeps the exact host scope it always had. Consolidated
+9 previously-duplicated inline `checkAdminJwt()` functions across
+Next.js admin API routes into one `lib/serverAuth.ts`, verifying
+locally with a shared `AUTH_JWT_SECRET` instead of each one live-
+fetching Appwrite.
+
+**Existing users**: Appwrite's server API key was also blocked, so a
+clean bulk export wasn't possible. Reconstructed 49 of ~173 accounts
+from D1's own submission records (`articles.submitter_email`,
+photography and Bhasa Diwas submitter ids) — everyone else lands on
+self-serve signup, which now transparently claims a migrated
+(password-less) account by email match instead of erroring, as a
+backstop for anyone the recovery missed.
+
+Verified end-to-end against the live production domain, not just
+`*.workers.dev`: signup → session cookie → `/auth/me` → logout → 401,
+all via curl and then again through the actual browser at
+`khabardarjeeling.in` (real signup, profile page, session persistence).
+Admin JWT verification confirmed working against `/api/admin/*` with
+a real minted token.
+
+**This closes the one exclusion that used to be permanent.** Appwrite
+is no longer read from or written to by anything in the live site.
+What's left on Appwrite now is genuinely inert: `fcm_tokens` (a
+separate mobile app writes there directly) and two still-unmigrated,
+low-traffic corners found during this cleanup —
+`app/api/bhasa-diwas/comments/route.ts`'s `POST` handler (comment
+*reads* already moved to the Worker in Week 11; posting a new comment
+still writes to Appwrite's Database API directly, so it's silently
+broken right now) and `app/admin/reels.tsx` (never migrated at all;
+hardcodes the old `/v1` Appwrite REST shape against the new domain).
+Both are pre-existing, out of scope for this cutover, and flagged
+separately rather than fixed here. `node-appwrite` stays in
+`package.json` until those two are resolved; `appwrite` (the client
+SDK, already unused) and `next-auth` (an orphaned, never-wired
+scaffold) were removed.
+
 ## One-time setup
 
 ```bash
@@ -1449,17 +1520,9 @@ Worker at its own `*.workers.dev` URL (or a custom domain you attach
 later). Nothing in the live site reads from it until a future phase
 explicitly points a fetch call here instead of Appwrite.
 
-## What's deliberately still on Appwrite
+## What's still on Appwrite
 
-(This section used to track "not done yet" during the migration. It's a
-short, final list now — see the banner at the top of this file for the
-full picture.)
-
-- **Auth.** Permanent, decided before Week 1 — every JWT-gated route in
-  this Worker verifies against Appwrite's `/account`, same as the very
-  first auth-bridging work in Week 9.
-- **`fcm_tokens`** and the **author-name sync utility** — both permanent
-  exclusions, see the top banner for why.
-- **The Week 39 article image upload path** — code-complete and
-  deployed, just never live-tested end-to-end. Worth doing before
-  leaning on it hard.
+(This section used to track "not done yet" during the migration. Auth
+— once the one permanent exclusion — moved off in Week 44. See the
+banner at the top of this file for the current, short list and why
+each item is there.)
