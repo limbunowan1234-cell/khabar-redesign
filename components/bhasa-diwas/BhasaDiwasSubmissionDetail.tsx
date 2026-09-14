@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
+import { getWorkerAuthToken } from '@/lib/appwrite';
 import SiteFooter from '@/components/SiteFooter';
 
 // Week 40 of the Cloudflare migration (see cloudflare/README.md): photo
@@ -155,19 +156,29 @@ export default function BhasaDiwasSubmissionDetail({ id }: { id: string }) {
 
     setPostingComment(true);
     try {
-      const res = await fetch('/api/bhasa-diwas/comments', {
+      const jwt = await getWorkerAuthToken();
+      if (!jwt) throw new Error('Not authenticated');
+
+      const commentId = crypto.randomUUID();
+      const authorName = user.name || 'Anonymous';
+      const res = await fetch(`${WORKER_URL}/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + jwt },
         body: JSON.stringify({
-          submissionId: id,
+          id: commentId,
+          articleId: id,
           userId: user.$id,
-          userName: user.name || 'Anonymous',
-          text: commentText
+          authorName,
+          commentText: commentText.trim(),
         })
       });
-      const data = await res.json();
-      if (data.success) {
-        setComments(prev => [data.comment, ...prev]);
+      if (res.ok) {
+        setComments(prev => [{
+          $id: commentId,
+          $createdAt: new Date().toISOString(),
+          userName: authorName,
+          text: commentText.trim(),
+        }, ...prev]);
         setCommentText('');
       }
     } catch (error) {
