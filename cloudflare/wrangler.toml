@@ -2,6 +2,16 @@ name = "khabar-worker"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
 
+# Explicit -- attaching the api.khabardarjeeling.in custom domain
+# (below) silently disabled this Worker's own khabar-worker.<account>
+# .workers.dev route on deploy. That route is still hardcoded as
+# WORKER_URL across ~15 files (articles, likes, bookmarks, Bhasa
+# Diwas, contest, follows, photography, admin analytics -- everything
+# except auth), so losing it broke most of the site's dynamic
+# features. Keep both routes alive until those call sites are moved
+# to the custom domain.
+workers_dev = true
+
 # Filled in after running `npm run db:create` — it prints a database_id,
 # paste it below. Nothing here works until that's real.
 [[d1_databases]]
