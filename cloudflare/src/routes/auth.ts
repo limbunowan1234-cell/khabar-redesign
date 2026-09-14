@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { hashPassword, verifyPassword } from '../lib/password';
 import { signAccessToken } from '../lib/jwt';
 import { sendPasswordResetEmail } from '../lib/email';
+import { verifyUser, isAdmin } from '../lib/auth';
 
 // Replaces Appwrite Auth entirely -- see the migration plan for why
 // (Appwrite Cloud's billing_limit_exceeded 402 blocked the whole project,
@@ -231,5 +232,81 @@ auth.post('/reset-password', async (c) => {
   await c.env.DB.prepare(
     "UPDATE sessions SET revoked_at = datetime('now') WHERE user_id = ? AND revoked_at IS NULL"
   ).bind(record.user_id).run();
+  return c.json({ ok: true });
+});
+
+// GET /auth/admin/search-accounts?q=<name>
+// Finds candidates for manual account recovery -- pre-auth-migration
+// commenters/likers who have a `profiles` row (a real identity on the
+// site) but no email anywhere in D1, so the normal email-based
+// self-serve recovery (signup-claims-existing-row, or a reset link)
+// can't reach them. Search by display name; the admin cross-checks the
+// bio/join date against whoever is asking to confirm it's really them
+// (there's no automated proof of identity possible here -- see
+// POST /auth/admin/link-account below), then links their real email.
+auth.get('/admin/search-accounts', async (c) => {
+  const user = await verifyUser(c.req.raw, c.env);
+  if (!isAdmin(user)) return c.json({ error: 'Admin access required' }, 403);
+
+  const q = c.req.query('q')?.trim();
+  if (!q) return c.json({ error: 'q is required' }, 400);
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT p.user_id, p.display_name, p.bio, p.avatar_url, p.home_district, p.joined_at,
+            (SELECT id FROM users WHERE id = p.user_id) as existing_users_id
+     FROM profiles p WHERE p.display_name LIKE ? LIMIT 20`
+  ).bind(`%${q}%`).all();
+
+  const candidates = (results || []).map((r: any) => ({
+    userId: r.user_id,
+    displayName: r.display_name,
+    bio: r.bio,
+    avatarUrl: r.avatar_url,
+    homeDistrict: r.home_district,
+    joinedAt: r.joined_at,
+    alreadyLinked: !!r.existing_users_id,
+  }));
+  return c.json({ candidates });
+});
+
+// POST /auth/admin/link-account  { userId, email, name? }
+// Creates the users row an already-existing profile never got (no email
+// was ever recoverable for it), preserving the original user_id so
+// their existing comments/likes/profile stay attached -- then sends the
+// normal password-reset email so they set their own password. Trust in
+// the email being correct rests entirely on the admin having verified
+// this out-of-band (see search-accounts above); there is no other proof
+// of identity available for these accounts.
+auth.post('/admin/link-account', async (c) => {
+  const admin = await verifyUser(c.req.raw, c.env);
+  if (!isAdmin(admin)) return c.json({ error: 'Admin access required' }, 403);
+
+  const body = await c.req.json().catch(() => null);
+  const userId = body?.userId?.trim();
+  const email = body?.email?.trim();
+  if (!userId || !email) return c.json({ error: 'userId and email are required' }, 400);
+
+  const profile = await c.env.DB.prepare('SELECT display_name FROM profiles WHERE user_id = ?').bind(userId).first() as any;
+  if (!profile) return c.json({ error: 'No profile found for this userId' }, 404);
+
+  const existingById = await c.env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(userId).first();
+  if (existingById) return c.json({ error: 'This account is already linked to an email' }, 409);
+
+  const existingByEmail = await c.env.DB.prepare('SELECT id FROM users WHERE email = ? COLLATE NOCASE').bind(email).first();
+  if (existingByEmail) return c.json({ error: 'That email is already in use by another account' }, 409);
+
+  const name = body?.name?.trim() || profile.display_name || 'User';
+  await c.env.DB.prepare(
+    'INSERT INTO users (id, email, name, needs_password_reset) VALUES (?, ?, ?, 1)'
+  ).bind(userId, email, name).run();
+
+  const raw = randomToken();
+  const hash = await sha256Hex(raw);
+  const expires = new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString();
+  await c.env.DB.prepare(
+    'INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)'
+  ).bind(crypto.randomUUID(), userId, hash, expires).run();
+  await sendPasswordResetEmail(c.env, email, raw);
+
   return c.json({ ok: true });
 });
