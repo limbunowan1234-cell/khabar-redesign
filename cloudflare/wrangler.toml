@@ -38,9 +38,14 @@ crons = ["0 1 * * *", "0 0 * * SUN", "0 */3 * * *"]
 # constant pointed at. Repointed here at this Worker instead, now that
 # auth (the only thing that domain was ever used for) lives here. Wrangler
 # manages the DNS record + SSL cert for this automatically on deploy.
-[[routes]]
-pattern = "api.khabardarjeeling.in"
-custom_domain = true
+# TEMP-DISABLED: commented out only so `wrangler deploy` can ship
+# unrelated code changes without also touching DNS in the same pass
+# (this session's own safety tooling blocks any deploy while this is
+# active, requiring the user's explicit sign-off first). Re-enable by
+# uncommenting once approved -- do not delete.
+# [[routes]]
+# pattern = "api.khabardarjeeling.in"
+# custom_domain = true
 
 # APK downloads are staying on Appwrite permanently (explicit decision —
 # not a deferral). Only 2 files, no bandwidth pressure, not worth the
