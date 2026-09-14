@@ -39,16 +39,10 @@ async function hmacKey(secret: string): Promise<CryptoKey> {
 
 export async function verifyAccessToken(token: string): Promise<AccessClaims | null> {
   const secret = process.env.AUTH_JWT_SECRET;
-  if (!secret) {
-    console.error('DEBUG_AUTH: AUTH_JWT_SECRET is not set in this environment');
-    return null;
-  }
+  if (!secret) return null;
 
   const parts = token.split('.');
-  if (parts.length !== 3) {
-    console.error('DEBUG_AUTH: token does not have 3 parts, got', parts.length);
-    return null;
-  }
+  if (parts.length !== 3) return null;
   const [header, body, signature] = parts;
 
   try {
@@ -60,19 +54,12 @@ export async function verifyAccessToken(token: string): Promise<AccessClaims | n
     const ok = await crypto.subtle.verify(
       'HMAC', await hmacKey(secret), b64urlToBytes(signature) as BufferSource, new TextEncoder().encode(`${header}.${body}`) as BufferSource
     );
-    if (!ok) {
-      console.error('DEBUG_AUTH: signature verification failed, secret length', secret.length);
-      return null;
-    }
+    if (!ok) return null;
 
     const claims = JSON.parse(new TextDecoder().decode(b64urlToBytes(body))) as AccessClaims;
-    if (typeof claims.exp !== 'number' || claims.exp < Math.floor(Date.now() / 1000)) {
-      console.error('DEBUG_AUTH: exp check failed', claims.exp, Math.floor(Date.now() / 1000));
-      return null;
-    }
+    if (typeof claims.exp !== 'number' || claims.exp < Math.floor(Date.now() / 1000)) return null;
     return claims;
-  } catch (e) {
-    console.error('DEBUG_AUTH: exception', e);
+  } catch {
     return null;
   }
 }
