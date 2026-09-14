@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const endpoint = 'https://api.khabardarjeeling.in/v1';
+const endpoint = 'https://api.khabardarjeeling.in';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
@@ -47,7 +47,7 @@ export default function PostPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
+        const res = await fetch(endpoint + '/auth/me', { headers: H, credentials: 'include' });
         if (res.ok) { const data = await res.json(); setUser(data); }
         else { router.push('/auth'); }
       } catch { router.push('/auth'); }

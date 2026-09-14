@@ -18,6 +18,7 @@ import { analytics } from './routes/analytics';
 import { newsDigest } from './routes/newsDigest';
 import { ads } from './routes/ads';
 import { auth } from './routes/auth';
+import { counters } from './routes/counters';
 
 type Bindings = { DB: D1Database; IMAGES: R2Bucket; AUTH_JWT_SECRET: string };
 
@@ -77,6 +78,7 @@ app.route('/photography', photography);
 app.route('/analytics', analytics);
 app.route('/news-digest', newsDigest);
 app.route('/ads', ads);
+app.route('/counters', counters);
 
 export default {
   fetch: app.fetch,

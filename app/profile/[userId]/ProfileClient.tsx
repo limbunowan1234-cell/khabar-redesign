@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
+const ENDPOINT = 'https://api.khabardarjeeling.in';
 const PROJECT = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': PROJECT };
 // Week 8+27 of the Cloudflare migration (see cloudflare/README.md):
@@ -52,7 +52,7 @@ export default function ProfileClient({ userId, initialProfile, initialArticles 
   useEffect(() => {
     (async () => {
       try {
-        const authRes = await fetch(ENDPOINT + '/account', { headers: H, credentials: 'include' });
+        const authRes = await fetch(ENDPOINT + '/auth/me', { headers: H, credentials: 'include' });
         const authData = authRes.ok ? await authRes.json() : null;
         setCurrentUser(authData);
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getWorkerAuthToken } from '@/lib/appwrite';
 
-const endpoint = 'https://api.khabardarjeeling.in/v1';
+const endpoint = 'https://api.khabardarjeeling.in';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const dbId = 'Khabar_db';
@@ -29,7 +29,7 @@ export default function BhasaDiwasAdminPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
+        const res = await fetch(endpoint + '/auth/me', { headers: H, credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           if (data.email?.toLowerCase() !== ADMIN_EMAIL && !(data as any).labels?.includes('admin')) {
@@ -94,11 +94,11 @@ export default function BhasaDiwasAdminPage() {
     if (!confirm('Delete this submission: ' + title + '?')) return;
     setDeletingId(id);
     try {
+      const jwt = await getWorkerAuthToken();
       const res = await fetch('/api/bhasa-diwas/admin-delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-admin-jwt': jwt || '' },
         body: JSON.stringify({ id }),
-        credentials: 'include'
       });
       if (res.ok) {
         setSubmissions(prev => prev.filter(s => s.$id !== id));
@@ -116,11 +116,11 @@ export default function BhasaDiwasAdminPage() {
   async function handleToggleFeature(id: string, currentValue: boolean) {
     setTogglingId(id);
     try {
+      const jwt = await getWorkerAuthToken();
       const res = await fetch('/api/bhasa-diwas/admin-feature', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-admin-jwt': jwt || '' },
         body: JSON.stringify({ id, isFeatured: !currentValue }),
-        credentials: 'include'
       });
       if (res.ok) {
         setSubmissions(prev => prev.map(s => s.$id === id ? { ...s, isFeatured: !currentValue } : s));

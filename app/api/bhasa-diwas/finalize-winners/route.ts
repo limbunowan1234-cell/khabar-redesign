@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkAdminJwt } from '@/lib/serverAuth';
 
 // Admin action: ranks the top 3 (by votes) in poetry and essay and marks
 // them as winners, so their submitter can then see the "you won" banner
@@ -17,25 +18,6 @@ import { NextRequest, NextResponse } from 'next/server';
 // as a plain header sidesteps that entirely.
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '', 'Content-Type': 'application/json' };
-
-const ADMIN_EMAIL = 'nowanad@gmail.com';
-
-async function checkAdminJwt(jwt: string | null): Promise<boolean> {
-  if (!jwt) return false;
-  try {
-    const res = await fetch('https://nyc.cloud.appwrite.io/v1/account', {
-      headers: {
-        'X-Appwrite-Project': 'khabardarjeeling',
-        'X-Appwrite-JWT': jwt,
-      },
-    });
-    if (!res.ok) return false;
-    const user = await res.json();
-    return user.email?.toLowerCase() === ADMIN_EMAIL || (user.labels || []).includes('admin');
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {

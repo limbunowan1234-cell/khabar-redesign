@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkAdminJwt } from '@/lib/serverAuth';
 
-const ADMIN_EMAIL = 'nowanad@gmail.com';
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 // Week 30 of the Cloudflare migration (see cloudflare/README.md): reads
@@ -18,24 +18,6 @@ async function fetchDigestFromWorker(jwt: string) {
     return data.digest;
   } catch {
     return null;
-  }
-}
-
-async function checkAdminJwt(jwt: string | null): Promise<boolean> {
-  if (!jwt) return false;
-  try {
-    const res = await fetch('https://nyc.cloud.appwrite.io/v1/account', {
-      headers: {
-        'X-Appwrite-Project': 'khabardarjeeling',
-        'X-Appwrite-JWT': jwt,
-      },
-    });
-    if (!res.ok) return false;
-    const user = await res.json();
-    const labels = user.labels || [];
-    return user.email?.toLowerCase() === ADMIN_EMAIL || labels.includes('admin');
-  } catch {
-    return false;
   }
 }
 

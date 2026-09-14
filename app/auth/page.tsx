@@ -2,14 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getWorkerAuthToken } from '@/lib/appwrite';
-const endpoint = 'https://api.khabardarjeeling.in/v1';
-const projectId = 'khabardarjeeling';
-const H = { 'X-Appwrite-Project': projectId };
-const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
-// Week 41 of the Cloudflare migration (see cloudflare/README.md): the
-// initial profile row on signup writes to D1 through the Worker now.
-const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+import { login, signup, requestPasswordReset } from '@/lib/appwrite';
 export default function AuthPage() {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -29,34 +22,16 @@ export default function AuthPage() {
     setError('');
     setLoading(true);
     try {
-      await fetch(endpoint + '/account/sessions/current', { method: 'DELETE', headers: H, credentials: 'include' }).catch(() => {});
       if (isLogin) {
         if (!email || !password) { setError('Fill in all fields'); setLoading(false); return; }
-        const res = await fetch(endpoint + '/account/sessions/email', { method: 'POST', headers: HJ, credentials: 'include', body: JSON.stringify({ email, password }) });
-        if (!res.ok) { const data = await res.json(); throw new Error(data.message || 'Login failed'); }
+        await login(email, password);
         router.push('/');
       } else {
         if (!email || !password || !name) { setError('Fill in all fields'); setLoading(false); return; }
-        const signupRes = await fetch(endpoint + '/account', { method: 'POST', headers: HJ, credentials: 'include', body: JSON.stringify({ userId: 'unique()', email, password, name }) });
-        if (!signupRes.ok) { const data = await signupRes.json(); throw new Error(data.message || 'Signup failed'); }
-        const sessionRes = await fetch(endpoint + '/account/sessions/email', { method: 'POST', headers: HJ, credentials: 'include', body: JSON.stringify({ email, password }) });
-        if (!sessionRes.ok) throw new Error('Session creation failed');
-        try {
-          const meRes = await fetch(endpoint + '/account', { headers: H, credentials: 'include' });
-          const me = meRes.ok ? await meRes.json() : null;
-          if (me?.$id) {
-            const token = await getWorkerAuthToken();
-            if (token) {
-              await fetch(WORKER_URL + '/profiles', {
-                method: 'POST',
-                headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: me.$id, displayName: name, userName: name, homeDistrict }),
-              });
-            }
-          }
-        } catch (profileErr) {
-          console.error('Profile creation failed (non-blocking):', profileErr);
-        }
+        // signup() creates the D1 profile row server-side now (Worker's
+        // POST /auth/signup) -- no separate client-side profile-creation
+        // step needed, unlike the old Appwrite flow.
+        await signup(email, password, name, homeDistrict || undefined);
         router.push('/');
       }
     } catch (err) {
@@ -69,19 +44,11 @@ export default function AuthPage() {
     if (!recoveryEmail) { setError('Enter your email address'); return; }
     setRecoveryLoading(true);
     setError('');
-    try {
-      const res = await fetch(endpoint + '/account/recovery', {
-        method: 'POST', headers: HJ,
-        body: JSON.stringify({
-          email: recoveryEmail,
-          url: 'https://khabardarjeeling.in/auth/reset',
-        })
-      });
-      if (!res.ok) { const data = await res.json(); throw new Error(data.message || 'Failed to send reset email'); }
-      setRecoverySent(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send reset email');
-    }
+    // Always shows the same "check your email" confirmation regardless of
+    // whether the address exists -- requestPasswordReset() never throws,
+    // matching the Worker's own non-enumerating endpoint.
+    await requestPasswordReset(recoveryEmail);
+    setRecoverySent(true);
     setRecoveryLoading(false);
   };
   return (

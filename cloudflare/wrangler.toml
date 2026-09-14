@@ -33,6 +33,15 @@ bucket_name = "khabar-article-images"
 [triggers]
 crons = ["0 1 * * *", "0 0 * * SUN", "0 */3 * * *"]
 
+# api.khabardarjeeling.in used to be Appwrite's own custom domain (a CNAME
+# to nyc.cloud.appwrite.io) -- the one thing lib/appwrite.ts's `endpoint`
+# constant pointed at. Repointed here at this Worker instead, now that
+# auth (the only thing that domain was ever used for) lives here. Wrangler
+# manages the DNS record + SSL cert for this automatically on deploy.
+[[routes]]
+pattern = "api.khabardarjeeling.in"
+custom_domain = true
+
 # APK downloads are staying on Appwrite permanently (explicit decision —
 # not a deferral). Only 2 files, no bandwidth pressure, not worth the
 # extra bucket/route/script surface.

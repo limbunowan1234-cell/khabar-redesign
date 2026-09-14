@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkAdminJwt } from '@/lib/serverAuth';
 
 // Admin-only: the finalized winners WITH mailing address/phone, so the
 // admin panel can actually address and send each memento.
@@ -10,25 +11,6 @@ import { NextRequest, NextResponse } from 'next/server';
 // which is scoped to a different domain).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 const SERVICE_HEADERS = { 'X-Service-Secret': process.env.WORKER_SERVICE_SECRET || '' };
-
-const ADMIN_EMAIL = 'nowanad@gmail.com';
-
-async function checkAdminJwt(jwt: string | null): Promise<boolean> {
-  if (!jwt) return false;
-  try {
-    const res = await fetch('https://nyc.cloud.appwrite.io/v1/account', {
-      headers: {
-        'X-Appwrite-Project': 'khabardarjeeling',
-        'X-Appwrite-JWT': jwt,
-      },
-    });
-    if (!res.ok) return false;
-    const user = await res.json();
-    return user.email?.toLowerCase() === ADMIN_EMAIL || (user.labels || []).includes('admin');
-  } catch {
-    return false;
-  }
-}
 
 export async function GET(req: NextRequest) {
   try {

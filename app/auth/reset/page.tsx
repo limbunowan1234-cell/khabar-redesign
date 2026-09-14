@@ -2,16 +2,12 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-
-const endpoint = 'https://api.khabardarjeeling.in/v1';
-const projectId = 'khabardarjeeling';
-const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
+import { completePasswordReset } from '@/lib/appwrite';
 
 function ResetForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userId = searchParams.get('userId') || '';
-  const secret = searchParams.get('secret') || '';
+  const token = searchParams.get('token') || '';
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -22,21 +18,13 @@ function ResetForm() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setError('');
-    if (!userId || !secret) { setError('This reset link is invalid or has expired.'); return; }
+    if (!token) { setError('This reset link is invalid or has expired.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
 
     setLoading(true);
     try {
-      const res = await fetch(endpoint + '/account/recovery', {
-        method: 'PUT',
-        headers: HJ,
-        body: JSON.stringify({ userId, secret, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to reset password. The link may have expired.');
-      }
+      await completePasswordReset(token, password);
       setDone(true);
       setTimeout(() => router.push('/auth'), 2500);
     } catch (err: any) {

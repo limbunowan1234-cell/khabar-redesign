@@ -1,24 +1,32 @@
-﻿const endpoint = 'https://api.khabardarjeeling.in/v1';
-const projectId = 'khabardarjeeling';
-const dbId = 'Khabar_db';
-
-const H = { 'X-Appwrite-Project': projectId };
-const HJ = { 'X-Appwrite-Project': projectId, 'Content-Type': 'application/json' };
-// Week 10+25+26 of the Cloudflare migration (see cloudflare/README.md):
-// likes (Week 25) and bookmarks (Week 26) read AND write through the
-// Worker now -- both fully cut over, not just shadow-written (their
-// Appwrite collections are frozen as of their respective cutovers).
-// Auth stays on Appwrite permanently.
+// Week 10+25+26+[auth migration] of the Cloudflare migration (see
+// cloudflare/README.md): likes (Week 25) and bookmarks (Week 26) read AND
+// write through the Worker, both fully cut over. Auth is on the Worker
+// now too -- Appwrite Cloud's Storage quota was exceeded, which put the
+// whole project (including auth) behind a blanket billing_limit_exceeded
+// 402, and the site owner isn't paying to fix a Storage problem on a
+// migration that was already complete everywhere else. See
+// cloudflare/src/routes/auth.ts for the server side of every function
+// below that used to call Appwrite's REST API directly.
+//
+// api.khabardarjeeling.in is the same domain Appwrite's own custom-domain
+// integration used to own -- repointed at this Worker instead (see
+// cloudflare/wrangler.toml's [[routes]] custom_domain entry), so the
+// session cookie keeps the exact host scope it always had; nothing about
+// how these functions are called (credentials: 'include', same relative
+// paths under /v1... replaced with /auth/...) needed to change shape.
+const endpoint = 'https://api.khabardarjeeling.in';
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
-// Mints a short-lived (15 min) Appwrite JWT for the currently logged-in
+const HJ = { 'Content-Type': 'application/json' };
+
+// Mints a short-lived (15 min) access JWT for the currently logged-in
 // session, for handing to the Cloudflare Worker so it can verify identity
-// server-to-server -- the Worker's own domain never sees the actual
-// Appwrite session cookie (HttpOnly, scoped to this domain only). See
-// cloudflare/src/lib/auth.ts for the verification side.
+// locally -- the Worker's own /auth/token endpoint reads the HttpOnly
+// refresh-session cookie (never exposed to JS) and signs a fresh bearer
+// token from it. See cloudflare/src/lib/jwt.ts for the verification side.
 export async function getWorkerAuthToken(): Promise<string | null> {
   try {
-    const res = await fetch(`${endpoint}/account/jwts`, { method: 'POST', headers: H, credentials: 'include' });
+    const res = await fetch(`${endpoint}/auth/token`, { method: 'POST', credentials: 'include' });
     if (!res.ok) return null;
     const data = await res.json();
     return data.jwt || null;
@@ -29,7 +37,7 @@ export async function getWorkerAuthToken(): Promise<string | null> {
 
 export async function getCurrentUser() {
   try {
-    const res = await fetch(`${endpoint}/account`, { headers: H, credentials: 'include' });
+    const res = await fetch(`${endpoint}/auth/me`, { credentials: 'include' });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -37,41 +45,54 @@ export async function getCurrentUser() {
   }
 }
 
-export async function signup(email: string, password: string, name: string) {
-  const res = await fetch(`${endpoint}/account`, {
+export async function signup(email: string, password: string, name: string, homeDistrict?: string) {
+  const res = await fetch(`${endpoint}/auth/signup`, {
     method: 'POST', headers: HJ, credentials: 'include',
-    body: JSON.stringify({ userId: 'unique()', email, password, name })
+    body: JSON.stringify({ email, password, name, homeDistrict }),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.message || 'Signup failed');
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Signup failed');
   }
-  const user = await res.json();
-  const session = await fetch(`${endpoint}/account/sessions/email`, {
-    method: 'POST', headers: HJ, credentials: 'include',
-    body: JSON.stringify({ email, password })
-  });
-  if (!session.ok) {
-    const err = await session.json();
-    throw new Error(err.message || 'Session failed');
-  }
-  return user;
+  return res.json();
 }
 
 export async function login(email: string, password: string) {
-  const res = await fetch(`${endpoint}/account/sessions/email`, {
+  const res = await fetch(`${endpoint}/auth/login`, {
     method: 'POST', headers: HJ, credentials: 'include',
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.message || 'Login failed');
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Login failed');
   }
   return res.json();
 }
 
 export async function logout() {
-  await fetch(`${endpoint}/account/sessions/current`, { method: 'DELETE', headers: H, credentials: 'include' });
+  await fetch(`${endpoint}/auth/logout`, { method: 'POST', credentials: 'include' });
+}
+
+// Always resolves, never throws -- the Worker's own endpoint is
+// deliberately non-enumerating (always 200, real email or not), matching
+// Appwrite's own /account/recovery behavior.
+export async function requestPasswordReset(email: string): Promise<void> {
+  try {
+    await fetch(`${endpoint}/auth/request-password-reset`, {
+      method: 'POST', headers: HJ, body: JSON.stringify({ email }),
+    });
+  } catch {}
+}
+
+export async function completePasswordReset(token: string, password: string) {
+  const res = await fetch(`${endpoint}/auth/reset-password`, {
+    method: 'POST', headers: HJ, body: JSON.stringify({ token, password }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Password reset failed');
+  }
+  return res.json();
 }
 
 export async function getArticleLikes(articleId: string) {
@@ -168,15 +189,12 @@ export async function toggleCommentLike(commentId: string, userId: string, artic
   }
 }
 
-
+// Moved off Appwrite's Database REST API (a read-then-increment against a
+// single document there) onto the Worker's generic app_counters table --
+// that API went dark along with everything else on the project, and this
+// was the one remaining call in this file still hitting it directly.
 export async function trackApkDownload() {
   try {
-    const res = await fetch(endpoint + '/databases/' + dbId + '/collections/analytics/documents/apk_downloads', { headers: H, credentials: 'include' });
-    let current = 0;
-    if (res.ok) { const d = await res.json(); current = d.count || 0; }
-    await fetch(endpoint + '/databases/' + dbId + '/collections/analytics/documents/apk_downloads', {
-      method: 'PATCH', headers: HJ, credentials: 'include',
-      body: JSON.stringify({ data: { count: current + 1 } })
-    });
+    await fetch(`${WORKER_URL}/counters/apk_downloads/increment`, { method: 'POST' });
   } catch {}
 }
