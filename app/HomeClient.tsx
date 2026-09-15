@@ -28,7 +28,13 @@ const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
 const H = { 'X-Appwrite-Project': projectId };
 const DB = 'Khabar_db';
-const APK_URL = 'https://api.khabardarjeeling.in/v1/storage/buckets/app-downloads/files/khabar-app-v1/download?project=khabardarjeeling';
+// Was Appwrite Storage, linked via api.khabardarjeeling.in -- broke when
+// that domain got repointed at the Worker for the auth migration (and
+// Appwrite Storage was already unreachable underneath anyway, still
+// billing-blocked). Points at the GitHub release asset directly now --
+// the stable /releases/download/ URL always redirects to a
+// freshly-signed, non-expiring-in-practice blob URL on request.
+const APK_URL = 'https://github.com/limbunowan1234-cell/Khabar-darjeeling/releases/download/v1.0.0/KhabarDarjeeling-v1.0.0.2.apk';
 // Week 2 of the Cloudflare migration (see cloudflare/README.md): article
 // list + images now read from the Worker/R2 instead of Appwrite. Writes
 // (view counting, comments, etc.) are untouched, still on Appwrite.
