@@ -23,7 +23,7 @@ export const auth = new Hono<{ Bindings: Bindings }>();
 
 const REFRESH_COOKIE = 'kd_session';
 const REFRESH_TTL_DAYS = 30;
-const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour, same order of magnitude as Appwrite's own default
+const RESET_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24h -- 1h (Appwrite's own default) was too easy to miss, especially for the mass recovery-campaign emails going to inboxes people don't check right away
 
 async function sha256Hex(input: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
