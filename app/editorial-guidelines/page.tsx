@@ -5,7 +5,6 @@ export const metadata = {
 };
 
 const H2: React.CSSProperties = { fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' };
-const PLACEHOLDER: React.CSSProperties = { background: '#fff8e1', border: '1px dashed #e0c060', borderRadius: '10px', padding: '14px 16px', color: '#8a6d1a', fontSize: '14px', fontStyle: 'italic' };
 
 export default function EditorialGuidelinesPage() {
   return (
@@ -23,28 +22,75 @@ export default function EditorialGuidelinesPage() {
           </p>
 
           <h2 style={H2}>Story Selection</h2>
-          <div style={PLACEHOLDER}>[Paste your story selection criteria here — e.g. relevance to the Darjeeling/Gorkha community, public interest.]</div>
+          <p>
+            We prioritise stories with direct relevance to the Darjeeling, Kalimpong, Kurseong, Mirik,
+            Siliguri, and wider Gorkha/hill community — local governance, safety alerts (weather,
+            landslides, health), regional politics, culture, and community achievements. National and
+            international stories are covered when they materially affect the region (e.g. flooding
+            upstream in Nepal/Sikkim, policy changes affecting hill districts) or are of clear public
+            interest to our readers. We do not run a story purely because it is trending elsewhere if it
+            has no real relevance to our audience.
+          </p>
 
           <h2 style={H2}>Fact-Checking Process</h2>
-          <div style={PLACEHOLDER}>[Paste your fact-checking process here — how many sources required, verification steps before publishing.]</div>
+          <p>
+            Before publishing, a reporter identifies and records at least one verifiable source for each
+            material claim in a story — an official statement, a document, direct eyewitness testimony, or
+            established reporting from another credible outlet. Breaking/developing stories (e.g. a
+            landslide, an accident) may go up with an explicit "developing story" note while details are
+            still being confirmed, and are updated as verified information comes in rather than left
+            uncorrected.
+          </p>
 
           <h2 style={H2}>Reporter and Contributor Standards</h2>
-          <div style={PLACEHOLDER}>[Paste your standards for staff reporters vs. reader contributors/citizen journalists here.]</div>
+          <p>
+            Staff reporters are expected to follow this document and our Code of Ethics in full. Reader
+            contributions (opinion pieces, poetry, photo submissions, contest entries) are held to a
+            lighter but real standard: no plagiarism, no hate speech or communal incitement, and clear
+            labelling as reader-submitted rather than staff-reported content. Contributor bylines are never
+            used to publish something the actual named person did not write or approve.
+          </p>
 
           <h2 style={H2}>Language and Translation</h2>
-          <div style={PLACEHOLDER}>[Paste your guidelines for Nepali/Hindi/English content and translation accuracy here.]</div>
+          <p>
+            We publish in Nepali, Hindi, and English. When a story is translated from one language to
+            another, the translation is checked for accuracy of meaning, not just word-for-word
+            correspondence — a mistranslation that changes a claim's meaning is treated as seriously as a
+            factual error in the original language.
+          </p>
 
           <h2 style={H2}>Images and Media</h2>
-          <div style={PLACEHOLDER}>[Paste your policy on image sourcing, credit, and manipulation here.]</div>
+          <p>
+            Images are either taken by our own contributors, submitted with the submitter's confirmation
+            that they have the right to share them, or properly credited when sourced from elsewhere. We do
+            not use manipulated or out-of-context images to illustrate a story, and stock/illustrative
+            images are labelled as such rather than presented as photos of the actual event.
+          </p>
 
           <h2 style={H2}>Anonymous Sources</h2>
-          <div style={PLACEHOLDER}>[Paste your policy on when and how anonymous sources may be used here.]</div>
+          <p>
+            We prefer named, on-record sources. Anonymity is granted only where a source faces real risk
+            (retaliation, job loss, safety) for speaking on record, and only when an editor has confirmed
+            the source's identity and credibility internally, even though it isn't published. We do not
+            grant anonymity merely as a convenience to avoid attribution.
+          </p>
 
           <h2 style={H2}>Sensitive Topics</h2>
-          <div style={PLACEHOLDER}>[Paste your guidelines for reporting on political unrest, communal issues, crime victims, and minors here.]</div>
+          <p>
+            Coverage of political unrest, statehood movements (e.g. Gorkhaland-related demonstrations),
+            communal or ethnic tension, and crime involving minors or sexual violence is reviewed with
+            extra care before publishing — checking language for anything that could be read as inflaming
+            tension between communities, and following the privacy protections in our Code of Ethics for
+            victims and minors.
+          </p>
 
           <h2 style={H2}>Editorial Review and Sign-Off</h2>
-          <div style={PLACEHOLDER}>[Paste your internal review/approval process before publishing here.]</div>
+          <p>
+            Staff-reported news articles are reviewed by an editor before publishing. Reader-submitted
+            content (contest entries, opinion pieces, photo stories) goes through a moderation check for
+            the standards above before it goes live, but is not held to the same fact-checking bar as
+            staff-reported news.
+          </p>
 
           <h2 style={H2}>Related Policies</h2>
           <p>
