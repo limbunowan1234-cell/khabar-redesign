@@ -18,6 +18,9 @@ export default function SiteFooter({ isDarkMode }: { isDarkMode?: boolean }) {
               <a href="/contact" style={linkStyle}>Contact</a>
               <a href="/privacy" style={linkStyle}>Privacy Policy</a>
               <a href="/terms" style={linkStyle}>Terms of Service</a>
+              <a href="/code-of-ethics" style={linkStyle}>Code of Ethics</a>
+              <a href="/editorial-guidelines" style={linkStyle}>Editorial Guidelines</a>
+              <a href="/grievance" style={linkStyle}>Grievance Redressal</a>
             </div>
           </div>
           <div style={{ flex: '1 1 140px' }}>
