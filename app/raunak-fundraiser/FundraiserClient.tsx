@@ -151,9 +151,11 @@ export default function FundraiserClient() {
               </div>
             </div>
             <div style={{ ...CARD, padding: '4px', overflow: 'hidden', flex: 1 }}>
-              <div style={{ width: '100%', aspectRatio: '1/1', background: '#eee', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '12px', textAlign: 'center', padding: '16px' }}>
-                {lang === 'en' ? 'Raunak, at CMC Vellore — photo to be added' : 'रौनक, CMC Vellore मा — फोटो थपिनेछ'}
-              </div>
+              <img
+                src="/assets/fundraiser/raunak/raunak-hospital.jpg"
+                alt={lang === 'en' ? 'Raunak recovering at CMC Vellore after surgery' : 'शल्यक्रिया पछि CMC Vellore मा उपचाररत रौनक'}
+                style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: '12px', display: 'block' }}
+              />
             </div>
           </div>
 
