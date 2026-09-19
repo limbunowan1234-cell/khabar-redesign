@@ -588,6 +588,7 @@ function generateSlug(text: string): string {
                 <Link href="/admin/news-digest"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: '#c41e3a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>📰 News Digest</button></Link>
                 <Link href="/admin/analytics"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: '#1a1a1a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>📊 Analytics</button></Link>
                 <Link href="/admin/link-account"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: '#1a1a1a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>🔗 Link Account</button></Link>
+                <Link href="/admin/raunak-donations"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: '#1a1a1a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>🙏 Raunak Fundraiser</button></Link>
           </div>
         </div>
       </div>

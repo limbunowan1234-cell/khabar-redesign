@@ -6,6 +6,13 @@ export default function SiteFooter({ isDarkMode }: { isDarkMode?: boolean }) {
   return (
     <footer style={{ background: isDarkMode ? '#161616' : '#f7f7f7', borderTop: '3px solid #f5c518', padding: '32px 20px 90px', marginTop: '40px' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <a href="/raunak-fundraiser" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', borderRadius: '14px', background: 'linear-gradient(135deg, #c41e3a, #8f1428)', color: '#fff', textDecoration: 'none', marginBottom: '24px' }}>
+          <span style={{ fontSize: '22px' }}>🙏</span>
+          <span>
+            <span style={{ display: 'block', fontWeight: 800, fontSize: '14px' }}>Help Save 2-Year-Old Raunak</span>
+            <span style={{ display: 'block', fontSize: '12px', color: 'rgba(255,255,255,0.85)' }}>Fighting brain cancer at CMC Vellore — see how you can help</span>
+          </span>
+        </a>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', justifyContent: 'space-between', marginBottom: '24px' }}>
           <div style={{ flex: '1 1 220px' }}>
             <div style={{ fontSize: '18px', fontWeight: 800, color: '#c41e3a', marginBottom: '6px' }}>Khabar Darjeeling</div>
