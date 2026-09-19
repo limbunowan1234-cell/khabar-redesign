@@ -601,6 +601,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
   const [showMenu, setShowMenu] = useState(false);
   const [showTopCreators, setShowTopCreators] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
+  const [showFundraiserBanner, setShowFundraiserBanner] = useState(true);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -802,6 +803,20 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
         </div>
       )}
       <style>{'.ticker-wrap{overflow:hidden;flex:1;min-width:0}.ticker-track{display:inline-flex;white-space:nowrap;animation:tickerScroll 35s linear infinite}.ticker-track:hover{animation-play-state:paused}@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}.cat-pill{transition:all 0.2s;cursor:pointer;border:none} main a img{transition:transform 0.45s ease} main a:hover img{transform:scale(1.045)}'}</style>
+
+      {showFundraiserBanner && (
+        <a href="/raunak-fundraiser" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px 16px', background: 'linear-gradient(135deg, #c41e3a, #8f1428)', color: '#fff', textDecoration: 'none', borderBottom: '2px solid #f5c518' }}>
+          <span style={{ fontSize: '18px', flexShrink: 0 }}>🙏</span>
+          <span style={{ flex: '0 1 auto', fontSize: isMobile ? '13px' : '15px', fontWeight: '700', textAlign: 'center' }}>
+            Help Save 2-Year-Old Raunak — Fighting Brain Cancer at CMC Vellore
+            <span style={{ textDecoration: 'underline', marginLeft: '8px', whiteSpace: 'nowrap' }}>See how to help →</span>
+          </span>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowFundraiserBanner(false); }}
+            style={{ backgroundColor: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px', flexShrink: 0, padding: '0', width: '26px', height: '26px' }}
+          >X</button>
+        </a>
+      )}
 
       {showBanner && (
         <div style={{ backgroundColor: '#f5c518', color: '#c41e3a', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', borderBottom: '2px solid #c41e3a' }}>
