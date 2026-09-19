@@ -144,9 +144,16 @@ export default function FundraiserClient() {
       <div style={{ maxWidth: '1080px', margin: '-30px auto 0', padding: '0 20px 60px', display: 'flex', gap: '28px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
         {/* Main column */}
         <div style={{ flex: '2 1 480px', minWidth: '280px' }}>
-          <div style={{ ...CARD, padding: '4px', overflow: 'hidden', marginBottom: '20px' }}>
-            <div style={{ width: '100%', aspectRatio: '4/3', background: '#eee', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '13px', textAlign: 'center', padding: '20px' }}>
-              {lang === 'en' ? 'Photo of Raunak — to be added' : 'रौनकको फोटो — थपिनेछ'}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ ...CARD, padding: '4px', overflow: 'hidden', flex: 1 }}>
+              <div style={{ width: '100%', aspectRatio: '1/1', background: '#eee', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '12px', textAlign: 'center', padding: '16px' }}>
+                {lang === 'en' ? 'Raunak, before — photo to be added' : 'रौनक, पहिले — फोटो थपिनेछ'}
+              </div>
+            </div>
+            <div style={{ ...CARD, padding: '4px', overflow: 'hidden', flex: 1 }}>
+              <div style={{ width: '100%', aspectRatio: '1/1', background: '#eee', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '12px', textAlign: 'center', padding: '16px' }}>
+                {lang === 'en' ? 'Raunak, at CMC Vellore — photo to be added' : 'रौनक, CMC Vellore मा — फोटो थपिनेछ'}
+              </div>
             </div>
           </div>
 
