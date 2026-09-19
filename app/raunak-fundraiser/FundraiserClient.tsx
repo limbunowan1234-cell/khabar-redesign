@@ -36,7 +36,7 @@ const content = {
       'He has undergone surgical excision and has been started on chemotherapy. Expenses to date: ₹5.5 lakhs. Further treatment (approx. 1 year) is estimated to cost a further ₹7 lakhs — total estimated expenses: ₹12.5 lakhs. This is an approximate estimate and the cost is likely to be more if there are unforeseen complications.',
     ],
     proofSigned: '— Dr. Leenu Joseph, MD, DCH, DM, Associate Professor, Paediatric Hematology-Oncology, CMC Vellore',
-    proofNote: 'A photo of the original signed letter will be added here shortly.',
+    proofNote: 'Original signed letter:',
     donateTitle: "Support Raunak's Treatment",
     donateSub: 'Scan either QR code with any UPI app to donate directly to the family.',
     shareTitle: 'Share this appeal',
@@ -64,7 +64,7 @@ const content = {
       'उनको शल्यक्रिया भइसकेको छ र केमोथेरापी सुरु गरिएको छ। हालसम्मको खर्च: रु ५.५ लाख। थप उपचार (लगभग १ वर्ष) को अनुमानित खर्च थप रु ७ लाख — कुल अनुमानित खर्च: रु १२.५ लाख। यो अनुमानित रकम मात्र हो, अप्रत्याशित जटिलता आएमा खर्च बढ्न सक्छ।',
     ],
     proofSigned: '— डा. लीनु जोसेफ, MD, DCH, DM, Associate Professor, Paediatric Hematology-Oncology, CMC Vellore',
-    proofNote: 'सक्कल हस्ताक्षरित पत्रको फोटो चाँडै यहाँ थपिनेछ।',
+    proofNote: 'सक्कल हस्ताक्षरित पत्र:',
     donateTitle: 'रौनकको उपचारमा सहयोग गर्नुहोस्',
     donateSub: 'कुनै पनि UPI app बाट QR code स्क्यान गरेर सिधै परिवारलाई सहयोग गर्नुहोस्।',
     shareTitle: 'यो अपिल Share गर्नुहोस्',
@@ -173,7 +173,12 @@ export default function FundraiserClient() {
               ))}
               <p style={{ fontSize: '13px', color: '#666', fontWeight: 600, marginTop: '14px' }}>{t.proofSigned}</p>
             </div>
-            <p style={{ fontSize: '12px', color: '#aaa', marginTop: '12px', fontStyle: 'italic' }}>{t.proofNote}</p>
+            <p style={{ fontSize: '12px', color: '#999', marginTop: '16px', marginBottom: '8px', fontWeight: 700 }}>{t.proofNote}</p>
+            <img
+              src="/assets/fundraiser/raunak/cmc-letter.jpg"
+              alt="Official letter from CMC Vellore's Department of Paediatric Haematology Oncology confirming Raunak Chettri's diagnosis and treatment cost estimate"
+              style={{ width: '100%', borderRadius: '10px', border: '1px solid #eee' }}
+            />
           </div>
         </div>
 
