@@ -146,9 +146,11 @@ export default function FundraiserClient() {
         <div style={{ flex: '2 1 480px', minWidth: '280px' }}>
           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
             <div style={{ ...CARD, padding: '4px', overflow: 'hidden', flex: 1 }}>
-              <div style={{ width: '100%', aspectRatio: '1/1', background: '#eee', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '12px', textAlign: 'center', padding: '16px' }}>
-                {lang === 'en' ? 'Raunak, before — photo to be added' : 'रौनक, पहिले — फोटो थपिनेछ'}
-              </div>
+              <img
+                src="/assets/fundraiser/raunak/raunak-before.jpg"
+                alt={lang === 'en' ? 'Raunak smiling before his diagnosis' : 'रोग पत्ता लाग्नु अघि हाँसिरहेका रौनक'}
+                style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: '12px', display: 'block' }}
+              />
             </div>
             <div style={{ ...CARD, padding: '4px', overflow: 'hidden', flex: 1 }}>
               <img
