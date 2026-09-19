@@ -413,3 +413,20 @@ CREATE TABLE news_digest (
   updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 INSERT INTO news_digest (id) VALUES (1);
+
+-- ─── Fundraisers ────────────────────────────────────────────────────────
+
+-- Support-message log for the /raunak-fundraiser page. Actual money moves
+-- directly between a donor and the family's own UPI ID via the QR codes on
+-- that page -- this table never touches a real payment, it's a
+-- self-reported pledge/message wall (amount is whatever the donor typed
+-- in, not a verified transaction), matching how the page presents it.
+CREATE TABLE donations (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  email      TEXT,
+  amount     REAL,
+  message    TEXT,
+  timestamp  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_donations_timestamp ON donations(timestamp DESC);
