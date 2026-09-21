@@ -50,7 +50,7 @@ export default function FlipPageViewer({ pages, issueLabel, onClose, onDownload,
       </div>
 
       {/* Main page area */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: '16px' }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: '16px' }}>
         <button
           onClick={() => goTo(current - 1)}
           disabled={current === 0}
@@ -60,8 +60,13 @@ export default function FlipPageViewer({ pages, issueLabel, onClose, onDownload,
 
         <div
           style={{
-            maxHeight: '100%',
-            maxWidth: '100%',
+            height: '100%',
+            width: '100%',
+            minHeight: 0,
+            minWidth: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
             transform: flipping === 'next' ? 'perspective(1600px) rotateY(-8deg) scale(0.97)' : flipping === 'prev' ? 'perspective(1600px) rotateY(8deg) scale(0.97)' : 'perspective(1600px) rotateY(0deg) scale(1)',
             transition: 'transform 0.26s ease',
@@ -70,7 +75,7 @@ export default function FlipPageViewer({ pages, issueLabel, onClose, onDownload,
         >
           {pages[current] && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={pages[current]} alt={`Page ${current + 1}`} style={{ maxHeight: '100%', maxWidth: '100%', display: 'block', background: '#fff' }} />
+            <img src={pages[current]} alt={`Page ${current + 1}`} style={{ maxHeight: '100%', maxWidth: '100%', height: 'auto', width: 'auto', objectFit: 'contain', display: 'block', background: '#fff' }} />
           )}
         </div>
 

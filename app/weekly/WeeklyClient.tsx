@@ -354,7 +354,7 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
       {flipPages && (
         <FlipPageViewer
           pages={flipPages}
-          issueLabel={'Khabar Darjeeling Weekly — Issue ' + String(currentIssue).padStart(2, '0')}
+          issueLabel={'Khabar Darjeeling Weekly — Issue ' + String(currentIssue).padStart(2, '0') + (dateRange ? ' · ' + dateRange : '')}
           onClose={() => setFlipPages(null)}
           onDownload={downloadPdf}
           downloading={downloading}
