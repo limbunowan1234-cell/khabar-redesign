@@ -19,6 +19,7 @@ import GenreColumns from '@/components/GenreColumns';
 import BhasaDiwasWidget from '@/components/BhasaDiwasWidget';
 import LatestSection from '@/components/LatestSection';
 import DistrictSection from '@/components/DistrictSection';
+import GorkhaTVSection, { type BulletinVideo } from '@/components/GorkhaTVSection';
 import HillsInFrameWidget from '@/components/HillsInFrameWidget';
 import SidebarTabs from '@/components/SidebarTabs';
 import { truncateWords } from '@/lib/textPreview';
@@ -585,7 +586,7 @@ function NavDropdownItem({ href, onClick, isDarkMode, danger, children }: { href
   return <div onClick={onClick} style={itemStyle}>{children}</div>;
 }
 
-export default function HomeClient({ initialArticles = [], initialIsMobile = false }: { initialArticles?: any[]; initialIsMobile?: boolean }) {
+export default function HomeClient({ initialArticles = [], initialIsMobile = false, bulletinVideos = [] }: { initialArticles?: any[]; initialIsMobile?: boolean; bulletinVideos?: BulletinVideo[] }) {
   const { initAuth, user, logOut } = useAuthStore();
   const [articles, setArticles] = useState<any[]>(initialArticles);
   const [totalSiteArticles, setTotalSiteArticles] = useState(0);
@@ -989,6 +990,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
                 under the hero's own AdSlot banner. */}
             {!searchQuery && selectedCategory === 'All' && <AdBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
+            {!searchQuery && selectedCategory === 'All' && <GorkhaTVSection videos={bulletinVideos} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget />}
             {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget />}
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}
@@ -1017,6 +1019,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
+            {!searchQuery && selectedCategory === 'All' && <GorkhaTVSection videos={bulletinVideos} />}
             {!searchQuery && selectedCategory === 'All' && <BhasaDiwasWidget />}
             {!searchQuery && selectedCategory === 'All' && <HillsInFrameWidget />}
             {!searchQuery && selectedCategory === 'All' && <GenreColumns articles={articles} isDarkMode={isDarkMode} onSelectGenre={setSelectedCategory} />}

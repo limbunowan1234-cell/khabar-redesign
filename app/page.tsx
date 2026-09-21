@@ -2,6 +2,7 @@
 import HomeClient from './HomeClient';
 import { headers } from 'next/headers';
 import { truncateChars } from '@/lib/textPreview';
+import type { BulletinVideo } from '@/components/GorkhaTVSection';
 
 const SITE = 'https://khabardarjeeling.in';
 // Week 6 of the Cloudflare migration (see cloudflare/README.md).
@@ -29,8 +30,40 @@ async function fetchLatestArticles(): Promise<any[]> {
   }
 }
 
+// GorkhaTV (gorkhatv.site) is the same publisher's YouTube discovery
+// platform for Darjeeling-region creators. Its /api/genre/news endpoint
+// has no CORS header, so this has to be a server-side fetch, not a
+// client-side one from GorkhaTVSection.
+async function fetchBulletinVideos(): Promise<BulletinVideo[]> {
+  try {
+    const res = await fetch('https://gorkhatv.site/api/genre/news', { next: { revalidate: 600 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const trending = (data.trending || []).slice(0, 4);
+    const latest = (data.latest || []).slice(0, 6);
+    const seen = new Set<string>();
+    const merged: any[] = [];
+    for (const v of [...trending, ...latest]) {
+      if (!v?.youtube_video_id || seen.has(v.youtube_video_id)) continue;
+      seen.add(v.youtube_video_id);
+      merged.push(v);
+    }
+    return merged.slice(0, 10).map((v: any) => ({
+      id: v.id,
+      youtubeId: v.youtube_video_id,
+      title: v.title,
+      channel: v.channel_name || 'GorkhaTV',
+      location: v.location || '',
+      thumbnail: v.thumbnail_url || ('https://i.ytimg.com/vi/' + v.youtube_video_id + '/hqdefault.jpg'),
+      viewCount: v.view_count || 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export default async function Page() {
-  const articles = await fetchLatestArticles();
+  const [articles, bulletinVideos] = await Promise.all([fetchLatestArticles(), fetchBulletinVideos()]);
   const ua = (await headers()).get('user-agent') || '';
   const initialIsMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(ua);
 
@@ -69,7 +102,7 @@ export default async function Page() {
         </ul>
       </div>
 
-      <HomeClient initialArticles={articles} initialIsMobile={initialIsMobile} />
+      <HomeClient initialArticles={articles} initialIsMobile={initialIsMobile} bulletinVideos={bulletinVideos} />
     </>
   );
 }
