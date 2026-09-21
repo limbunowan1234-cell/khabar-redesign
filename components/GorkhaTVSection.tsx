@@ -24,7 +24,7 @@ export default function GorkhaTVSection({ videos }: { videos: BulletinVideo[] })
   if (!videos || videos.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: '32px', background: 'var(--color-surface)', borderRadius: '8px', padding: '24px' }}>
+    <div style={{ marginBottom: '32px', background: 'var(--color-surface)', borderRadius: '8px', padding: '24px', minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '4px', flexWrap: 'wrap' as const, gap: '8px' }}>
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 700, color: 'var(--color-text)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span aria-hidden="true">📺</span> GorkhaTV Bulletin
@@ -49,6 +49,8 @@ export default function GorkhaTVSection({ videos }: { videos: BulletinVideo[] })
           overflowX: 'auto' as const,
           paddingBottom: '4px',
           scrollSnapType: 'x proximity' as const,
+          minWidth: 0,
+          width: '100%',
         }}
       >
         {videos.map((v) => (

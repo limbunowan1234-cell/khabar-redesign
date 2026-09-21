@@ -1011,7 +1011,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
         </div>
       ) : (
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', minWidth: 0 }}>
-          <main>
+          <main style={{ minWidth: 0 }}>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <WeatherAirWidget isDarkMode={isDarkMode} />}
