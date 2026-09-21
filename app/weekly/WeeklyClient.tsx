@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { stripMarkdown, truncateChars } from '@/lib/textPreview';
+import FlipPageViewer from './FlipPageViewer';
+
+const PDFJS_VERSION = '3.11.174';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in';
 const PROJECT = 'khabardarjeeling';
@@ -40,6 +43,8 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [pdfMode, setPdfMode] = useState(false);
+  const [flipPages, setFlipPages] = useState<string[] | null>(null);
+  const [generatingFlip, setGeneratingFlip] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
 
@@ -47,6 +52,17 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
     script.async = true;
+    document.body.appendChild(script);
+    return () => { document.body.removeChild(script); };
+  }, []);
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
+    script.async = true;
+    script.onload = () => {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
+    };
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
   }, []);
@@ -63,9 +79,12 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
     }));
   }
 
-  async function downloadPdf() {
-    if (!printRef.current || !(window as any).html2pdf) return;
-    setDownloading(true);
+  // Shared by downloadPdf() and openFlipView() -- renders the same
+  // html2pdf pipeline once, returns the jsPDF object before either saving
+  // it or handing it to pdf.js for page-by-page rendering, so the flip
+  // viewer always shows exactly what the download produces.
+  async function buildPdf() {
+    if (!printRef.current || !(window as any).html2pdf) return null;
     setPdfMode(true);
     await new Promise((resolve) => setTimeout(resolve, 300));
     if (printRef.current) await waitForImages(printRef.current);
@@ -77,22 +96,59 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
       pagebreak: { mode: 'css', avoid: ['.weekly-article-block'] },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
+    let pdf: any = null;
     try {
       const worker = (window as any).html2pdf().set(opt).from(printRef.current);
-      const pdfBlob = await worker.toPdf().get('pdf');
-      const totalPages = pdfBlob.internal.getNumberOfPages();
+      pdf = await worker.toPdf().get('pdf');
+      const totalPages = pdf.internal.getNumberOfPages();
       for (let p = 1; p <= totalPages; p++) {
-        pdfBlob.setPage(p);
-        pdfBlob.setFontSize(9);
-        pdfBlob.setTextColor(150);
-        pdfBlob.text('Page ' + p + ' of ' + totalPages, pdfBlob.internal.pageSize.getWidth() / 2, pdfBlob.internal.pageSize.getHeight() - 8, { align: 'center' });
+        pdf.setPage(p);
+        pdf.setFontSize(9);
+        pdf.setTextColor(150);
+        pdf.text('Page ' + p + ' of ' + totalPages, pdf.internal.pageSize.getWidth() / 2, pdf.internal.pageSize.getHeight() - 8, { align: 'center' });
       }
-      pdfBlob.save('Khabar-Darjeeling-Weekly-Issue-' + String(currentIssue).padStart(2, '0') + '.pdf');
     } catch (e) {
       console.error(e);
     }
     setPdfMode(false);
+    return pdf;
+  }
+
+  async function downloadPdf() {
+    setDownloading(true);
+    const pdf = await buildPdf();
+    if (pdf) pdf.save('Khabar-Darjeeling-Weekly-Issue-' + String(currentIssue).padStart(2, '0') + '.pdf');
     setDownloading(false);
+  }
+
+  async function openFlipView() {
+    setGeneratingFlip(true);
+    try {
+      const pdf = await buildPdf();
+      const pdfjsLib = (window as any).pdfjsLib;
+      if (!pdf || !pdfjsLib) { setGeneratingFlip(false); return; }
+
+      const arrayBuffer = pdf.output('arraybuffer');
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const doc = await loadingTask.promise;
+
+      const images: string[] = [];
+      for (let p = 1; p <= doc.numPages; p++) {
+        const page = await doc.getPage(p);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) continue;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        images.push(canvas.toDataURL('image/jpeg', 0.92));
+      }
+      setFlipPages(images);
+    } catch (e) {
+      console.error(e);
+    }
+    setGeneratingFlip(false);
   }
 
 
@@ -175,9 +231,12 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
         </div>
       )}
 
-      <div className='weekly-container' style={{ margin: '0 auto', padding: '20px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className='weekly-container' style={{ margin: '0 auto', padding: '20px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
         <Link href='/' style={{ color: '#c41e3a', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>&larr; Back to Home</Link>
-        <button onClick={downloadPdf} disabled={downloading} style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', opacity: downloading ? 0.6 : 1 }}>{downloading ? 'Preparing PDF...' : 'Download PDF'}</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={openFlipView} disabled={generatingFlip} style={{ backgroundColor: '#1a1712', color: '#e8dfc8', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: generatingFlip ? 'default' : 'pointer', opacity: generatingFlip ? 0.6 : 1 }}>{generatingFlip ? 'Preparing…' : '📖 Read as E-Paper'}</button>
+          <button onClick={downloadPdf} disabled={downloading} style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', opacity: downloading ? 0.6 : 1 }}>{downloading ? 'Preparing PDF...' : 'Download PDF'}</button>
+        </div>
       </div>
 
       <style>{`
@@ -291,6 +350,16 @@ export default function WeeklyClient({ initialArticles = [], initialAllIssues = 
           </div>
         )}
       </div>
+
+      {flipPages && (
+        <FlipPageViewer
+          pages={flipPages}
+          issueLabel={'Khabar Darjeeling Weekly — Issue ' + String(currentIssue).padStart(2, '0')}
+          onClose={() => setFlipPages(null)}
+          onDownload={downloadPdf}
+          downloading={downloading}
+        />
+      )}
     </div>
   );
 }
