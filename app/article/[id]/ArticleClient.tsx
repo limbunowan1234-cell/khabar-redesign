@@ -147,6 +147,25 @@ function renderContent(content: string, isDarkMode: boolean, supportingImages?: 
   const images = (supportingImages || []).map((raw) => {
     try { return JSON.parse(raw); } catch { return null; }
   }).filter((img) => img && img.fileId);
+
+  // A `[[image:N]]` line (1-indexed, matching the order supporting photos
+  // were uploaded in) places that specific image at an exact spot in the
+  // content. Any image not referenced by a marker still falls back to the
+  // old auto-spacing below, so articles written before this feature existed
+  // keep rendering exactly as they did.
+  const placedIndexes = new Set<number>();
+  for (const line of lines) {
+    const m = line.trim().match(/^\[\[image:(\d+)\]\]$/i);
+    if (m) placedIndexes.add(parseInt(m[1], 10) - 1);
+  }
+
+  const renderImage = (img: any, key: string) => (
+    <figure key={'img' + key} style={{ margin: '24px 0' }}>
+      <img src={getImageUrl({ imageFileId: img.fileId })} alt={img.caption || ''} style={{ width: '100%', borderRadius: '10px', display: 'block' }} />
+      {img.caption && <figcaption style={{ fontSize: '13px', color: isDarkMode ? '#999' : '#777', marginTop: '8px', fontStyle: 'italic', textAlign: 'center' as const }}>{img.caption}</figcaption>}
+    </figure>
+  );
+
   let firstParaDone = false;
   let imageIdx = 0;
   let blockCount = 0;
@@ -154,21 +173,26 @@ function renderContent(content: string, isDarkMode: boolean, supportingImages?: 
 
   const maybeInsertImage = (key: string) => {
     blockCount++;
-    if (blockCount % 3 === 0 && imageIdx < images.length) {
-      const img = images[imageIdx];
+    if (blockCount % 3 !== 0) return;
+    while (imageIdx < images.length && placedIndexes.has(imageIdx)) imageIdx++;
+    if (imageIdx < images.length) {
+      output.push(renderImage(images[imageIdx], key));
       imageIdx++;
-      output.push(
-        <figure key={'img' + key} style={{ margin: '24px 0' }}>
-          <img src={getImageUrl({ imageFileId: img.fileId })} alt={img.caption || ''} style={{ width: '100%', borderRadius: '10px', display: 'block' }} />
-          {img.caption && <figcaption style={{ fontSize: '13px', color: isDarkMode ? '#999' : '#777', marginTop: '8px', fontStyle: 'italic', textAlign: 'center' as const }}>{img.caption}</figcaption>}
-        </figure>
-      );
     }
   };
 
   let i = 0;
   while (i < lines.length) {
     const trimmed = lines[i].trim();
+
+    // Explicit placement marker: [[image:N]] (1-indexed) on its own line.
+    const markerMatch = trimmed.match(/^\[\[image:(\d+)\]\]$/i);
+    if (markerMatch) {
+      const idx = parseInt(markerMatch[1], 10) - 1;
+      if (images[idx]) output.push(renderImage(images[idx], 'm' + i));
+      i++;
+      continue;
+    }
 
     // Table: a run of consecutive lines that each start with "|".
     if (trimmed.startsWith('|')) {

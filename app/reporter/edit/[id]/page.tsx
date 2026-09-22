@@ -248,16 +248,20 @@ export default function ReporterEditPage() {
 
           <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '6px' }}>Content *</label>
           <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write the full article content..." rows={12} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '6px', fontSize: '15px', lineHeight: 1.6, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
-          <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#888' }}>Formatting: <code>## </code> for a subheading, <code>**bold**</code> for bold, <code>&gt; </code> for a pull-quote, or a table as <code>| Col A | Col B |</code> rows.</p>
+          <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#888' }}>Formatting: <code>## </code> for a subheading, <code>**bold**</code> for bold, <code>&gt; </code> for a pull-quote, a table as <code>| Col A | Col B |</code> rows, or <code>[[image:2]]</code> on its own line to place supporting photo #2 exactly there (see the numbers below).</p>
           <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '18px' }}>{content.length} characters (minimum 100)</p>
 
           <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#374151', marginBottom: '10px' }}>Supporting Photos (with captions)</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '14px' }}>
             {supportingImages.map((img, index) => (
               <div key={img.fileId} style={{ display: 'flex', gap: '12px', border: '1px solid #eee', borderRadius: '8px', padding: '10px', alignItems: 'flex-start' }}>
-                <img src={img.preview} alt="" style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <img src={img.preview} alt="" style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '6px', display: 'block' }} />
+                  <span style={{ position: 'absolute', top: '4px', left: '4px', background: 'rgba(0,0,0,0.65)', color: 'white', fontSize: '11px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px' }}>#{index + 1}</span>
+                </div>
                 <div style={{ flex: 1 }}>
                   <input value={img.caption} onChange={(e) => updateCaption(index, e.target.value)} placeholder="Caption for this photo" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
+                  <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af' }}>Reference this photo in the content with <code>[[image:{index + 1}]]</code></p>
                 </div>
                 <button type="button" onClick={() => removeSupportingImage(index)} style={{ background: '#fee2e2', color: '#c41e3a', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, flexShrink: 0 }}>Remove</button>
               </div>
