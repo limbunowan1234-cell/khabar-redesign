@@ -53,9 +53,21 @@ ${sourceText}
     const result = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       prompt,
       max_tokens: 2048,
-    }) as { response?: string };
+    }) as any;
 
-    const raw = (result?.response || '').trim();
+    // result.response isn't reliably a plain string for every model/call --
+    // it's sometimes an object or array instead (seen live, not just in
+    // theory). Handle both known shapes and surface the raw shape on
+    // anything else instead of crashing on .trim().
+    let raw: string;
+    if (typeof result?.response === 'string') {
+      raw = result.response;
+    } else if (typeof result === 'string') {
+      raw = result;
+    } else {
+      return c.json({ error: 'Unexpected AI response shape', raw: JSON.stringify(result) }, 502);
+    }
+    raw = raw.trim();
     // Some models echo/repeat the draft a few times before hitting
     // max_tokens rather than stopping cleanly -- take only the first
     // complete top-level JSON object (brace-matched, not a greedy regex
