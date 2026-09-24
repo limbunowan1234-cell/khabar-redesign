@@ -545,6 +545,18 @@ function generateSlug(text: string): string {
     } catch { setError('Update failed'); }
   }
 
+  // The one place a pending_review row (from AI Draft, or anything else
+  // that lands in that queue) actually goes live -- a deliberate, separate
+  // click, distinct from whatever created the draft in the first place.
+  async function publishPending(articleId: string) {
+    try {
+      const workerToken = await getWorkerAuthToken();
+      await editArticle(articleId, { status: 'published', publishedAt: new Date().toISOString() }, workerToken);
+      setArticles(articles.map((a) => a.$id === articleId ? { ...a, status: 'published' } : a));
+      setSuccess('Published.');
+    } catch { setError('Publish failed'); }
+  }
+
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontSize: '18px' }}>Loading...</div>;
 
   if (!user) return (
@@ -556,10 +568,11 @@ function generateSlug(text: string): string {
 
   const totalViews = articles.reduce((s: number, a: any) => s + (a.views || 0), 0);
   const filteredArticles = articles.filter((a) => {
+    if (activeTab === 'pending') return a.status === 'pending_review';
     if (activeTab === 'breaking') return a.isBreaking;
     if (activeTab === 'featured') return a.isFeatured;
     if (activeTab === 'contest') return a.isContestEntry;
-    return true;
+    return a.status !== 'pending_review'; // "All Articles" means the live site's content, not drafts awaiting review
   }).filter((a) => !search || a.title?.toLowerCase().includes(search.toLowerCase()));
   const pagedArticles = filteredArticles.slice(listPage * 10, listPage * 10 + 10);
   const totalPages = Math.max(1, Math.ceil(filteredArticles.length / 10));
@@ -581,6 +594,7 @@ function generateSlug(text: string): string {
                 <>
               <button onClick={() => { setView('weekly'); loadWeeklyPicks(); }} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: view === 'weekly' ? '#D4AF37' : 'rgba(255,255,255,0.12)', color: view === 'weekly' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0, transition: 'background-color 0.15s' }}>🗓️ Weekly</button>
                 <button onClick={() => { setView('certificates'); loadCertRankings(); }} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: view === 'certificates' ? '#D4AF37' : 'rgba(255,255,255,0.12)', color: view === 'certificates' ? '#0F4C5C' : 'white', whiteSpace: 'nowrap', flexShrink: 0, transition: 'background-color 0.15s' }}>🎓 Certificates</button>
+                <Link href="/admin/ai-draft"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.12)', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>🤖 AI Draft</button></Link>
                 </>
               )}
                 <Link href="/admin/bhasa-diwas"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: '#b91c1c', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>🎭 Bhasa Diwas</button></Link>
@@ -622,9 +636,9 @@ function generateSlug(text: string): string {
             </div>
 
             <div style={{ display: 'flex', gap: '0', marginBottom: '16px', borderBottom: '2px solid #ddd' }}>
-              {['all', 'breaking', 'featured', 'contest'].map((tab) => (
+              {['all', 'pending', 'breaking', 'featured', 'contest'].map((tab) => (
                 <button key={tab} onClick={() => { setListPage(0); setActiveTab(tab); }} style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px', color: activeTab === tab ? '#c41e3a' : '#666', borderBottom: activeTab === tab ? '3px solid #c41e3a' : '3px solid transparent', marginBottom: '-2px' }}>
-                  {tab === 'all' ? 'All Articles' : tab === 'breaking' ? 'Breaking' : tab === 'featured' ? 'Featured' : 'Contest'}
+                  {tab === 'all' ? 'All Articles' : tab === 'pending' ? `Pending (${articles.filter(a => a.status === 'pending_review').length})` : tab === 'breaking' ? 'Breaking' : tab === 'featured' ? 'Featured' : 'Contest'}
                 </button>
               ))}
             </div>
@@ -646,12 +660,14 @@ function generateSlug(text: string): string {
                       <div style={{ fontWeight: '600', fontSize: '14px', color: '#0F4C5C', marginBottom: '4px' }}>{article.title}</div>
                       <div style={{ fontSize: '12px', color: '#999', marginBottom: '6px' }}>By {article.submitterName || article.authorName || 'Unknown'} • {article.category} • {formatDate(article.$createdAt)} • {(article.views || 0).toLocaleString()} views</div>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {article.status === 'pending_review' && <span style={{ padding: '2px 8px', backgroundColor: '#ede9fe', color: '#6d28d9', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>PENDING REVIEW</span>}
                         {article.isBreaking && <span style={{ padding: '2px 8px', backgroundColor: '#ffebee', color: '#c41e3a', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>BREAKING</span>}
                         {article.isFeatured && <span style={{ padding: '2px 8px', backgroundColor: '#fff3e0', color: '#e65100', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>FEATURED</span>}
                         {article.isContestEntry && <span style={{ padding: '2px 8px', backgroundColor: '#fff8e1', color: '#b8860b', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>CONTEST</span>}
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexShrink: 0 }}>
+                      {article.status === 'pending_review' && <button onClick={() => publishPending(article.$id)} style={{ padding: '6px 12px', backgroundColor: '#166534', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>Publish</button>}
                       <button onClick={() => handleEdit(article)} style={{ padding: '6px 12px', backgroundColor: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Edit</button>
                       <button onClick={() => toggleFeatured(article.$id, !article.isFeatured)} style={{ padding: '6px 12px', backgroundColor: '#fff3e0', color: '#e65100', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{article.isFeatured ? 'Unfeature' : 'Feature'}</button>
                       <button onClick={() => toggleBreaking(article.$id, !article.isBreaking)} style={{ padding: '6px 12px', backgroundColor: '#ffebee', color: '#c41e3a', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{article.isBreaking ? 'Unbreak' : 'Breaking'}</button>

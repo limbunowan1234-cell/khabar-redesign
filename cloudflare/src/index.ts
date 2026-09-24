@@ -20,8 +20,9 @@ import { ads } from './routes/ads';
 import { auth } from './routes/auth';
 import { counters } from './routes/counters';
 import { donations } from './routes/donations';
+import { aiDraft } from './routes/aiDraft';
 
-type Bindings = { DB: D1Database; IMAGES: R2Bucket; AUTH_JWT_SECRET: string };
+type Bindings = { DB: D1Database; IMAGES: R2Bucket; AUTH_JWT_SECRET: string; AI: Ai };
 
 // Mirrors components/WeatherWidget.tsx's CITIES and components/
 // WeatherWarning.tsx's getSeverity() in the Next.js app -- duplicated
@@ -81,6 +82,7 @@ app.route('/news-digest', newsDigest);
 app.route('/ads', ads);
 app.route('/counters', counters);
 app.route('/donations', donations);
+app.route('/ai-draft', aiDraft);
 
 export default {
   fetch: app.fetch,

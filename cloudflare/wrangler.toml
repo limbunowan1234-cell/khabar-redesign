@@ -23,6 +23,14 @@ database_id = "991e6a3d-1aca-4c2a-bbdf-5b8d374d45b8"
 binding = "IMAGES"
 bucket_name = "khabar-article-images"
 
+# Powers POST /ai-draft (admin-only) -- turns pasted source material into a
+# structured article draft. Free daily neuron allotment, pay-as-you-go past
+# that at low per-request cost; picked over an external LLM API specifically
+# so this stays inside the same Cloudflare account/billing everything else
+# in this project already runs on.
+[ai]
+binding = "AI"
+
 # Three schedules, all handled by scheduled() in src/index.ts (branches on
 # event.cron), no HTTP auth needed for any of them:
 #   "0 1 * * *"  -- daily, 30-day analytics_events retention (Week 32).
