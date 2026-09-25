@@ -29,20 +29,32 @@ aiDraft.post('/', async (c) => {
     return c.json({ error: 'sourceText is required (at least 50 characters)' }, 400);
   }
 
+  // Content comes back as an array of typed blocks, not one flat string
+  // with inline "##"/">" markers -- that flat-string approach was tried
+  // first and failed live: this model doesn't reliably put a real blank
+  // line before those markers inside a single JSON string value, so they
+  // landed mid-sentence in one run-on paragraph and never got recognized
+  // as block-level elements by the renderer (only inline **bold** survived,
+  // since that doesn't depend on paragraph boundaries). Blocks sidestep the
+  // whole problem: the model only ever picks a block's type and text, and
+  // this endpoint does the "## "/"> " prefixing and \n\n joining itself --
+  // so correct structure no longer depends on the model getting whitespace
+  // right inside a string.
   const prompt = `You are a news editor for Khabar Darjeeling, a regional news site covering Darjeeling, Kalimpong, and the wider Gorkha hills community. Turn the source material below into a publish-ready article draft.
 
 Rules:
 - Never invent facts, quotes, or numbers -- only reformat and organize what's actually in the source.
-- Lead paragraph, no header, sets the scene.
-- Use "## " section headers wherever the topic shifts.
-- Use "**Bold labels:**" for quick-reference facts within a paragraph where it aids scanning.
-- Pull at most one or two standout lines into "> " blockquotes.
+- Break the article into blocks. Each block is one of:
+  - "paragraph" -- ordinary prose. Use "**text**" inside a paragraph's text for a quick-reference bold label where it aids scanning.
+  - "heading" -- a short section header, used wherever the topic shifts.
+  - "quote" -- a single standout line pulled out for emphasis. Use at most one or two of these in the whole draft, and only for a real standout line, not just a restated fact.
+- The first block must be a "paragraph" (the lead, sets the scene, no heading before it).
 - Pick the single best-fitting genre from: ${GENRES.join(', ')}.
 - Pick the single best-fitting district from: ${DISTRICTS.join(', ')}. Use "National" or "World" if the story isn't about a specific hill district.
 - Write a short one-sentence subheading (sideHeader) that adds context beyond the title.
 
 Respond with ONLY a JSON object, no other text, no markdown code fences, in exactly this shape:
-{"title": "...", "sideHeader": "...", "content": "...", "genre": "...", "locationDistrict": "..."}
+{"title": "...", "sideHeader": "...", "blocks": [{"type": "paragraph", "text": "..."}, {"type": "heading", "text": "..."}], "genre": "...", "locationDistrict": "..."}
 
 Source material:
 """
@@ -82,17 +94,37 @@ ${sourceText}
     }
     if (end === -1) return c.json({ error: 'AI response was truncated before a complete draft', raw }, 502);
 
-    let draft: any;
+    let parsed: any;
     try {
-      draft = JSON.parse(raw.slice(start, end + 1));
+      parsed = JSON.parse(raw.slice(start, end + 1));
     } catch {
       return c.json({ error: 'AI returned malformed JSON', raw }, 502);
     }
-    if (!draft.title || !draft.content) {
-      return c.json({ error: 'AI draft missing title or content', raw }, 502);
+    if (!parsed.title || !Array.isArray(parsed.blocks) || parsed.blocks.length === 0) {
+      return c.json({ error: 'AI draft missing title or blocks', raw }, 502);
     }
-    if (!GENRES.includes(draft.genre)) draft.genre = GENRES[0];
-    if (!DISTRICTS.includes(draft.locationDistrict)) draft.locationDistrict = 'National';
+
+    // Assemble content here, not the model -- guarantees a real blank line
+    // between every block regardless of what the model did internally.
+    const content = parsed.blocks
+      .filter((b: any) => b && typeof b.text === 'string' && b.text.trim())
+      .map((b: any) => {
+        const text = b.text.trim();
+        if (b.type === 'heading') return '## ' + text;
+        if (b.type === 'quote') return '> ' + text;
+        return text;
+      })
+      .join('\n\n');
+
+    if (!content) return c.json({ error: 'AI draft had no usable block text', raw }, 502);
+
+    const draft = {
+      title: parsed.title,
+      sideHeader: parsed.sideHeader || '',
+      content,
+      genre: GENRES.includes(parsed.genre) ? parsed.genre : GENRES[0],
+      locationDistrict: DISTRICTS.includes(parsed.locationDistrict) ? parsed.locationDistrict : 'National',
+    };
 
     return c.json({ draft });
   } catch (err: any) {
