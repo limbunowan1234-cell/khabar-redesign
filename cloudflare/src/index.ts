@@ -21,6 +21,7 @@ import { auth } from './routes/auth';
 import { counters } from './routes/counters';
 import { donations } from './routes/donations';
 import { aiDraft } from './routes/aiDraft';
+import { downloads } from './routes/downloads';
 
 type Bindings = { DB: D1Database; IMAGES: R2Bucket; AUTH_JWT_SECRET: string; AI: Ai };
 
@@ -83,6 +84,7 @@ app.route('/ads', ads);
 app.route('/counters', counters);
 app.route('/donations', donations);
 app.route('/ai-draft', aiDraft);
+app.route('/downloads', downloads);
 
 export default {
   fetch: app.fetch,

@@ -430,3 +430,30 @@ CREATE TABLE donations (
   timestamp  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX idx_donations_timestamp ON donations(timestamp DESC);
+
+-- ─── Apps & Games downloads ─────────────────────────────────────────────
+
+-- The /apps page: a catalogue of downloadable apps, games, magic-trick
+-- apps and game materials. A row is either hosted in R2 (file_key, under
+-- the downloads/ prefix of the IMAGES bucket) or points at a file hosted
+-- elsewhere (external_url -- for anything too big to upload through a
+-- Worker, ~90MB). Downloads always go through GET /downloads/:id/download
+-- so they can be counted and so an external URL is never exposed in the
+-- public list.
+CREATE TABLE downloads (
+  id             TEXT PRIMARY KEY,
+  title          TEXT NOT NULL,
+  category       TEXT NOT NULL,   -- 'apps' | 'games' | 'magic-tricks' | 'game-materials'
+  description    TEXT,
+  version        TEXT,
+  icon_file_id   TEXT,            -- image in the IMAGES bucket, served at /cdn/articles/<id>
+  file_key       TEXT,
+  file_name      TEXT,
+  size_bytes     INTEGER,
+  external_url   TEXT,
+  download_count INTEGER NOT NULL DEFAULT 0,
+  active         INTEGER NOT NULL DEFAULT 1,
+  created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_downloads_category ON downloads(category, active, created_at DESC);

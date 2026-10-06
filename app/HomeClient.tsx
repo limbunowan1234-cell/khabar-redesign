@@ -841,6 +841,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
               {[
                 { href: '/nepali-bhasa-diwas', label: 'Nepali Bhasa Diwas' },
                 { href: '/hills-in-frame', label: 'Hills in Frame' },
+                { href: '/apps', label: 'Apps & Games' },
                 { href: '/', label: 'Home' },
                 { href: '/weekly', label: 'Weekly Edition' },
                 { href: '/daily-updates', label: 'Daily Updates' },
@@ -902,6 +903,8 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
               </NavDropdown>
 
               <Link href="/hills-in-frame" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Photos</button></Link>
+
+              <Link href="/apps" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Apps &amp; Games</button></Link>
 
               {user ? (
                 <>
