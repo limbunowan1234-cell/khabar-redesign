@@ -103,6 +103,7 @@ function getTopArticles(articles: any[], period: string): any[] {
   let f = articles;
   if (period === 'Today') f = articles.filter(a => (now - new Date(a.$createdAt).getTime()) < msPerDay);
   else if (period === 'Week') f = articles.filter(a => (now - new Date(a.$createdAt).getTime()) < msPerDay * 7);
+  if (f.length === 0) f = articles;
   return [...f].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
 }
 
@@ -601,7 +602,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
   const [activeNav, setActiveNav] = useState('home');
   const [showMenu, setShowMenu] = useState(false);
   const [showTopCreators, setShowTopCreators] = useState(false);
-  const [showBanner, setShowBanner] = useState(true);
+  const [showBanner, setShowBanner] = useState(false);
   const [showFundraiserBanner, setShowFundraiserBanner] = useState(true);
 
   useEffect(() => {
