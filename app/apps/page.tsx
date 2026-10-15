@@ -1,16 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import AppsClient from './AppsClient';
-import type { DownloadItem } from '@/lib/downloadCategories';
+import SiteFooter from '@/components/SiteFooter';
+import styles from './apps.module.css';
+import { WORKER_URL, type DownloadItem } from '@/lib/downloadCategories';
 
 const SITE = 'https://khabardarjeeling.in';
-const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
-async function fetchDownloads(): Promise<DownloadItem[]> {
+async function fetchApps(): Promise<DownloadItem[]> {
   try {
-    // Short revalidate so a freshly added app or game shows up within a
-    // minute, without every visitor hitting the Worker.
-    const res = await fetch(WORKER_URL + '/downloads', { next: { revalidate: 60 } });
+    // Short revalidate so a freshly approved app shows up within a minute,
+    // without every visitor hitting the Worker.
+    const res = await fetch(WORKER_URL + '/downloads?limit=200', { next: { revalidate: 60 } });
     if (!res.ok) return [];
     const data = await res.json();
     return data.documents || [];
@@ -20,12 +21,12 @@ async function fetchDownloads(): Promise<DownloadItem[]> {
 }
 
 export const metadata: Metadata = {
-  title: 'Apps & Games - Downloads',
-  description: 'Download apps, games, magic-trick apps and game materials from Khabar Darjeeling.',
+  title: 'Apps & Games from the Hills',
+  description: 'Discover and download apps, games and tools made in Darjeeling, Sikkim and the Gorkha community - or submit your own.',
   alternates: { canonical: SITE + '/apps' },
   openGraph: {
-    title: 'Apps & Games - Khabar Darjeeling',
-    description: 'Download apps, games, magic-trick apps and game materials.',
+    title: 'Apps & Games from the Hills - Khabar Darjeeling',
+    description: 'Discover and download apps, games and tools made by the Gorkha community.',
     url: SITE + '/apps',
     siteName: 'Khabar Darjeeling',
     type: 'website',
@@ -33,22 +34,21 @@ export const metadata: Metadata = {
 };
 
 export default async function AppsPage() {
-  const items = await fetchDownloads();
+  const items = await fetchApps();
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ background: '#c41e3a', color: 'white', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ color: 'white', textDecoration: 'none', fontSize: '18px', fontWeight: 800 }}>Khabar Darjeeling</Link>
-        <Link href="/" style={{ background: 'white', color: '#c41e3a', padding: '8px 18px', borderRadius: '20px', textDecoration: 'none', fontWeight: 700, fontSize: '13px' }}>Home</Link>
+    <div className={styles.root}>
+      <div className={styles.topbar}>
+        <div className={styles.topbarInner}>
+          <Link href="/" className={styles.brand}>Khabar Darjeeling</Link>
+          <div className={styles.topLinks}>
+            <Link href="/" className={styles.pillGhost}>Home</Link>
+            <Link href="/apps/submit" className={styles.pillLight}>Submit your app</Link>
+          </div>
+        </div>
       </div>
-
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '32px 20px 60px' }}>
-        <h1 style={{ margin: '0 0 6px', fontSize: '30px', fontWeight: 800, color: '#111827' }}>Apps &amp; Games</h1>
-        <p style={{ margin: '0 0 24px', fontSize: '15px', color: '#6b7280', maxWidth: '60ch' }}>
-          Apps, games, magic-trick apps and game materials to download.
-        </p>
-        <AppsClient items={items} workerUrl={WORKER_URL} />
-      </div>
+      <AppsClient items={items} />
+      <SiteFooter />
     </div>
   );
 }

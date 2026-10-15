@@ -454,6 +454,24 @@ CREATE TABLE downloads (
   download_count INTEGER NOT NULL DEFAULT 0,
   active         INTEGER NOT NULL DEFAULT 1,
   created_at     TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+  updated_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  -- App-store fields (db/migrations/2026-10-15-apps-store.sql). Public
+  -- listings need status = 'approved' AND active = 1; community
+  -- submissions start as 'pending' until an admin approves them.
+  slug             TEXT,
+  tagline          TEXT,
+  screenshots      TEXT NOT NULL DEFAULT '[]',   -- JSON array of image file ids
+  developer_name   TEXT,
+  developer_email  TEXT,                          -- private, admin/submitter only
+  website_url      TEXT,
+  play_store_url   TEXT,
+  app_store_url    TEXT,
+  featured         INTEGER NOT NULL DEFAULT 0,
+  status           TEXT NOT NULL DEFAULT 'approved', -- 'pending' | 'approved' | 'rejected'
+  rejection_reason TEXT,
+  submitter_id     TEXT
 );
 CREATE INDEX idx_downloads_category ON downloads(category, active, created_at DESC);
+CREATE UNIQUE INDEX idx_downloads_slug ON downloads(slug) WHERE slug IS NOT NULL;
+CREATE INDEX idx_downloads_status ON downloads(status, active, featured, created_at DESC);
+CREATE INDEX idx_downloads_submitter ON downloads(submitter_id);
