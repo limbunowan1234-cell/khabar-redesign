@@ -97,13 +97,9 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function getTopArticles(articles: any[], period: string): any[] {
-  const now = new Date().getTime();
-  const msPerDay = 86400000;
-  let f = articles;
-  if (period === 'Today') f = articles.filter(a => (now - new Date(a.$createdAt).getTime()) < msPerDay);
-  else if (period === 'Week') f = articles.filter(a => (now - new Date(a.$createdAt).getTime()) < msPerDay * 7);
-  if (f.length === 0) f = articles;
+function getTopArticles(articles: any[]): any[] {
+  const monthAgo = new Date().getTime() - 86400000 * 30;
+  const f = articles.filter(a => new Date(a.$createdAt).getTime() > monthAgo);
   return [...f].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
 }
 
@@ -499,17 +495,11 @@ function MobileCard({ article, isDarkMode, index }: any) {
 }
 
 function TopTen({ articles, isDarkMode }: any) {
-  const [activePeriod, setActivePeriod] = useState('Today');
-  const top = getTopArticles(articles, activePeriod);
+  const top = getTopArticles(articles);
   return (
     <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Top 10</h3>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {['Today', 'Week', 'Month'].map(p => (
-            <button key={p} onClick={() => setActivePeriod(p)} style={{ padding: '3px 8px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700', backgroundColor: activePeriod === p ? '#c41e3a' : isDarkMode ? '#2a2a2a' : '#f5f5f5', color: activePeriod === p ? 'white' : isDarkMode ? '#aaa' : '#666' }}>{p}</button>
-          ))}
-        </div>
+        <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Top 10 This Month</h3>
       </div>
       {top.length === 0 ? (
         <p style={{ fontSize: '13px', color: isDarkMode ? '#666' : '#aaa', textAlign: 'center', padding: '10px' }}>No articles yet</p>
