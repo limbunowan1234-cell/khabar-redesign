@@ -10,6 +10,8 @@ const SITE = 'https://khabardarjeeling.in';
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
 
 export const revalidate = 600;
+// Unknown topic slugs 404 without rendering or being cached.
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return TOPICS.map((t) => ({ slug: t.slug }));
