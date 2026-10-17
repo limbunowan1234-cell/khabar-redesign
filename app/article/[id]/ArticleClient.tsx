@@ -307,13 +307,15 @@ async function notifyUser(targetUserId: string, fromUserId: string, type: string
   }
 }
 
-export default function ArticleClient({ initialArticle }: { initialArticle?: any }) {
+const NO_RELATED: any[] = [];
+
+export default function ArticleClient({ initialArticle, initialRelated = NO_RELATED }: { initialArticle?: any; initialRelated?: any[] }) {
   const params = useParams();
   const id = decodeURIComponent((params?.id as string) || '');
   const { user } = useAuthStore();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [article, setArticle] = useState<any>(initialArticle || null);
-  const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
+  const [relatedArticles, setRelatedArticles] = useState<any[]>(initialRelated);
   const [authorArticles, setAuthorArticles] = useState<any[]>([]);
   const [isTranslated, setIsTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
@@ -418,6 +420,10 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
     setFollowLoading(false);
   }
 
+  // The same component instance is reused when navigating between articles,
+  // so follow the server-rendered list for the new article.
+  useEffect(() => { setRelatedArticles(initialRelated); }, [initialRelated]);
+
   useEffect(() => {
     if (!id) return;
     async function load() {
@@ -432,7 +438,8 @@ export default function ArticleClient({ initialArticle }: { initialArticle?: any
         // Fire-and-forget, using the resolved doc id (the route param can
         // be a slug, and the view-count endpoint only matches on id).
         fetch(WORKER_URL + '/articles/' + data.$id + '/views', { method: 'PATCH' }).catch(() => {});
-        if (data.genre) {
+        // Server already rendered related stories for this article.
+        if (data.genre && initialRelated.length === 0) {
           try {
             const rRes = await fetch(WORKER_URL + '/articles?genre=' + encodeURIComponent(data.genre) + '&limit=5');
             if (rRes.ok) {

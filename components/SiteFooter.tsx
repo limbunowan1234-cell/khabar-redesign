@@ -1,5 +1,9 @@
 ﻿'use client';
 
+import { TOPICS } from '@/lib/topics';
+
+const FOOTER_REGIONS = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'Sikkim'];
+
 export default function SiteFooter({ isDarkMode }: { isDarkMode?: boolean }) {
   const year = new Date().getFullYear();
   const linkStyle = { color: isDarkMode ? '#ccc' : '#555', textDecoration: 'none', fontSize: '14px' };
@@ -28,6 +32,17 @@ export default function SiteFooter({ isDarkMode }: { isDarkMode?: boolean }) {
               <a href="/code-of-ethics" style={linkStyle}>Code of Ethics</a>
               <a href="/editorial-guidelines" style={linkStyle}>Editorial Guidelines</a>
               <a href="/grievance" style={linkStyle}>Grievance Redressal</a>
+            </div>
+          </div>
+          <div style={{ flex: '1 1 140px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Coverage</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {FOOTER_REGIONS.map((r) => (
+                <a key={r} href={'/region/' + r.toLowerCase()} style={linkStyle}>{r} News</a>
+              ))}
+              {TOPICS.map((t) => (
+                <a key={t.slug} href={'/topic/' + t.slug} style={linkStyle}>{t.name}</a>
+              ))}
             </div>
           </div>
           <div style={{ flex: '1 1 140px' }}>

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { TOPICS } from '@/lib/topics';
 const SITE = 'https://khabardarjeeling.in';
 // Week 6+43 of the Cloudflare migration (see cloudflare/README.md).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
@@ -73,6 +74,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sectionUrls: MetadataRoute.Sitemap = [
     ...REGIONS.map((r) => ({ url: SITE + '/region/' + slugify(r), lastModified: new Date(), changeFrequency: 'hourly' as const, priority: 0.8 })),
     ...GENRES.map((g) => ({ url: SITE + '/genre/' + slugify(g), lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 })),
+    ...TOPICS.map((t) => ({ url: SITE + '/topic/' + t.slug, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 })),
   ];
   return [...staticUrls, ...sectionUrls, ...articleUrls, ...submissionUrls, ...photoUrls];
 }

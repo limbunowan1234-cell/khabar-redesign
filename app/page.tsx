@@ -1,12 +1,16 @@
 ﻿import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
-import { headers } from 'next/headers';
 import { truncateChars } from '@/lib/textPreview';
 import type { BulletinVideo } from '@/components/GorkhaTVSection';
 
 const SITE = 'https://khabardarjeeling.in';
 // Week 6 of the Cloudflare migration (see cloudflare/README.md).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+
+// Served from Vercel's cache and regenerated in the background at most once
+// a minute. Reading headers() (the old user-agent sniff) forced a full
+// server render on every request -- ~2s TTFB, Cache-Control: no-store.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Khabar Darjeeling - The Digital Home of Darjeeling',
@@ -64,8 +68,6 @@ async function fetchBulletinVideos(): Promise<BulletinVideo[]> {
 
 export default async function Page() {
   const [articles, bulletinVideos] = await Promise.all([fetchLatestArticles(), fetchBulletinVideos()]);
-  const ua = (await headers()).get('user-agent') || '';
-  const initialIsMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(ua);
 
   const itemListJsonLd = articles.length > 0 ? {
     '@context': 'https://schema.org',
@@ -102,7 +104,7 @@ export default async function Page() {
         </ul>
       </div>
 
-      <HomeClient initialArticles={articles} initialIsMobile={initialIsMobile} bulletinVideos={bulletinVideos} />
+      <HomeClient initialArticles={articles} initialIsMobile={true} bulletinVideos={bulletinVideos} />
     </>
   );
 }

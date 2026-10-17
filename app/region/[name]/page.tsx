@@ -22,6 +22,23 @@ const REGION_DESCRIPTIONS: Record<string, string> = {
   'World': 'International news and global coverage.',
 };
 
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return REGIONS.map((n) => ({ name: slugify(n) }));
+}
+
+// Longer intro shown on the hill-town pages, so each has real text for
+// searches like "kurseong news" rather than only a list of headlines.
+const REGION_INTROS: Record<string, string> = {
+  'Darjeeling': 'Darjeeling is the heart of the hills: the town, its tea gardens, schools and tourism economy, and the seat of hill politics. We cover local administration and the GTA, municipal issues like water and roads, tea, tourism, culture, sport and the people who make Darjeeling home.',
+  'Kalimpong': 'Kalimpong became its own district in 2017. We report on the town and its villages, from municipal and district administration to roads and landslides on NH10, schools, nurseries and flower growers, tourism, culture and community life.',
+  'Kurseong': 'Kurseong sits midway between Siliguri and Darjeeling. Our coverage spans the town and subdivision: tea estates, schools, the toy train line, local politics, roads and weather, and stories from the communities along Hill Cart Road.',
+  'Mirik': 'Mirik is known for its lake, orange orchards and tea gardens. We follow local news from Mirik town and the surrounding villages, including civic issues, tourism, agriculture, landslides and monsoon damage, and community events.',
+  'Siliguri': 'Siliguri is the gateway to the Darjeeling hills, Sikkim and the Northeast. We cover the city and the plains below the hills: civic news, trade and transport, education, health, and the stories that connect Siliguri with the hill community.',
+  'Sikkim': 'Our Sikkim coverage follows news from Gangtok and across the state that matters to readers in the Darjeeling hills: politics, roads and NH10, tourism, culture, sport and the shared Nepali-speaking community.',
+};
+
 function slugify(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '-');
 }
@@ -119,6 +136,7 @@ export default async function RegionPage({ params }: { params: Promise<{ name: s
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 20px 20px' }}>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 700, color: 'var(--color-text)', margin: '0 0 8px' }}>{region}</h1>
         <p style={{ fontSize: '15px', color: 'var(--color-text-muted)', margin: '0 0 32px', maxWidth: '600px' }}>{REGION_DESCRIPTIONS[region]}</p>
+        {REGION_INTROS[region] && <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--color-text)', margin: '-20px 0 32px', maxWidth: '720px' }}>{REGION_INTROS[region]}</p>}
 
         {articles.length === 0 ? (
           <div style={{ background: 'var(--color-surface)', borderRadius: '8px', padding: '60px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
