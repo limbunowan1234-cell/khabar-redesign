@@ -430,7 +430,14 @@ export default function ArticleClient({ initialArticle, initialRelated = NO_RELA
       trackPageView(id, user?.$id);
       let data: any = null;
       try {
-        const res = await fetch(WORKER_URL + '/articles/' + encodeURIComponent(id));
+        let res = await fetch(WORKER_URL + '/articles/' + encodeURIComponent(id));
+        // Unpublished articles 404 for anonymous callers. Retry with a token
+        // so the submitter and reporters/admins can still preview them from
+        // their dashboards, without making every public view mint a token.
+        if (res.status === 404) {
+          const token = await getWorkerAuthToken();
+          if (token) res = await fetch(WORKER_URL + '/articles/' + encodeURIComponent(id), { headers: { Authorization: 'Bearer ' + token } });
+        }
         if (res.ok) data = await res.json();
       } catch {}
       if (data) {

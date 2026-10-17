@@ -174,6 +174,17 @@ articles.get('/:idOrSlug', async (c) => {
   }
   if (!row) return c.json({ error: 'Not found' }, 404);
 
+  // Same rule as the list endpoint: only published articles are public.
+  // Pending/rejected/draft rows are visible to their submitter and to
+  // reporters/admins (edit pages, dashboard previews); everyone else gets
+  // the same 404 as a missing id, so drafts can't be probed for existence.
+  if ((row as any).status !== 'published') {
+    const user = await verifyUser(c.req.raw, c.env);
+    if (!user || ((row as any).submitter_id !== user.$id && !isReporterOrAdmin(user))) {
+      return c.json({ error: 'Not found' }, 404);
+    }
+  }
+
   const supporting = await c.env.DB
     .prepare('SELECT file_id, caption FROM article_supporting_images WHERE article_id = ? ORDER BY sort_order')
     .bind((row as any).id)

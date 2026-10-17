@@ -485,7 +485,13 @@ function generateSlug(text: string): string {
     setEditingArticle(article);
     setTitle(article.title);
     setContent(article.content || '');
-    if (!article.content) { fetch(WORKER_URL + '/articles/' + article.$id).then(r => r.ok ? r.json() : null).then(d => { if (d) setContent(d.content || ''); }); }
+    if (!article.content) {
+      // Unpublished articles 404 without a token (see cloudflare/src/routes/articles.ts).
+      getWorkerAuthToken()
+        .then(token => fetch(WORKER_URL + '/articles/' + article.$id, { headers: token ? { Authorization: 'Bearer ' + token } : {} }))
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setContent(d.content || ''); });
+    }
     setGenre(genres.includes(article.genre) ? article.genre : (genres.includes(article.category) ? article.category : 'Voice of People'));
     setLocationDistrict(article.locationDistrict || 'Darjeeling'); setLocationArea(article.locationArea || article.location || '');
     setYoutubeId(article.youtube_id || '');
