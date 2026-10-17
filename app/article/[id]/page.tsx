@@ -25,6 +25,44 @@ function clean(text: string, max = 155): string {
   return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.\-]+$/, '') + '...';
 }
 
+export const revalidate = 300;
+
+// Empty list: nothing prebuilt at deploy time, but each article is cached the
+// first time it's requested instead of being rendered on every visit.
+export async function generateStaticParams() {
+  return [];
+}
+
+async function fetchList(query: string): Promise<any[]> {
+  try {
+    const res = await fetch(WORKER_URL + '/articles?' + query, { next: { revalidate: 300 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.documents || [];
+  } catch {
+    return [];
+  }
+}
+
+// Same genre first, then same district, so links stay on-topic. Rendered on
+// the server so the links are in the HTML Google crawls, not only added
+// after the page loads in the browser.
+async function fetchRelated(a: any): Promise<any[]> {
+  const [byGenre, byDistrict] = await Promise.all([
+    a.genre ? fetchList('genre=' + encodeURIComponent(a.genre) + '&limit=7') : Promise.resolve([]),
+    a.locationDistrict ? fetchList('district=' + encodeURIComponent(a.locationDistrict) + '&limit=7') : Promise.resolve([]),
+  ]);
+  const seen = new Set<string>([a.$id]);
+  const out: any[] = [];
+  for (const r of [...byGenre, ...byDistrict]) {
+    if (!r?.$id || seen.has(r.$id)) continue;
+    seen.add(r.$id);
+    out.push(r);
+    if (out.length === 6) break;
+  }
+  return out;
+}
+
 async function fetchArticle(idOrSlug: string): Promise<any> {
   try {
     const res = await fetch(WORKER_URL + '/articles/' + encodeURIComponent(idOrSlug), {
@@ -76,6 +114,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { id } = await params;
   const decodedId = decodeURIComponent(id);
   const a = await fetchArticle(decodedId);
+  const related = a ? await fetchRelated(a) : [];
 
   const jsonLd = a ? {
     '@context': 'https://schema.org',
@@ -119,7 +158,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       {breadcrumbLd && (
         <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       )}
-      <ArticleClient initialArticle={a} />
+      <ArticleClient initialArticle={a} initialRelated={related} />
     </>
   );
 }

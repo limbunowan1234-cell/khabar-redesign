@@ -24,6 +24,12 @@ const GENRE_DESCRIPTIONS: Record<string, string> = {
   'Business': 'Business, economy, and entrepreneurship news from the region.',
 };
 
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return GENRES.map((n) => ({ name: slugify(n) }));
+}
+
 function slugify(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '-');
 }
