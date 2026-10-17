@@ -75,7 +75,11 @@ export default function ReporterEditPage() {
         if (!userIsReporter) { setError('Access denied. Reporter or Admin only.'); setLoading(false); return; }
         setUser(data);
 
-        const artRes = await fetch(WORKER_URL + '/articles/' + articleId);
+        // Unpublished articles 404 without a token (see cloudflare/src/routes/articles.ts).
+        const token = await getWorkerAuthToken();
+        const artRes = await fetch(WORKER_URL + '/articles/' + articleId, {
+          headers: token ? { Authorization: 'Bearer ' + token } : {},
+        });
         if (!artRes.ok) { setError('Article not found.'); setLoading(false); return; }
         const article = await artRes.json();
 
