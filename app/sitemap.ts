@@ -2,6 +2,11 @@ import type { MetadataRoute } from 'next';
 const SITE = 'https://khabardarjeeling.in';
 // Week 6+43 of the Cloudflare migration (see cloudflare/README.md).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
+// Keep in sync with GENRES in app/genre/[name]/page.tsx and REGIONS in
+// app/region/[name]/page.tsx (same slug rule as their slugify()).
+const GENRES = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
+const REGIONS = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
+const slugify = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
 async function getArticles(): Promise<any[]> {
   try {
     const res = await fetch(WORKER_URL + '/articles?limit=1000', { next: { revalidate: 3600 } });
@@ -65,5 +70,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE + '/about', lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.4 },
     { url: SITE + '/contact', lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.3 },
   ];
-  return [...staticUrls, ...articleUrls, ...submissionUrls, ...photoUrls];
+  const sectionUrls: MetadataRoute.Sitemap = [
+    ...REGIONS.map((r) => ({ url: SITE + '/region/' + slugify(r), lastModified: new Date(), changeFrequency: 'hourly' as const, priority: 0.8 })),
+    ...GENRES.map((g) => ({ url: SITE + '/genre/' + slugify(g), lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 })),
+  ];
+  return [...staticUrls, ...sectionUrls, ...articleUrls, ...submissionUrls, ...photoUrls];
 }

@@ -72,7 +72,7 @@ export default function StoryCard({
         <div>
           <ImageBlock story={story} height="340px" />
           {story.genre && <div style={{ marginTop: '14px' }}><GenreTag genre={story.genre} /></div>}
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-h1)', lineHeight: 1.2, margin: '8px 0', color: 'var(--color-text)' }}>{story.title}</h1>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-h1)', lineHeight: 1.2, margin: '8px 0', color: 'var(--color-text)' }}>{story.title}</h2>
           {story.deck && <p style={{ fontFamily: 'var(--font-sans)', fontSize: '15px', color: 'var(--color-text-muted)', lineHeight: 1.5, margin: '0 0 10px' }}>{story.deck}</p>}
           <Byline author={story.authorName || 'Staff Reporter'} date={story.publishedAt} readingTime={story.readingTime} />
         </div>

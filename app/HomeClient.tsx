@@ -129,7 +129,7 @@ function HeroSection({ articles, isDarkMode }: any) {
         )}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 24px' }}>
           <div style={{ fontSize: '11px', fontWeight: 800, color: '#f5c518', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '0.5px' }}>{hero.category || 'News'}</div>
-          <h1 style={{ fontSize: '30px', fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: '0 0 10px', textShadow: '0 2px 10px rgba(0,0,0,0.4)', maxWidth: '700px' }}>{hero.title}</h1>
+          <h2 style={{ fontSize: '30px', fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: '0 0 10px', textShadow: '0 2px 10px rgba(0,0,0,0.4)', maxWidth: '700px' }}>{hero.title}</h2>
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', margin: 0 }}>By {author}</p>
         </div>
       </div>
@@ -690,7 +690,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
       <div style={{ textAlign: 'center' }}>
         {/* BIGGER LOGO */}
         <img src="/assets/logo.png" alt="KhabarDarjeeling" style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid rgba(255,255,255,0.4)', marginBottom: '20px', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-        <h1 style={{ color: 'white', fontSize: '28px', fontWeight: '800', margin: '0 0 6px' }}>Khabar Darjeeling</h1>
+        <div style={{ color: 'white', fontSize: '28px', fontWeight: '800', margin: '0 0 6px' }}>Khabar Darjeeling</div>
         <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', margin: '0 0 30px' }}>Hamro Khabar, Hami Lekhaw</p>
         <div className="spin" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', margin: '0 auto' }} />
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginTop: '16px' }}>Loading latest news...</p>
@@ -883,7 +883,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             {/* INCREASED FROM 42px to 56px */}
             <img src="/assets/logo.png" alt="KhabarDarjeeling" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.4)' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             <div>
-              <h1 style={{ margin: 0, fontSize: isMobile ? '16px' : '20px', fontWeight: '800', lineHeight: '1.2' }}>Khabar Darjeeling</h1>
+              <div style={{ margin: 0, fontSize: isMobile ? '16px' : '20px', fontWeight: '800', lineHeight: '1.2' }}>Khabar Darjeeling</div>
               {!isMobile && <p style={{ margin: 0, fontSize: '10px', opacity: 0.8 }}>Hamro Khabar, Hami Lekhaw</p>}
             </div>
           </Link>

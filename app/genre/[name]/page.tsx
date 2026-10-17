@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
   if (!genre) return { title: 'Not Found | Khabar Darjeeling' };
   const description = GENRE_DESCRIPTIONS[genre] || ('Latest ' + genre + ' news from Khabar Darjeeling.');
   return {
-    title: genre + ' News | Khabar Darjeeling',
+    title: genre + ' News',
     description,
     alternates: { canonical: SITE + '/genre/' + name },
     openGraph: {
