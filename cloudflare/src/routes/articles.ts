@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { verifyUser, isReporterOrAdmin } from '../lib/auth';
+import { verifyUser, isReporterOrAdmin, type AppUser } from '../lib/auth';
 
 type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
@@ -10,8 +10,14 @@ export const articles = new Hono<{ Bindings: Bindings }>();
 // their fetch URL to this Worker without also rewriting how they read the
 // response — that rewrite can happen gradually, call site by call site,
 // instead of being a single all-at-once change blocking this migration.
-function toArticleJson(row: any) {
-  return {
+//
+// submitterEmail/authorEmail are only included when canSeeEmails(): this
+// endpoint is public (homepage, sitemaps, any scraper), and including them
+// unconditionally exposed every reporter's email address to anyone. No
+// page in the Next.js app reads them back -- they're only written on
+// submit -- so dropping them for anonymous callers breaks nothing.
+function toArticleJson(row: any, includeEmails = false) {
+  const json: Record<string, unknown> = {
     $id: row.id,
     $createdAt: row.created_at,
     $updatedAt: row.updated_at,
@@ -53,6 +59,17 @@ function toArticleJson(row: any) {
     publishedAt: row.published_at,
     submittedAt: row.submitted_at,
   };
+  if (!includeEmails) {
+    delete json.submitterEmail;
+    delete json.authorEmail;
+  }
+  return json;
+}
+
+// Reporters/admins see every article's emails; anyone else only their own.
+function canSeeEmails(user: AppUser | null, row: any): boolean {
+  if (!user) return false;
+  return isReporterOrAdmin(user) || row.submitter_id === user.$id;
 }
 
 // Homepage requests up to 300 (app/HomeClient.tsx), sitemaps up to 1000
@@ -78,6 +95,10 @@ articles.get('/', async (c) => {
   const where: string[] = ['1=1'];
   const params: unknown[] = [];
 
+  // Verified once up front -- used both for the status=all gate below and
+  // for deciding whether each row may include email fields.
+  const user = await verifyUser(c.req.raw, c.env);
+
   // status=all opts out of the default published-only filter. Two valid
   // shapes, both needing a verified identity since this is the one filter
   // that can expose non-public data:
@@ -89,7 +110,6 @@ articles.get('/', async (c) => {
   // Anyone else, or no/invalid JWT, silently gets published-only instead
   // of a 401 that would leak "yes, that's a valid user id."
   if (q.status === 'all' && q.submitterId) {
-    const user = await verifyUser(c.req.raw, c.env);
     if (user && user.$id === q.submitterId) {
       // no status filter at all -- every status for this one author
     } else {
@@ -97,7 +117,6 @@ articles.get('/', async (c) => {
       params.push('published');
     }
   } else if (q.status === 'all') {
-    const user = await verifyUser(c.req.raw, c.env);
     if (user && isReporterOrAdmin(user)) {
       // no status filter at all -- every status, every author
     } else {
@@ -152,7 +171,7 @@ articles.get('/', async (c) => {
 
   const sql = `SELECT * FROM articles WHERE ${pageWhere} ORDER BY ${sortSql} LIMIT ?`;
   const { results } = await c.env.DB.prepare(sql).bind(...pageParams, limit).all();
-  const docs = (results || []).map(toArticleJson);
+  const docs = (results || []).map((r: any) => toArticleJson(r, canSeeEmails(user, r)));
   const nextCursor = docs.length === limit && sortSql === SORT_MAP.createdAtDesc ? (results![results!.length - 1] as any).created_at : null;
 
   const countRow = await c.env.DB
@@ -206,7 +225,8 @@ articles.get('/:idOrSlug', async (c) => {
     .all();
   const galleryImageIds = (gallery.results || []).map((r: any) => r.file_id);
 
-  return c.json({ ...toArticleJson(row), supportingImages, galleryImageIds });
+  const user = await verifyUser(c.req.raw, c.env);
+  return c.json({ ...toArticleJson(row, canSeeEmails(user, row)), supportingImages, galleryImageIds });
 });
 
 // PATCH /articles/:id/views — the one write endpoint Phase 1 needs, since
