@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
   if (!region) return { title: 'Not Found | Khabar Darjeeling' };
   const description = REGION_DESCRIPTIONS[region] || ('Latest news from ' + region + '.');
   return {
-    title: region + ' News | Khabar Darjeeling',
+    title: region + ' News',
     description,
     alternates: { canonical: SITE + '/region/' + name },
     openGraph: {

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import ArticleClient from './ArticleClient';
+import { stripMarkdown } from '@/lib/textPreview';
 
 const SITE = 'https://khabardarjeeling.in';
 // Week 3 of the Cloudflare migration (see cloudflare/README.md).
@@ -13,10 +14,15 @@ function imgUrl(a: any): string {
   return WORKER_URL + '/cdn/articles/' + id;
 }
 
-function clean(text: string, max = 120): string {
+// Meta descriptions: up to ~155 chars, cut at a word boundary so Google
+// doesn't show a half word ("...and res...").
+function clean(text: string, max = 155): string {
   if (!text) return 'Latest news from Darjeeling and the Gorkha community.';
-  const t = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  return t.length > max ? t.slice(0, max).trim() + '...' : t;
+  const t = stripMarkdown(text.replace(/<[^>]*>/g, ' '));
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.\-]+$/, '') + '...';
 }
 
 async function fetchArticle(idOrSlug: string): Promise<any> {
