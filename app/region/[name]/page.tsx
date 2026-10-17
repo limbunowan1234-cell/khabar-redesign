@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import StoryCard from '@/components/StoryCard';
 import SiteFooter from '@/components/SiteFooter';
 import { truncateChars } from '@/lib/textPreview';
@@ -23,6 +24,9 @@ const REGION_DESCRIPTIONS: Record<string, string> = {
 };
 
 export const revalidate = 300;
+// Only the slugs from generateStaticParams exist; anything else is a real
+// 404 without rendering. Differently-cased slugs are redirected in proxy.ts.
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return REGIONS.map((n) => ({ name: slugify(n) }));
@@ -92,7 +96,7 @@ function selectHeroAndPinned(articles: any[]) {
 export async function generateMetadata({ params }: { params: Promise<{ name: string }> }): Promise<Metadata> {
   const { name } = await params;
   const region = unslugify(name);
-  if (!region) return { title: 'Not Found | Khabar Darjeeling' };
+  if (!region) return { title: 'Not Found' };
   const description = REGION_DESCRIPTIONS[region] || ('Latest news from ' + region + '.');
   return {
     title: region + ' News',
@@ -112,14 +116,7 @@ export default async function RegionPage({ params }: { params: Promise<{ name: s
   const { name } = await params;
   const region = unslugify(name);
 
-  if (!region) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-        <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' }}>Region not found</p>
-        <Link href="/" style={{ color: '#c41e3a', fontWeight: 700, textDecoration: 'none' }}>Back to Home</Link>
-      </div>
-    );
-  }
+  if (!region) notFound();
 
   const articles = await fetchRegionArticles(region);
   const { hero, pinned, rest } = selectHeroAndPinned(articles);
