@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import styles from '../apps.module.css';
 import AppCard, { AppIcon, blurb } from '../AppCard';
 import AppGallery from '../AppGallery';
+import ShareBar from './ShareBar';
+import Reviews from './Reviews';
 import SiteFooter from '@/components/SiteFooter';
 import {
   WORKER_URL, categoryMeta, downloadHref, formatCount, formatFileSize, imageUrl, type DownloadItem,
@@ -91,6 +93,8 @@ export default async function AppDetailPage({ params }: { params: Promise<{ slug
   };
 
   const hasLinks = !!(item.playStoreUrl || item.appStoreUrl || item.websiteUrl);
+  const pageUrl = SITE + '/apps/' + (item.slug || item.$id);
+  const playableOnWeb = item.slug === 'simon-speed';
 
   return (
     <div className={styles.root}>
@@ -128,7 +132,9 @@ export default async function AppDetailPage({ params }: { params: Promise<{ slug
                 {item.playStoreUrl && <a href={item.playStoreUrl} className={item.hasDownload ? `${styles.ctaGhost} ${styles.ctaGhostDark}` : styles.cta} rel="nofollow noopener" target="_blank">Google Play</a>}
                 {item.appStoreUrl && <a href={item.appStoreUrl} className={styles.ctaGhost + ' ' + styles.ctaGhostDark} rel="nofollow noopener" target="_blank">App Store</a>}
                 {item.websiteUrl && <a href={item.websiteUrl} className={(item.hasDownload || item.playStoreUrl || item.appStoreUrl) ? `${styles.ctaGhost} ${styles.ctaGhostDark}` : styles.cta} rel="nofollow noopener" target="_blank">Visit website</a>}
+                {playableOnWeb && <Link href="/play/simon-speed" className={`${styles.ctaGhost} ${styles.ctaGhostDark}`}>Play in browser</Link>}
               </div>
+              <ShareBar url={pageUrl} title={item.title} />
             </div>
           </div>
         </div>
@@ -146,6 +152,15 @@ export default async function AppDetailPage({ params }: { params: Promise<{ slug
 
         <div className={styles.twoCol} style={{ marginTop: '22px' }}>
           <div className={styles.stack}>
+            {playableOnWeb && (
+              <div className={styles.playBand}>
+                <div>
+                  <h2>Play {item.title} in your browser</h2>
+                  <p>Compete in Easy, Medium and Hard. The top 10 each month make the leaderboard.</p>
+                </div>
+                <Link href="/play/simon-speed" className={styles.cta}>Play now</Link>
+              </div>
+            )}
             {item.screenshots.length > 0 && (
               <section className={styles.panel}>
                 <h2 className={styles.sectionTitle} style={{ marginBottom: '14px' }}>Inside the app</h2>
@@ -158,6 +173,7 @@ export default async function AppDetailPage({ params }: { params: Promise<{ slug
                 <p className={styles.about}>{item.description}</p>
               </section>
             )}
+            <Reviews appId={item.$id} appTitle={item.title} />
           </div>
 
           <aside className={styles.side}>

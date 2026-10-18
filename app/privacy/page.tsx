@@ -27,6 +27,9 @@ export default function PrivacyPage() {
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Push Notifications</h2>
           <p>Users can opt in to receive browser push notifications about new articles and updates. When you subscribe, we collect your browser endpoint, encryption keys (p256dh and auth token), and user ID to deliver notifications. Push subscriptions can be disabled at any time from your browser settings or by clicking the notification bell on our site. We do not share push subscription data with third parties.</p>
 
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Games and App Reviews</h2>
+          <p>To play Simon Speed for the leaderboard or to rate apps in Khabar Apps, you create a player account with an in-game name, your mobile number and a 4-digit PIN. Your in-game name, scores, ratings and comments are shown publicly. Your mobile number is never shown publicly; we use it only to identify your account and to contact you if you win a competition. Your PIN is stored in scrambled (hashed) form, so we cannot read it. To delete your player account, contact us using the details below.</p>
+
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Advertising</h2>
           <p>We may display advertisements served by third-party ad networks such as Google AdSense. These partners may use cookies and similar technologies to show ads based on your visits to this and other websites. Google's use of advertising cookies enables it and its partners to serve ads based on your visit to our site. You can opt out of personalized advertising by visiting Google's Ads Settings.</p>
 

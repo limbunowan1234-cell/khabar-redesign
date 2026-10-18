@@ -329,3 +329,43 @@
   .root * { transition: none !important; }
   .feat:hover, .card:hover, .cta:hover { transform: none; }
 }
+
+/* ── Share bar, ratings and reviews (app detail page) ── */
+.root {
+  --pa-line: var(--ap-line);
+  --pa-input: var(--ap-card);
+  --pa-chip: var(--ap-chip);
+  --pa-card: var(--ap-card);
+}
+.share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 18px; }
+.shareLabel { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.75); margin-right: 4px; }
+.shareBtn {
+  display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 999px; font: 700 13px var(--font-sans), system-ui, sans-serif;
+  background: rgba(255, 255, 255, 0.14); color: #fff !important; border: 1px solid rgba(255, 255, 255, 0.28); text-decoration: none; cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.shareBtn:hover { background: rgba(255, 255, 255, 0.26); }
+
+.reviewHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.reviewScore { display: flex; align-items: center; gap: 10px; color: var(--ap-muted); font-size: 14px; }
+.reviewScore strong { font-size: 30px; line-height: 1; color: var(--ap-text); font-family: var(--font-serif), Georgia, serif; }
+.stars { position: relative; display: inline-block; line-height: 1; letter-spacing: 2px; color: var(--ap-line); white-space: nowrap; }
+.starsFill { position: absolute; inset: 0 auto 0 0; overflow: hidden; color: var(--ap-gold); }
+.reviewForm { display: grid; gap: 12px; padding: 18px; border-radius: 16px; background: var(--ap-page); border: 1px solid var(--ap-line); }
+.reviewAs { margin: 0; font-size: 14px; color: var(--ap-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.reviewAs strong { color: var(--ap-text); }
+.starPick { display: flex; gap: 4px; }
+.starOn, .starOff { font-size: 34px; line-height: 1; background: none; border: none; padding: 2px; cursor: pointer; transition: transform 0.12s ease; }
+.starOn { color: var(--ap-gold); }
+.starOff { color: var(--ap-line); }
+.starOn:hover, .starOff:hover { transform: scale(1.12); }
+.reviewLogin { max-width: 420px; }
+.reviewList { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 0; }
+.review { padding: 16px 0; border-top: 1px solid var(--ap-line); }
+.reviewMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; }
+.reviewAvatar { width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--ap-red); color: #fff; font-weight: 800; font-size: 13px; }
+.reviewDate { color: var(--ap-muted); font-size: 12.5px; }
+.reviewText { margin: 8px 0 0 38px; font-size: 15px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.playBand { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 22px 24px; border-radius: 22px; background: linear-gradient(120deg, #0b1230, #1b0f3a); color: #fff; box-shadow: var(--ap-shadow); }
+.playBand h2 { margin: 0 0 4px; font-size: 20px; font-weight: 800; }
+.playBand p { margin: 0; font-size: 14px; color: rgba(255, 255, 255, 0.78); }
