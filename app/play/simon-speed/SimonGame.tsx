@@ -8,6 +8,8 @@ import { getPlayerSession, logoutPlayer, onPlayerChange, playerFetch, type Playe
 import { PADS_PER_MODE, SIMON_MODES, flashMs, simonSequence, type SimonMode } from '@/lib/simonSpeed';
 
 const MODE_LABEL: Record<SimonMode, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+// Monthly prize, in rupees, for the #1 player in each mode.
+const PRIZE: Record<SimonMode, number> = { easy: 100, medium: 300, hard: 500 };
 const PAD_COLORS = ['#ff3b5c', '#2f80ff', '#ffd23f', '#22e39a', '#b05bff', '#ff8a2b', '#ff5cc8', '#2ee6f2', '#a6f23a', '#f2f2f2'];
 const PAD_TONES = [262, 330, 392, 523, 294, 349, 440, 494, 587, 659];
 const BETWEEN_ROUNDS_MS = 650;
@@ -218,7 +220,12 @@ export default function SimonGame() {
           <div>
             <p className={styles.eyebrow}>Khabar Games · Monthly competition</p>
             <h1 className={styles.title}>Simon <span>Speed</span></h1>
-            <p className={styles.sub}>Watch the pads flash, repeat the pattern, and go as far as you can. The best scores each month make the Top 10.</p>
+            <p className={styles.sub}>Watch the pads flash, repeat the pattern, and go as far as you can. The #1 player in each mode wins a cash prize every month.</p>
+            <ul className={styles.prizes} aria-label="Monthly prizes">
+              {SIMON_MODES.map((m) => (
+                <li key={m}><strong>₹{PRIZE[m]}</strong><span>{MODE_LABEL[m]}</span></li>
+              ))}
+            </ul>
           </div>
           <div className={styles.account}>
             {player ? (
@@ -251,7 +258,7 @@ export default function SimonGame() {
                   onClick={() => { setMode(m); setPhase('idle'); setResult(null); setScore(0); setRound(0); setBoardPeriod(null); }}
                   className={mode === m ? styles.modeOn : styles.mode}
                 >
-                  {MODE_LABEL[m]} <small>{PADS_PER_MODE[m]} colours</small>
+                  {MODE_LABEL[m]} <small>{PADS_PER_MODE[m]} colours · ₹{PRIZE[m]}</small>
                 </button>
               ))}
             </div>
@@ -307,6 +314,7 @@ export default function SimonGame() {
               )}
             </div>
             {viewing && <p className={styles.periodName}>{periodName(viewing)}{isCurrent ? ' · resets on the 1st' : ' · final results'}</p>}
+            <p className={styles.prizeLine}>{isCurrent ? '#1 at the end of the month wins' : '#1 won'} <strong>₹{PRIZE[mode]}</strong></p>
             {boardError && <p className={styles.err}>{boardError}</p>}
             {board && board.top.length === 0 && <p className={styles.empty}>No scores yet. The first player to clear a round takes #1.</p>}
             {board && board.top.length > 0 && (
@@ -328,6 +336,16 @@ export default function SimonGame() {
             {!player && <p className={styles.empty}>Log in to see your own standing.</p>}
           </aside>
         </div>
+        <section className={styles.rules} aria-labelledby="rules-title">
+          <h2 id="rules-title">Competition rules</h2>
+          <ol>
+            <li>Each month the player ranked #1 in each mode wins: <strong>₹{PRIZE.easy}</strong> for Easy, <strong>₹{PRIZE.medium}</strong> for Medium and <strong>₹{PRIZE.hard}</strong> for Hard.</li>
+            <li>The leaderboard closes at midnight (India time) on the last day of the month and starts fresh on the 1st.</li>
+            <li>Only games played while logged in count. If two players have the same score, the one who reached it first ranks higher.</li>
+            <li>We contact winners on the mobile number they registered with and pay by UPI. Please register with your own number.</li>
+            <li>One account per person. Accounts that cheat, use bots or share a number may be removed from the leaderboard.</li>
+          </ol>
+        </section>
       </main>
     </div>
   );
