@@ -66,13 +66,18 @@
 .board6 { grid-template-columns: repeat(3, 1fr); max-width: 480px; }
 .board10 { grid-template-columns: repeat(5, 1fr); max-width: 560px; }
 .pad {
-  aspect-ratio: 1; max-width: 100%; border-radius: 22%; cursor: pointer; padding: 0;
+  aspect-ratio: 1; width: 100%; min-width: 0; max-width: 100%; align-self: start; border-radius: 22%; cursor: pointer; padding: 0;
   border: 3px solid var(--pad);
   background: color-mix(in srgb, var(--pad) 16%, #0b1026);
   box-shadow: 0 0 10px color-mix(in srgb, var(--pad) 35%, transparent);
   transition: background-color .08s ease, box-shadow .08s ease, transform .08s ease;
 }
 .pad:disabled { cursor: default; }
+/* Browsers without aspect-ratio (older iOS Safari, some in-app browsers)
+   would stretch the pads, so size them from their width instead. */
+@supports not (aspect-ratio: 1) {
+  .pad { height: 0; padding-top: calc(100% - 6px); }
+}
 .board[data-phase='input'] .pad:hover { box-shadow: 0 0 18px color-mix(in srgb, var(--pad) 55%, transparent); }
 .padLit {
   background: radial-gradient(circle at 50% 50%, #fff 0%, var(--pad) 45%, var(--pad) 100%);
