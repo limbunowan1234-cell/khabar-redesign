@@ -31,5 +31,13 @@ const nextConfig = {
       },
     ],
   },
+  // People type /app when looking for the app store at /apps; send them there
+  // instead of a 404.
+  async redirects() {
+    return [
+      { source: '/app', destination: '/apps', permanent: true },
+      { source: '/app/:slug', destination: '/apps/:slug', permanent: true },
+    ];
+  },
 };
 module.exports = nextConfig;
