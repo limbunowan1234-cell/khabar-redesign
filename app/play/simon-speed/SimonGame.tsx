@@ -17,17 +17,20 @@ const BETWEEN_ROUNDS_MS = 650;
 type Phase = 'idle' | 'starting' | 'showing' | 'input' | 'over';
 
 interface BoardRow { rank: number; gameName: string; score: number; level: number }
-interface Board { period: string; currentPeriod: string; top: BoardRow[]; me: { gameName: string; score: number; rank: number } | null }
+interface Board {
+  period: string;
+  start: string;
+  end: string;
+  currentPeriod: string;
+  previousPeriod: string | null;
+  top: BoardRow[];
+  me: { gameName: string; score: number; rank: number } | null;
+}
 interface Result { score: number; level: number; best?: number; rank?: number | null; saved: boolean; error?: string }
 
-function previousPeriod(period: string): string {
-  const [y, m] = period.split('-').map(Number);
-  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
-}
-
-function periodName(period: string): string {
-  const [y, m] = period.split('-').map(Number);
-  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+// '2026-11-18' -> '18 Nov 2026' (or '18 Nov' without the year).
+function dayName(day: string, withYear = true): string {
+  return new Date(day + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}), timeZone: 'UTC' });
 }
 
 export default function SimonGame() {
@@ -202,7 +205,6 @@ export default function SimonGame() {
     : phase === 'input' ? 'Your turn'
     : phase === 'over' ? 'Game over'
     : 'Press Play to start';
-  const viewing = board?.period || '';
   const isCurrent = !!board && board.period === board.currentPeriod;
 
   return (
@@ -286,7 +288,7 @@ export default function SimonGame() {
             {phase === 'over' && result && (
               <div className={styles.result} role="status">
                 <strong>{result.score} points · level {result.level}</strong>
-                {result.saved && result.rank ? <span>Your best this month: {result.best} · rank #{result.rank} in {MODE_LABEL[mode]}</span> : null}
+                {result.saved && result.rank ? <span>Your best this round: {result.best} · rank #{result.rank} in {MODE_LABEL[mode]}</span> : null}
                 {result.saved && !result.rank ? <span>Clear at least one round to get on the leaderboard.</span> : null}
                 {!result.saved && !result.error && <span>Practice game. <button type="button" className={styles.linkBtn} onClick={() => setShowAuth(true)}>Log in</button> to save scores and compete.</span>}
                 {result.error && <span className={styles.err}>Score not saved: {result.error}</span>}
@@ -308,13 +310,13 @@ export default function SimonGame() {
               <h2>Top 10 · {MODE_LABEL[mode]}</h2>
               {board && (
                 <div className={styles.periods}>
-                  <button type="button" className={isCurrent ? styles.periodOn : styles.period} onClick={() => setBoardPeriod(null)}>This month</button>
-                  <button type="button" className={!isCurrent ? styles.periodOn : styles.period} onClick={() => setBoardPeriod(previousPeriod(board.currentPeriod))}>Last month</button>
+                  <button type="button" className={isCurrent ? styles.periodOn : styles.period} onClick={() => setBoardPeriod(null)}>This round</button>
+                  {board.previousPeriod && <button type="button" className={!isCurrent ? styles.periodOn : styles.period} onClick={() => setBoardPeriod(board.previousPeriod)}>Last round</button>}
                 </div>
               )}
             </div>
-            {viewing && <p className={styles.periodName}>{periodName(viewing)}{isCurrent ? ' · resets on the 1st' : ' · final results'}</p>}
-            <p className={styles.prizeLine}>{isCurrent ? '#1 at the end of the month wins' : '#1 won'} <strong>₹{PRIZE[mode]}</strong></p>
+            {board?.start && <p className={styles.periodName}>{dayName(board.start, false)} – {dayName(board.end)}{isCurrent ? ' · ends midnight ' + dayName(board.end, false) : ' · final results'}</p>}
+            <p className={styles.prizeLine}>{isCurrent ? '#1 when the round ends wins' : '#1 won'} <strong>₹{PRIZE[mode]}</strong></p>
             {boardError && <p className={styles.err}>{boardError}</p>}
             {board && board.top.length === 0 && <p className={styles.empty}>No scores yet. The first player to clear a round takes #1.</p>}
             {board && board.top.length > 0 && (
@@ -332,15 +334,15 @@ export default function SimonGame() {
             {board?.me && !board.top.some((r) => r.rank === board.me!.rank && r.gameName === board.me!.gameName) && (
               <div className={styles.meRow}>Your standing: <strong>#{board.me.rank}</strong> with {board.me.score} points</div>
             )}
-            {player && board && !board.me && isCurrent && <p className={styles.empty}>You haven&apos;t scored in {MODE_LABEL[mode]} this month yet.</p>}
+            {player && board && !board.me && isCurrent && <p className={styles.empty}>You haven&apos;t scored in {MODE_LABEL[mode]} this round yet.</p>}
             {!player && <p className={styles.empty}>Log in to see your own standing.</p>}
           </aside>
         </div>
         <section className={styles.rules} aria-labelledby="rules-title">
           <h2 id="rules-title">Competition rules</h2>
           <ol>
-            <li>Each month the player ranked #1 in each mode wins: <strong>₹{PRIZE.easy}</strong> for Easy, <strong>₹{PRIZE.medium}</strong> for Medium and <strong>₹{PRIZE.hard}</strong> for Hard.</li>
-            <li>The leaderboard closes at midnight (India time) on the last day of the month and starts fresh on the 1st.</li>
+            <li>Each round the player ranked #1 in each mode wins: <strong>₹{PRIZE.easy}</strong> for Easy, <strong>₹{PRIZE.medium}</strong> for Medium and <strong>₹{PRIZE.hard}</strong> for Hard.</li>
+            <li>The first round runs from 18 October to 18 November 2026. Each round closes at midnight (India time) at the end of the 18th, and the next one starts fresh on the 19th.</li>
             <li>Only games played while logged in count. If two players have the same score, the one who reached it first ranks higher.</li>
             <li>We contact winners on the mobile number they registered with and pay by UPI. Please register with your own number.</li>
             <li>One account per person. Accounts that cheat, use bots or share a number may be removed from the leaderboard.</li>

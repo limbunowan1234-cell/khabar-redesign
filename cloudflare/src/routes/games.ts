@@ -7,7 +7,7 @@ type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string };
 
 export const games = new Hono<{ Bindings: Bindings }>();
 
-// The web version of Simon Speed with a monthly Top 10 per mode.
+// The web version of Simon Speed with a Top 10 per mode for each monthly round.
 //
 // Scores are never trusted from the browser. Starting a game stores a seed
 // chosen here; finishing sends back only the pads the player tapped, and
@@ -27,13 +27,34 @@ function isMode(m: unknown): m is SimonMode {
   return typeof m === 'string' && (SIMON_MODES as readonly string[]).includes(m);
 }
 
-// Competitions run by calendar month in India time.
+// Competition rounds end at midnight India time at the end of the 18th, and
+// are named by the month they end in: '2026-12' runs 19 Nov - 18 Dec. The
+// first round opened at launch on 18 Oct 2026 and runs to 18 Nov.
+const ROUND_END_DAY = 18;
+const FIRST_PERIOD = '2026-11';
+const FIRST_ROUND_START = '2026-10-18';
+
+function shiftPeriod(period: string, months: number): string {
+  const [y, m] = period.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + months, 1));
+  return d.toISOString().slice(0, 7);
+}
+
 function currentPeriod(): string {
-  return new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 7);
+  const ist = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  let period = ist.toISOString().slice(0, 7);
+  if (ist.getUTCDate() > ROUND_END_DAY) period = shiftPeriod(period, 1);
+  return period < FIRST_PERIOD ? FIRST_PERIOD : period;
+}
+
+// First and last day (inclusive, India time) of a round, as 'YYYY-MM-DD'.
+function roundDates(period: string): { start: string; end: string } {
+  const start = period === FIRST_PERIOD ? FIRST_ROUND_START : `${shiftPeriod(period, -1)}-${ROUND_END_DAY + 1}`;
+  return { start, end: `${period}-${ROUND_END_DAY}` };
 }
 
 function isPeriod(p: unknown): p is string {
-  return typeof p === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(p);
+  return typeof p === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(p) && p >= FIRST_PERIOD;
 }
 
 function parseSqlTime(s: string): number {
@@ -144,8 +165,8 @@ async function rankFor(db: D1Database, mode: string, period: string, playerId: s
   return row ? row.rank : null;
 }
 
-// GET /games/simon-speed/leaderboard?mode=easy[&period=2026-10]
-//   -> { mode, period, top: [{ rank, gameName, score, level, achievedAt }], me }
+// GET /games/simon-speed/leaderboard?mode=easy[&period=2026-11]
+//   -> { mode, period, start, end, currentPeriod, previousPeriod, top: [{ rank, gameName, score, level, achievedAt }], me }
 // `me` is the logged-in player's own best and rank (null if they haven't
 // scored this period). A site admin also gets each winner's phone number,
 // so prizes can be arranged.
@@ -153,7 +174,7 @@ games.get('/simon-speed/leaderboard', async (c) => {
   const mode = c.req.query('mode');
   if (!isMode(mode)) return c.json({ error: 'mode must be easy, medium or hard' }, 400);
   const period = c.req.query('period') || currentPeriod();
-  if (!isPeriod(period)) return c.json({ error: 'period must look like 2026-10' }, 400);
+  if (!isPeriod(period)) return c.json({ error: `period must look like ${FIRST_PERIOD} and not be before it` }, 400);
 
   const [player, user] = await Promise.all([verifyPlayer(c.req.raw, c.env), verifyUser(c.req.raw, c.env)]);
   const admin = isAdmin(user);
@@ -178,5 +199,7 @@ games.get('/simon-speed/leaderboard', async (c) => {
   }
 
   if (!player && !admin) c.header('Cache-Control', 'public, max-age=15');
-  return c.json({ mode, period, currentPeriod: currentPeriod(), top, me });
+  const current = currentPeriod();
+  const previousPeriod = current === FIRST_PERIOD ? null : shiftPeriod(current, -1);
+  return c.json({ mode, period, ...roundDates(period), currentPeriod: current, previousPeriod, top, me });
 });
