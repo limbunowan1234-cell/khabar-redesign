@@ -47,10 +47,17 @@ export default function SimonGame() {
   const [board, setBoard] = useState<Board | null>(null);
   const [boardPeriod, setBoardPeriod] = useState<string | null>(null);
   const [boardError, setBoardError] = useState('');
+  const authRef = useRef<HTMLDivElement>(null);
 
   // Game state the timers and tap handler need without re-rendering.
   const game = useRef({ seq: [] as number[], taps: [] as number[], step: 0, round: 0, score: 0, sessionId: null as string | null, mode: 'easy' as SimonMode, timers: [] as number[], accepting: false });
   const audio = useRef<AudioContext | null>(null);
+
+  // Open the login form and bring it into view, wherever it was asked for.
+  const openAuth = () => {
+    setShowAuth(true);
+    window.setTimeout(() => authRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0);
+  };
 
   useEffect(() => {
     const sync = () => setPlayer(getPlayerSession()?.player || null);
@@ -236,19 +243,32 @@ export default function SimonGame() {
                 <button type="button" className={styles.linkBtn} onClick={() => { logoutPlayer(); setShowAuth(false); }}>Log out</button>
               </>
             ) : (
-              <button type="button" className={styles.ghostBtn} onClick={() => setShowAuth((v) => !v)}>{showAuth ? 'Close' : 'Log in to compete'}</button>
+              showAuth ? (
+                <button type="button" className={styles.ghostBtn} onClick={() => setShowAuth(false)}>Close</button>
+              ) : (
+                <div className={styles.cta}>
+                  <button type="button" className={styles.ctaBtn} onClick={openAuth}>Log in to compete</button>
+                  <span>New here? Sign up free with your mobile number.</span>
+                </div>
+              )
             )}
           </div>
         </header>
 
         {!player && showAuth && (
-          <div className={styles.authPanel}>
+          <div className={styles.authPanel} ref={authRef}>
             <PlayerAuth intro="Create a free player account to save your scores and compete for the monthly Top 10." onDone={() => setShowAuth(false)} />
           </div>
         )}
 
         <div className={styles.layout}>
           <section className={styles.gamePanel} aria-label="Game">
+            {!player && (
+              <div className={styles.practice}>
+                <span><strong>Practice mode.</strong> Your scores won&apos;t count for prizes.</span>
+                <button type="button" className={styles.practiceBtn} onClick={openAuth}>Log in to compete</button>
+              </div>
+            )}
             <div className={styles.modes} role="tablist" aria-label="Mode">
               {SIMON_MODES.map((m) => (
                 <button
@@ -290,7 +310,7 @@ export default function SimonGame() {
                 <strong>{result.score} points · level {result.level}</strong>
                 {result.saved && result.rank ? <span>Your best this round: {result.best} · rank #{result.rank} in {MODE_LABEL[mode]}</span> : null}
                 {result.saved && !result.rank ? <span>Clear at least one round to get on the leaderboard.</span> : null}
-                {!result.saved && !result.error && <span>Practice game. <button type="button" className={styles.linkBtn} onClick={() => setShowAuth(true)}>Log in</button> to save scores and compete.</span>}
+                {!result.saved && !result.error && <span>Practice game. <button type="button" className={styles.linkBtn} onClick={openAuth}>Log in</button> to save scores and compete.</span>}
                 {result.error && <span className={styles.err}>Score not saved: {result.error}</span>}
               </div>
             )}
@@ -335,7 +355,7 @@ export default function SimonGame() {
               <div className={styles.meRow}>Your standing: <strong>#{board.me.rank}</strong> with {board.me.score} points</div>
             )}
             {player && board && !board.me && isCurrent && <p className={styles.empty}>You haven&apos;t scored in {MODE_LABEL[mode]} this round yet.</p>}
-            {!player && <p className={styles.empty}>Log in to see your own standing.</p>}
+            {!player && <button type="button" className={styles.boardCta} onClick={openAuth}>Log in to get on the Top 10</button>}
           </aside>
         </div>
         <section className={styles.rules} aria-labelledby="rules-title">
