@@ -57,6 +57,9 @@ function toJson(row: any, view: View) {
     fileName: row.file_name,
     sizeBytes: row.size_bytes,
     downloadCount: row.download_count,
+    // Only the list query joins these in; 0/null elsewhere.
+    ratingCount: row.rating_count || 0,
+    ratingAverage: row.rating_avg ? Math.round(row.rating_avg * 10) / 10 : null,
     hosted: !!row.file_key,
     hasDownload: !!(row.file_key || row.external_url),
     createdAt: row.created_at,
@@ -114,7 +117,10 @@ downloads.get('/', async (c) => {
   const order = c.req.query('sort') === 'popular' ? 'download_count DESC, created_at DESC' : 'created_at DESC';
   const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '500', 10) || 500, 1), 500);
 
-  const sql = `SELECT * FROM downloads ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY ${order} LIMIT ${limit}`;
+  const sql = `SELECT downloads.*, r.rating_count, r.rating_avg FROM downloads
+    LEFT JOIN (SELECT app_id, COUNT(*) AS rating_count, AVG(rating) AS rating_avg FROM app_reviews GROUP BY app_id) r
+      ON r.app_id = downloads.id
+    ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY ${order} LIMIT ${limit}`;
   const { results } = await c.env.DB.prepare(sql).bind(...params).all();
   const docs = (results || []).map((r: any) => toJson(r, admin ? 'admin' : 'public'));
   if (!admin) c.header('Cache-Control', 'public, max-age=30');

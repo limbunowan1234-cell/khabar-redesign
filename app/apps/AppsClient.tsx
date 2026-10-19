@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import styles from './apps.module.css';
-import AppCard, { AppIcon, blurb } from './AppCard';
+import AppCard, { AppIcon, RatingBadge, blurb } from './AppCard';
 import {
   DOWNLOAD_CATEGORIES, appHref, categoryMeta, formatCount, imageUrl, primaryAction, type DownloadItem,
 } from '@/lib/downloadCategories';
@@ -28,6 +28,7 @@ function FeaturedCard({ item }: { item: DownloadItem }) {
           <div style={{ minWidth: 0 }}>
             <h3 className={styles.featName}>{item.title}</h3>
             <p className={styles.featTag}>{blurb(item, 80)}</p>
+            <RatingBadge item={item} className={styles.featRating} />
           </div>
         </div>
         <span className={styles.featGo}>View app</span>
@@ -48,6 +49,7 @@ function ChartRow({ item, rank }: { item: DownloadItem; rank: number }) {
         <p className={styles.rowMeta}>
           {cat.label}{item.downloadCount > 0 ? ' · ' + formatCount(item.downloadCount) + ' download' + (item.downloadCount === 1 ? '' : 's') : ''}
         </p>
+        <RatingBadge item={item} />
       </div>
       {action && <a href={action.href} className={styles.get} rel="nofollow noopener" target={action.external ? '_blank' : undefined}>{action.label}</a>}
     </div>

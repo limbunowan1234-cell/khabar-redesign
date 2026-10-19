@@ -158,6 +158,11 @@
 .cardShots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .cardShot { width: 100%; aspect-ratio: 9 / 14; object-fit: cover; border-radius: 12px; background: var(--ap-chip); border: 1px solid var(--ap-line); }
 .cardFoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; }
+.rating { display: inline-flex; align-items: center; gap: 3px; margin: 4px 0 0; font-size: 12.5px; color: var(--ap-muted); font-variant-numeric: tabular-nums; }
+.rating strong { color: var(--ap-text, inherit); font-weight: 700; }
+.ratingStar { color: #f5a623; font-size: 13px; line-height: 1; }
+.featRating { color: rgba(255, 255, 255, 0.86); }
+.featRating strong { color: #fff; }
 .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--ap-muted); }
 .tag { background: var(--ap-chip); color: var(--ap-text); font-weight: 700; font-size: 11.5px; padding: 3px 9px; border-radius: 999px; }
 

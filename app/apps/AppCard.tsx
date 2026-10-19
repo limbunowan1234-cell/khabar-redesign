@@ -22,6 +22,19 @@ export function AppIcon({ item, className, fallbackClassName }: { item: Pick<Dow
   );
 }
 
+// "4.5 ★ (12)", the way app stores show it on listings. Nothing until an
+// app has at least one rating.
+export function RatingBadge({ item, className }: { item: Pick<DownloadItem, 'ratingCount' | 'ratingAverage'>; className?: string }) {
+  if (!item.ratingCount || item.ratingAverage == null) return null;
+  return (
+    <span className={styles.rating + (className ? ' ' + className : '')} aria-label={`Rated ${item.ratingAverage.toFixed(1)} out of 5 from ${item.ratingCount} rating${item.ratingCount === 1 ? '' : 's'}`}>
+      <strong>{item.ratingAverage.toFixed(1)}</strong>
+      <span aria-hidden="true" className={styles.ratingStar}>★</span>
+      <span>({formatCount(item.ratingCount)})</span>
+    </span>
+  );
+}
+
 // `preview` renders the same card with no links, for the submit form's live preview.
 export default function AppCard({ item, preview = false }: { item: DownloadItem; preview?: boolean }) {
   const cat = categoryMeta(item.category);
@@ -38,6 +51,7 @@ export default function AppCard({ item, preview = false }: { item: DownloadItem;
             {preview ? (item.title || 'Your app name') : <Link href={appHref(item)} className={styles.stretch}>{item.title}</Link>}
           </h3>
           <p className={styles.cardTagline}>{blurb(item) || (preview ? 'Your one-line tagline appears here' : '')}</p>
+          <RatingBadge item={item} />
         </div>
       </div>
 

@@ -31,6 +31,9 @@ export interface DownloadItem {
   fileName: string | null;
   sizeBytes: number | null;
   downloadCount: number;
+  // Star ratings from app reviews; only filled in on the /downloads list.
+  ratingCount?: number;
+  ratingAverage?: number | null;
   hosted: boolean;
   hasDownload: boolean;
   createdAt: string;
