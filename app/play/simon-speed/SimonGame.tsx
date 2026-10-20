@@ -26,6 +26,7 @@ interface Board {
   top: BoardRow[];
   me: { gameName: string; score: number; rank: number } | null;
 }
+interface Stats { players: number; games: number; rounds: number }
 interface Result { score: number; level: number; best?: number; rank?: number | null; saved: boolean; error?: string }
 
 // '2026-11-18' -> '18 Nov 2026' (or '18 Nov' without the year).
@@ -47,6 +48,7 @@ export default function SimonGame() {
   const [board, setBoard] = useState<Board | null>(null);
   const [boardPeriod, setBoardPeriod] = useState<string | null>(null);
   const [boardError, setBoardError] = useState('');
+  const [stats, setStats] = useState<Stats | null>(null);
   const authRef = useRef<HTMLDivElement>(null);
 
   // Game state the timers and tap handler need without re-rendering.
@@ -64,6 +66,12 @@ export default function SimonGame() {
     sync();
     return onPlayerChange(sync);
   }, []);
+
+  // Best-effort: the counter just stays hidden if this fails.
+  const loadStats = useCallback(() => {
+    playerFetch<Stats>('/games/simon-speed/stats').then(setStats, () => {});
+  }, []);
+  useEffect(loadStats, [loadStats]);
 
   const loadBoard = useCallback(async (m: SimonMode, period: string | null) => {
     setBoardError('');
@@ -160,6 +168,7 @@ export default function SimonGame() {
       setResult({ ...res, saved: true });
       setBoardPeriod(null);
       loadBoard(g.mode, null);
+      loadStats();
     } catch (err) {
       setResult({ score: g.score, level, saved: false, error: errorMessage(err) });
     }
@@ -235,6 +244,13 @@ export default function SimonGame() {
                 <li key={m}><strong>₹{PRIZE[m]}</strong><span>{MODE_LABEL[m]}</span></li>
               ))}
             </ul>
+            {stats && stats.games > 0 && (
+              <dl className={styles.stats} aria-label="Simon Speed so far">
+                <div><dt>Players</dt><dd>{stats.players.toLocaleString('en-IN')}</dd></div>
+                <div><dt>Games played</dt><dd>{stats.games.toLocaleString('en-IN')}</dd></div>
+                <div><dt>Rounds cleared</dt><dd>{stats.rounds.toLocaleString('en-IN')}</dd></div>
+              </dl>
+            )}
           </div>
           <div className={styles.account}>
             {player ? (

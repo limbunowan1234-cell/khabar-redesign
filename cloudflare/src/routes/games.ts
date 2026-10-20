@@ -165,6 +165,22 @@ async function rankFor(db: D1Database, mode: string, period: string, playerId: s
   return row ? row.rank : null;
 }
 
+// GET /games/simon-speed/stats -> { players, games, rounds }
+// All-time totals for the counter on the game page, from verified games
+// only: players who have finished a logged-in game, games finished, and
+// rounds cleared across them. Practice games aren't recorded anywhere.
+games.get('/simon-speed/stats', async (c) => {
+  const row = await c.env.DB
+    .prepare(`SELECT
+        (SELECT COUNT(DISTINCT player_id) FROM game_sessions WHERE game = ?1 AND finished_at IS NOT NULL) AS players,
+        (SELECT COUNT(*) FROM game_sessions WHERE game = ?1 AND finished_at IS NOT NULL) AS games,
+        (SELECT COALESCE(SUM(level), 0) FROM game_scores WHERE game = ?1) AS rounds`)
+    .bind(GAME)
+    .first<{ players: number; games: number; rounds: number }>();
+  c.header('Cache-Control', 'public, max-age=30');
+  return c.json({ players: row?.players || 0, games: row?.games || 0, rounds: row?.rounds || 0 });
+});
+
 // GET /games/simon-speed/leaderboard?mode=easy[&period=2026-11]
 //   -> { mode, period, start, end, currentPeriod, previousPeriod, top: [{ rank, gameName, score, level, achievedAt }], me }
 // `me` is the logged-in player's own best and rank (null if they haven't
