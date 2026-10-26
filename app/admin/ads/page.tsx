@@ -17,15 +17,14 @@ const PLACEMENT_LABELS: Record<string, string> = {
 };
 
 // Not hardcoded to one advertiser -- derived from whatever's actually
-// configured in AD_PLACEMENTS, so this page keeps working as-is once a
-// real campaign is added there again. Right now that list is empty.
+// configured in AD_PLACEMENTS, one section per campaign, so several
+// campaigns can run side by side (e.g. one per homepage slot).
 const CAMPAIGN_IDS = Array.from(new Set(Object.values(AD_PLACEMENTS).map((p) => p.campaignId)));
 
 export default function AdsAdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [data, setData] = useState<any>(null);
-  const [campaignActive, setCampaignActive] = useState<boolean | null>(null);
+  const [campaigns, setCampaigns] = useState<Record<string, { data: any; active: boolean | null }>>({});
 
   useEffect(() => {
     async function load() {
@@ -37,23 +36,28 @@ export default function AdsAdminPage() {
         const user = await getCurrentUser();
         if (!user) { setError('Please log in.'); setLoading(false); return; }
         if (CAMPAIGN_IDS.length === 0) { setLoading(false); return; }
-        const campaignId = CAMPAIGN_IDS[0];
 
         const jwt = await getWorkerAuthToken();
         if (!jwt) { setError('Could not verify your session.'); setLoading(false); return; }
 
-        const [analyticsRes, campaignRes] = await Promise.all([
-          fetch(`${WORKER_URL}/ads/analytics?campaignId=${encodeURIComponent(campaignId)}`, {
-            headers: { Authorization: 'Bearer ' + jwt },
-          }),
-          fetch(`${WORKER_URL}/ads/campaign/${encodeURIComponent(campaignId)}`),
-        ]);
+        const loaded: Record<string, { data: any; active: boolean | null }> = {};
+        for (const campaignId of CAMPAIGN_IDS) {
+          const [analyticsRes, campaignRes] = await Promise.all([
+            fetch(`${WORKER_URL}/ads/analytics?campaignId=${encodeURIComponent(campaignId)}`, {
+              headers: { Authorization: 'Bearer ' + jwt },
+            }),
+            fetch(`${WORKER_URL}/ads/campaign/${encodeURIComponent(campaignId)}`),
+          ]);
 
-        if (analyticsRes.status === 403) { setError('Admin access required.'); setLoading(false); return; }
-        if (!analyticsRes.ok) { setError('Failed to load analytics.'); setLoading(false); return; }
+          if (analyticsRes.status === 403) { setError('Admin access required.'); setLoading(false); return; }
+          if (!analyticsRes.ok) { setError('Failed to load analytics.'); setLoading(false); return; }
 
-        setData(await analyticsRes.json());
-        if (campaignRes.ok) setCampaignActive((await campaignRes.json()).active);
+          loaded[campaignId] = {
+            data: await analyticsRes.json(),
+            active: campaignRes.ok ? (await campaignRes.json()).active : null,
+          };
+        }
+        setCampaigns(loaded);
       } catch {
         setError('Failed to load.');
       }
@@ -89,43 +93,56 @@ export default function AdsAdminPage() {
           </div>
         ) : (
           <>
-            <div style={{
-              background: campaignActive ? '#f0fdf4' : '#fff8e1',
-              border: '1px solid ' + (campaignActive ? '#bbf7d0' : '#fde68a'),
-              borderRadius: '8px', padding: '16px 20px', marginBottom: '24px',
-            }}>
-              <p style={{ margin: 0, fontWeight: 700, color: campaignActive ? '#15803d' : '#92400e' }}>
-                {campaignActive ? '🟢 Campaign is LIVE' : '🟡 Campaign is OFF — not showing to any reader'}
-              </p>
-              <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#6b7280' }}>
-                Toggle via the <code>active</code> column on the <code>ad_campaigns</code> row in D1
-                (deliberately no on/off button here — this stays a manual, deliberate step).
-              </p>
-            </div>
+            {CAMPAIGN_IDS.map((campaignId) => {
+              const { data, active: campaignActive } = campaigns[campaignId] || { data: null, active: null };
+              const placements = Object.values(AD_PLACEMENTS).filter((p) => p.campaignId === campaignId);
+              return (
+                <section key={campaignId} style={{ marginBottom: '36px' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', margin: '0 0 4px' }}>{placements[0]?.advertiser || campaignId}</h2>
+                  <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#6b7280' }}>
+                    <code>{campaignId}</code> · links to <code>{placements[0]?.href}</code>
+                  </p>
 
-            <div style={{ background: 'white', borderRadius: '8px', padding: '20px', marginBottom: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px' }}>Last 30 Days</h2>
-              <div style={{ display: 'flex', gap: '32px' }}>
-                <div><div style={{ fontSize: '28px', fontWeight: 800, color: '#111827' }}>{data?.totals?.impressions ?? 0}</div><div style={{ fontSize: '12px', color: '#6b7280' }}>Impressions</div></div>
-                <div><div style={{ fontSize: '28px', fontWeight: 800, color: '#111827' }}>{data?.totals?.clicks ?? 0}</div><div style={{ fontSize: '12px', color: '#6b7280' }}>Clicks</div></div>
-                <div><div style={{ fontSize: '28px', fontWeight: 800, color: '#111827' }}>{data?.totals?.ctr ?? 0}%</div><div style={{ fontSize: '12px', color: '#6b7280' }}>CTR</div></div>
-              </div>
-            </div>
+                  <div style={{
+                    background: campaignActive ? '#f0fdf4' : '#fff8e1',
+                    border: '1px solid ' + (campaignActive ? '#bbf7d0' : '#fde68a'),
+                    borderRadius: '8px', padding: '16px 20px', marginBottom: '16px',
+                  }}>
+                    <p style={{ margin: 0, fontWeight: 700, color: campaignActive ? '#15803d' : '#92400e' }}>
+                      {campaignActive ? '🟢 Campaign is LIVE' : '🟡 Campaign is OFF — not showing to any reader'}
+                    </p>
+                    <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#6b7280' }}>
+                      Toggle via the <code>active</code> column on the <code>ad_campaigns</code> row in D1
+                      (deliberately no on/off button here — this stays a manual, deliberate step).
+                    </p>
+                  </div>
 
-            <div style={{ background: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px' }}>By Placement</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {Object.values(AD_PLACEMENTS).map((p) => {
-                  const stats = data?.byPlacement?.[p.id] || { impressions: 0, clicks: 0 };
-                  return (
-                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: '#f9fafb', borderRadius: '6px' }}>
-                      <span style={{ fontWeight: 600 }}>{PLACEMENT_LABELS[p.id] || p.id}</span>
-                      <span style={{ color: '#6b7280', fontSize: '13px' }}>{stats.impressions} impressions · {stats.clicks} clicks</span>
+                  <div style={{ background: 'white', borderRadius: '8px', padding: '20px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px' }}>Last 30 Days</h3>
+                    <div style={{ display: 'flex', gap: '32px' }}>
+                      <div><div style={{ fontSize: '28px', fontWeight: 800, color: '#111827' }}>{data?.totals?.impressions ?? 0}</div><div style={{ fontSize: '12px', color: '#6b7280' }}>Impressions</div></div>
+                      <div><div style={{ fontSize: '28px', fontWeight: 800, color: '#111827' }}>{data?.totals?.clicks ?? 0}</div><div style={{ fontSize: '12px', color: '#6b7280' }}>Clicks</div></div>
+                      <div><div style={{ fontSize: '28px', fontWeight: 800, color: '#111827' }}>{data?.totals?.ctr ?? 0}%</div><div style={{ fontSize: '12px', color: '#6b7280' }}>CTR</div></div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  </div>
+
+                  <div style={{ background: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px' }}>By Placement</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {placements.map((p) => {
+                        const stats = data?.byPlacement?.[p.id] || { impressions: 0, clicks: 0 };
+                        return (
+                          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', background: '#f9fafb', borderRadius: '6px' }}>
+                            <span style={{ fontWeight: 600 }}>{PLACEMENT_LABELS[p.id] || p.id}</span>
+                            <span style={{ color: '#6b7280', fontSize: '13px' }}>{stats.impressions} impressions · {stats.clicks} clicks</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              );
+            })}
           </>
         )}
       </div>

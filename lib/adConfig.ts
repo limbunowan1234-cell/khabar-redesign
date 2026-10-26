@@ -4,10 +4,11 @@
 // unless this AND the D1 ad_campaigns row (see cloudflare/src/routes/
 // ads.ts) both say active.
 //
-// Currently running: the Raunak fundraiser (an in-house community
-// appeal, not a paid advertiser) in both homepage slots. To turn it off
-// without a deploy, set `active = 0` on the 'raunak-fundraiser-2026' row
-// in D1's ad_campaigns; to retire it for good, delete its entries below.
+// Currently running two in-house community appeals (not paid advertisers):
+// the Bring Anmol Home appeal in the hero banner and the Raunak fundraiser
+// in the sidebar. To turn either off without a deploy, set `active = 0` on
+// its row ('bring-anmol-home-2026' / 'raunak-fundraiser-2026') in D1's
+// ad_campaigns; to retire it for good, delete its entry below.
 //
 // The earlier campaign this system was built for (Subha Enterprise
 // Consultant LLP, Russia warehouse jobs) was removed: eMigrate's own
@@ -52,16 +53,25 @@ const RAUNAK_CARD = {
   cta: 'How you can help',
 };
 
+// Copy follows the appeal published by Darjeeling Maato Ko Maya Foundation
+// on the /bring-anmol-home page.
+const ANMOL_CARD = {
+  image: '/assets/fundraiser/anmol/anmol-face.jpg',
+  headline: 'Bring Anmol Home · अनमोललाई घर फर्काऔँ',
+  body: 'Anmol Sinchury from Mirik is trapped in a scam company on the Thailand–Myanmar border and has been beaten and tortured. Help bring him home safely.',
+  cta: 'How you can help',
+};
+
 export const AD_PLACEMENTS: Record<string, AdPlacement> = {
   homepageHeroBanner: {
     id: 'homepage-hero-banner',
-    campaignId: 'raunak-fundraiser-2026',
-    advertiser: 'Khabar Darjeeling (community fundraiser)',
+    campaignId: 'bring-anmol-home-2026',
+    advertiser: 'Darjeeling Maato Ko Maya Foundation (community appeal)',
     active: true,
-    card: RAUNAK_CARD,
-    href: '/raunak-fundraiser',
-    alt: 'Raunak, a smiling toddler',
-    label: 'Fundraiser',
+    card: ANMOL_CARD,
+    href: '/bring-anmol-home',
+    alt: 'Anmol Sinchury, with bruising around his eyes',
+    label: 'Urgent appeal',
   },
   homepageSidebar: {
     id: 'homepage-sidebar',
