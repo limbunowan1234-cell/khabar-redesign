@@ -4,11 +4,12 @@
 // unless this AND the D1 ad_campaigns row (see cloudflare/src/routes/
 // ads.ts) both say active.
 //
-// Currently running two in-house community appeals (not paid advertisers):
-// the Bring Anmol Home appeal in the hero banner and the Raunak fundraiser
-// in the sidebar. To turn either off without a deploy, set `active = 0` on
-// its row ('bring-anmol-home-2026' / 'raunak-fundraiser-2026') in D1's
-// ad_campaigns; to retire it for good, delete its entry below.
+// Nothing is running right now. The two in-house community appeals that
+// used these slots -- Bring Anmol Home (hero banner) and the Raunak
+// fundraiser (sidebar) -- ended on 30 Oct 2026: `active: false` below and
+// `active = 0` on their D1 ad_campaigns rows. Their pages stay up so links
+// people already shared keep working. To reuse a slot, point it at a new
+// campaign and flip both flags back on.
 //
 // The earlier campaign this system was built for (Subha Enterprise
 // Consultant LLP, Russia warehouse jobs) was removed: eMigrate's own
@@ -67,7 +68,7 @@ export const AD_PLACEMENTS: Record<string, AdPlacement> = {
     id: 'homepage-hero-banner',
     campaignId: 'bring-anmol-home-2026',
     advertiser: 'Darjeeling Maato Ko Maya Foundation (community appeal)',
-    active: true,
+    active: false,
     card: ANMOL_CARD,
     href: '/bring-anmol-home',
     alt: 'Anmol Sinchury, with bruising around his eyes',
@@ -77,7 +78,7 @@ export const AD_PLACEMENTS: Record<string, AdPlacement> = {
     id: 'homepage-sidebar',
     campaignId: 'raunak-fundraiser-2026',
     advertiser: 'Khabar Darjeeling (community fundraiser)',
-    active: true,
+    active: false,
     card: RAUNAK_CARD,
     href: '/raunak-fundraiser',
     alt: 'Raunak, a smiling toddler',
