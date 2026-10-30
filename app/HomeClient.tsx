@@ -809,7 +809,6 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
                 { href: '/weekly', label: 'Weekly Edition' },
                 { href: '/daily-updates', label: 'Daily Updates' },
                 { href: '/post', label: 'Create Post' },
-                { href: '/contest', label: 'Story Contest 2026' },
                 { href: '/profile', label: 'My Profile' },
                 { href: '/bookmarks', label: 'Saved Articles' },
                 ...(isAdmin ? [{ href: '/admin', label: 'Admin Panel' }] : []),
@@ -855,8 +854,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Link href="/post" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Post</button></Link>
 
-              <NavDropdown label="Contest & Culture" isDarkMode={isDarkMode}>
-                <NavDropdownItem href="/contest" isDarkMode={isDarkMode}>🏆 Story Contest</NavDropdownItem>
+              <NavDropdown label="Culture" isDarkMode={isDarkMode}>
                 <NavDropdownItem href="/nepali-bhasa-diwas" isDarkMode={isDarkMode}>🎭 Bhasa Diwas</NavDropdownItem>
               </NavDropdown>
 
@@ -1027,7 +1025,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             </a>
             <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>Quick Links</h3>
-              {[{ label: 'Post a Story', href: '/post', color: '#c41e3a' }, { label: 'Story Contest', href: '/contest', color: '#e65100' }, { label: 'My Bookmarks', href: '/bookmarks', color: '#0F4C5C' }, { label: 'My Profile', href: '/profile', color: '#7b1fa2' }].map(item => (
+              {[{ label: 'Post a Story', href: '/post', color: '#c41e3a' }, { label: 'My Bookmarks', href: '/bookmarks', color: '#0F4C5C' }, { label: 'My Profile', href: '/profile', color: '#7b1fa2' }].map(item => (
                 <a key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', marginBottom: '6px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '8px', textDecoration: 'none', borderLeft: '3px solid ' + item.color }}>
                   <span style={{ fontSize: '13px', fontWeight: '600', color: isDarkMode ? '#ddd' : '#1a1a1a' }}>{item.label}</span>
                   <span style={{ color: item.color, fontWeight: '700', fontSize: '14px' }}>&rarr;</span>
@@ -1053,7 +1051,6 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             { id: 'home', href: '/', icon: '🏠', label: 'Home' },
             { id: 'search', href: '#', icon: '🔍', label: 'Search' },
             { id: 'post', href: '/post', icon: '✍️', label: 'Post' },
-            { id: 'contest', href: '/contest', icon: '🏆', label: 'Contest' },
               { id: 'creators', href: '#', icon: '\u2605', label: 'Top' },
             { id: 'profile', href: user ? '/profile' : '/auth', icon: '👤', label: user ? 'Profile' : 'Login' },
             ...(isAdmin ? [{ id: 'admin', href: '/admin', icon: '⚙️', label: 'Admin' }] : []),

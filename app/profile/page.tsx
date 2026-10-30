@@ -335,7 +335,6 @@ const accentColor = ACCENT_COLORS[profileDoc?.bannerTheme] || ACCENT_COLORS.crim
           {[
             { href: '/post', icon: '✍️', label: 'Create Post', color: '#c41e3a' },
             { href: '/bookmarks', icon: '🔖', label: 'Bookmarks', color: '#f5c518', textColor: '#1a1a1a' },
-            { href: '/contest', icon: '🏆', label: 'Contest', color: '#a01830' },
             { href: '/admin', icon: '⚙️', label: 'Admin Panel', color: '#1a1a1a' },
           ].map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
