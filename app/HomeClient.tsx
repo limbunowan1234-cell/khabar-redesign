@@ -23,7 +23,6 @@ import GorkhaTVSection, { type BulletinVideo } from '@/components/GorkhaTVSectio
 import HillsInFrameWidget from '@/components/HillsInFrameWidget';
 import SidebarTabs from '@/components/SidebarTabs';
 import { truncateWords } from '@/lib/textPreview';
-import ContestResultsBanner from '@/components/ContestResultsBanner';
 
 const ENDPOINT = 'https://api.khabardarjeeling.in/v1';
 const projectId = 'khabardarjeeling';
@@ -517,18 +516,6 @@ function TopTen({ articles, isDarkMode }: any) {
   );
 }
 
-function ContestResultsSidebarLink({ isDarkMode }: any) {
-  return (
-    <Link href="/contest" style={{ textDecoration: 'none' }}>
-      <div style={{ background: 'linear-gradient(135deg, #c41e3a, #a01830)', borderRadius: '10px', padding: '20px', marginBottom: '20px', textAlign: 'center', cursor: 'pointer' }}>
-        <div style={{ color: 'white', fontWeight: '800', fontSize: '15px', marginBottom: '4px' }}>🏆 Story Contest 2026</div>
-        <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', marginBottom: '12px' }}>Results are out!</div>
-        <div style={{ backgroundColor: '#f5c518', color: '#1a1a1a', padding: '8px 16px', borderRadius: '20px', fontWeight: '700', fontSize: '13px', display: 'inline-block' }}>View Final Results</div>
-      </div>
-    </Link>
-  );
-}
-
 // NEW: BREAKING NEWS SIDEBAR WIDGET
 function BreakingNewsSidebar({ articles, isDarkMode }: any) {
   const breaking = articles.filter((a: any) => a.isBreaking).slice(0, 3);
@@ -960,7 +947,6 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <WeatherAirWidget isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <AdSlot placement={AD_PLACEMENTS.homepageHeroBanner} />}
-            {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {/* Mobile has no sidebar, so this is its only AdBanner slot on the
                 default "All" view -- desktop gets its unconditional one in
@@ -995,7 +981,6 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <WeatherAirWidget isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <AdSlot placement={AD_PLACEMENTS.homepageHeroBanner} />}
-            {!searchQuery && selectedCategory === 'All' && <ContestResultsBanner isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <LatestSection articles={articles} />}
             {!searchQuery && selectedCategory === 'All' && <DistrictSection articles={articles} defaultDistrict={userDistrict} />}
             {!searchQuery && selectedCategory === 'All' && <GorkhaTVSection videos={bulletinVideos} />}
@@ -1031,7 +1016,6 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
               <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
             <SidebarTabs articles={articles} isDarkMode={isDarkMode} topTen={<TopTen articles={articles} isDarkMode={isDarkMode} />} breaking={<BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />} />
-            <ContestResultsSidebarLink isDarkMode={isDarkMode} />
             <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ textDecoration: 'none' }}>
               <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                 <div style={{ flex: 1 }}>
