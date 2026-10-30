@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import StoryCard from '@/components/StoryCard';
 import SiteFooter from '@/components/SiteFooter';
 import { truncateChars } from '@/lib/textPreview';
@@ -25,6 +26,9 @@ const GENRE_DESCRIPTIONS: Record<string, string> = {
 };
 
 export const revalidate = 300;
+// Only the slugs from generateStaticParams exist; anything else is a real
+// 404 without rendering. Differently-cased slugs are redirected in proxy.ts.
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return GENRES.map((n) => ({ name: slugify(n) }));
@@ -83,7 +87,7 @@ function selectHeroAndPinned(articles: any[]) {
 export async function generateMetadata({ params }: { params: Promise<{ name: string }> }): Promise<Metadata> {
   const { name } = await params;
   const genre = unslugify(name);
-  if (!genre) return { title: 'Not Found | Khabar Darjeeling' };
+  if (!genre) return { title: 'Not Found' };
   const description = GENRE_DESCRIPTIONS[genre] || ('Latest ' + genre + ' news from Khabar Darjeeling.');
   return {
     title: genre + ' News',
@@ -103,14 +107,7 @@ export default async function GenrePage({ params }: { params: Promise<{ name: st
   const { name } = await params;
   const genre = unslugify(name);
 
-  if (!genre) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-        <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' }}>Genre not found</p>
-        <Link href="/" style={{ color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'none' }}>Back to Home</Link>
-      </div>
-    );
-  }
+  if (!genre) notFound();
 
   const articles = await fetchGenreArticles(genre);
   const { hero, pinned, rest } = selectHeroAndPinned(articles);

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import ArticleClient from './ArticleClient';
 import { stripMarkdown } from '@/lib/textPreview';
 
@@ -63,23 +64,24 @@ async function fetchRelated(a: any): Promise<any[]> {
   return out;
 }
 
+// null only when the worker says the article doesn't exist (or isn't
+// published), so the page can return a real 404. Any other failure throws:
+// a worker outage shouldn't get a live article cached as a 404, and ISR
+// keeps serving the last good copy when a revalidation throws.
 async function fetchArticle(idOrSlug: string): Promise<any> {
-  try {
-    const res = await fetch(WORKER_URL + '/articles/' + encodeURIComponent(idOrSlug), {
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
+  const res = await fetch(WORKER_URL + '/articles/' + encodeURIComponent(idOrSlug), {
+    next: { revalidate: 300 },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('Article fetch failed: ' + res.status);
+  return await res.json();
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const decodedId = decodeURIComponent(id);
   const a = await fetchArticle(decodedId);
-  if (!a) return { title: 'Article | Khabar Darjeeling' };
+  if (!a) return { title: 'Not Found' };
   const title = a.title || 'Khabar Darjeeling';
   const description = clean(a.content || a.summary || '');
   const image = imgUrl(a);
@@ -114,7 +116,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { id } = await params;
   const decodedId = decodeURIComponent(id);
   const a = await fetchArticle(decodedId);
-  const related = a ? await fetchRelated(a) : [];
+  if (!a) notFound();
+  const related = await fetchRelated(a);
 
   const jsonLd = a ? {
     '@context': 'https://schema.org',
