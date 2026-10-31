@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Khabar Search</title>
+  <style>
+    :root { --bg:#f7f7f5; --card:#fff; --text:#1d1d1b; --muted:#6b6b66; --accent:#1f6f4a; --line:#e3e3de; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#141413; --card:#1e1e1c; --text:#ececea; --muted:#a3a39d; --accent:#5fbf8f; --line:#2e2e2b; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui, sans-serif; }
+    main { max-width: 720px; margin: 0 auto; padding: 32px 16px; }
+    h1 { margin: 0 0 4px; font-size: 1.6rem; }
+    p.sub { margin: 0 0 20px; color: var(--muted); }
+    form { display:flex; gap:8px; flex-wrap:wrap; }
+    input[type=search] { flex:1 1 240px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text); font-size:1rem; }
+    button { padding:12px 18px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
+    label { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:.9rem; width:100%; }
+    #status { color:var(--muted); margin:16px 0; min-height:1.5em; }
+    .result { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+    .result a { color:var(--accent); font-weight:600; text-decoration:none; }
+    .result a:hover { text-decoration:underline; }
+    .result .host { color:var(--muted); font-size:.85rem; overflow-wrap:anywhere; }
+    .result p { margin:6px 0 0; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Khabar Search</h1>
+  <p class="sub">Search the web for news from the Darjeeling hills.</p>
+  <form id="f">
+    <input type="search" id="q" placeholder="e.g. Darjeeling toy train" required maxlength="200">
+    <button type="submit">Search</button>
+    <label><input type="checkbox" id="local" checked> Focus on Darjeeling hills</label>
+  </form>
+  <div id="status"></div>
+  <div id="results"></div>
+</main>
+<script>
+  // Your deployed Worker
+  const WORKER_URL = "https://linkup-search.limbunowan1234.workers.dev";
+
+  const form = document.getElementById("f");
+  const status = document.getElementById("status");
+  const list = document.getElementById("results");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const q = document.getElementById("q").value.trim();
+    const local = document.getElementById("local").checked ? "1" : "0";
+    status.textContent = "Searching…";
+    list.replaceChildren();
+    try {
+      const res = await fetch(`${WORKER_URL}/search?q=${encodeURIComponent(q)}&local=${local}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Search failed");
+      status.textContent = data.results.length ? `${data.results.length} results` : "No results found.";
+      for (const r of data.results) {
+        const card = document.createElement("article");
+        card.className = "result";
+        const a = document.createElement("a");
+        a.href = r.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = r.title;
+        const host = document.createElement("div");
+        host.className = "host"; host.textContent = new URL(r.url).hostname;
+        const p = document.createElement("p");
+        p.textContent = r.snippet;
+        card.append(a, host, p);
+        list.append(card);
+      }
+    } catch (err) {
+      status.textContent = err.message;
+    }
+  });
+</script>
+</body>
+</html>

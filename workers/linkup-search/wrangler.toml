@@ -1,0 +1,12 @@
+name = "linkup-search"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+[vars]
+# Sites allowed to call this Worker from the browser (comma-separated).
+# Replace with your real domains before going live.
+ALLOWED_ORIGINS = "https://khabardarjeeling.in,https://www.khabardarjeeling.in"
+
+# The API key is NOT stored here. Set it once with:
+#   npx wrangler secret put LINKUP_API_KEY
+# For local testing, put it in .dev.vars (git-ignored).
