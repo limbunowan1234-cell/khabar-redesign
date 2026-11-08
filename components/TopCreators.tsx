@@ -65,14 +65,14 @@ export default function TopCreators() {
   if (loading || creators.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#c41e3a', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Top Writers</h3>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+      <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: '800', color: 'var(--color-text)', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Top Writers</h3>
       {creators.map((creator, i) => {
         const score = creator.views;
         const tier = getTier(score);
         return (
           <Link key={creator.submitterId} href={'/profile/' + creator.submitterId} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div style={{ display: 'flex', gap: '10px', padding: '12px', backgroundColor: '#f9f9f9', borderRadius: '10px', alignItems: 'center', cursor: 'pointer', transition: 'all 0.2s', border: '1px solid #f0f0f0' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#f0f0f0'; e.currentTarget.style.borderColor = '#c41e3a'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#f9f9f9'; e.currentTarget.style.borderColor = '#f0f0f0'; }}>
+            <div style={{ display: 'flex', gap: '12px', padding: '10px 0', alignItems: 'center', cursor: 'pointer', transition: 'opacity 0.15s', borderBottom: '1px solid var(--rule)' }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}>
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#c41e3a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '700', overflow: 'hidden', flexShrink: 0 }}>
                   {creator.submitterAvatar ? (
@@ -84,8 +84,8 @@ export default function TopCreators() {
                 <span style={{ position: 'absolute', bottom: '-4px', right: '-6px', fontSize: '8px', fontWeight: '800', backgroundColor: tier.color, color: '#fff', padding: '1px 4px', borderRadius: '6px' }}>{getMedal(i + 1)}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: '700', fontSize: '13px', color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{creator.submitterName || 'Writer'}</div>
-                <div style={{ fontSize: '11px', color: '#888' }}>{creator.views.toLocaleString()} views - {creator.articles} articles</div>
+                <div style={{ fontWeight: '700', fontSize: '13px', color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{creator.submitterName || 'Writer'}</div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{creator.views.toLocaleString()} views - {creator.articles} articles</div>
               </div>
             </div>
           </Link>

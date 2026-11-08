@@ -1,0 +1,33 @@
+.promo {
+  position: relative; overflow: hidden; border-radius: 2px; margin: 28px 0; min-height: 240px; color: #fff; isolation: isolate;
+  display: flex; align-items: center; background: #1b1b22; font-family: var(--font-sans), system-ui, sans-serif;
+}
+.photo { position: absolute; inset: 0; background-size: cover; background-position: center 38%; z-index: -2; transform: scale(1.02); }
+.shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(8, 8, 12, 0.9) 0%, rgba(8, 8, 12, 0.66) 52%, rgba(8, 8, 12, 0.2) 100%); }
+.body { padding: 28px 30px 34px; max-width: 580px; }
+.badge {
+  display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #f5c518;
+  border: 1px solid rgba(245, 197, 24, 0.7); padding: 4px 9px; border-radius: 2px; margin-bottom: 14px;
+}
+.title { font-family: var(--font-serif), Georgia, serif; font-size: clamp(1.45rem, 1rem + 1.6vw, 2rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 10px; color: #fff; }
+.kicker { margin: 0 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.78); }
+.line { margin: 0 0 14px; font-family: var(--font-serif), Georgia, serif; font-style: italic; font-size: 17px; line-height: 1.45; color: #fff; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.chip { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border: 1px solid rgba(255, 255, 255, 0.45); border-radius: 2px; color: rgba(255, 255, 255, 0.92); }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; background: var(--color-primary, #c41e3a); color: #fff !important; text-decoration: none; font-weight: 800; font-size: 14px;
+  letter-spacing: 0.02em; padding: 13px 24px; border-radius: 2px; transition: background 0.15s, transform 0.15s;
+}
+.btn:hover { background: #a01830; transform: translateY(-1px); }
+.btn:focus-visible { outline: 3px solid #f5c518; outline-offset: 2px; }
+.credit { position: absolute; right: 12px; bottom: 8px; font-size: 10px; color: rgba(255, 255, 255, 0.7); max-width: 60%; text-align: right; }
+
+@media (max-width: 640px) {
+  .promo { min-height: 0; margin: 22px 0; }
+  .shade { background: linear-gradient(180deg, rgba(8, 8, 12, 0.55) 0%, rgba(8, 8, 12, 0.88) 100%); }
+  .body { padding: 22px 18px 34px; }
+  .line { font-size: 16px; }
+  .btn { width: 100%; justify-content: center; box-sizing: border-box; }
+  .credit { max-width: 90%; }
+}
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } .btn:hover { transform: none; } }

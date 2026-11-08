@@ -1,7 +1,9 @@
 ﻿'use client';
 
+import { Fragment } from 'react';
 import StoryCard from './StoryCard';
 import SectionHeader from './SectionHeader';
+import PostStoryPromo from './PostStoryPromo';
 import { selectHeroPool, selectLatestRoundRobin } from '@/lib/homepageSelection';
 
 // Week 2 of the Cloudflare migration (see cloudflare/README.md): images
@@ -37,8 +39,11 @@ export default function LatestSection({ articles }: { articles: any[] }) {
     <div style={{ marginBottom: '32px' }}>
       <SectionHeader title="Latest" />
       <div>
-        {latest.map((a: any) => (
-          <StoryCard key={a.$id} story={toStory(a)} variant="list" />
+        {latest.map((a: any, i: number) => (
+          <Fragment key={a.$id}>
+            <StoryCard story={toStory(a)} variant="list" />
+            {i === 4 && <PostStoryPromo index={0} />}
+          </Fragment>
         ))}
       </div>
     </div>

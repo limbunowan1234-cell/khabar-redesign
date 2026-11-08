@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import AuthProvider from '@/components/AuthProvider';
+import './tokens.css';
 import { Noto_Serif, Noto_Serif_Devanagari, Inter, Noto_Sans_Devanagari } from 'next/font/google';
 
 const notoSerif = Noto_Serif({ subsets: ['latin'], variable: '--font-noto-serif', display: 'swap' });

@@ -47,18 +47,24 @@ export default function MagazineHero({ articles }: { articles: any[]; isDarkMode
   if (!main) return null;
 
   return (
-    <div style={{ marginBottom: '32px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.9fr 1fr', gap: '28px' }} className="mag-hero-responsive">
-        <StoryCard story={toStory(main)} variant="hero" />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-          {side.map((a: any) => (
-            <StoryCard key={a.$id} story={toStory(a)} variant="secondary" />
+    <div style={{ marginBottom: '36px' }}>
+      <div className="mag-hero-responsive" style={{ display: 'grid', gridTemplateColumns: '1.9fr 1fr', gap: '0' }}>
+        <div className="mag-hero-lead" style={{ paddingRight: '28px', borderRight: '1px solid var(--rule)' }}>
+          <StoryCard story={toStory(main)} variant="hero" />
+        </div>
+        <div className="mag-hero-side" style={{ display: 'flex', flexDirection: 'column', paddingLeft: '28px' }}>
+          {side.map((a: any, i: number) => (
+            <div key={a.$id} style={{ paddingTop: i === 0 ? 0 : '20px', marginTop: i === 0 ? 0 : '20px', borderTop: i === 0 ? 'none' : '1px solid var(--rule)' }}>
+              <StoryCard story={toStory(a)} variant="secondary" />
+            </div>
           ))}
         </div>
       </div>
       <style>{`
         @media (max-width: 768px) {
           .mag-hero-responsive { grid-template-columns: 1fr !important; }
+          .mag-hero-lead { padding-right: 0 !important; border-right: none !important; padding-bottom: 20px; border-bottom: 1px solid var(--rule); margin-bottom: 20px; }
+          .mag-hero-side { padding-left: 0 !important; }
         }
       `}</style>
     </div>

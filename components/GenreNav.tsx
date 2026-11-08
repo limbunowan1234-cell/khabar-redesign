@@ -40,7 +40,7 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
     right: 0,
     minWidth: '180px',
     backgroundColor: isDarkMode ? '#1e1e1e' : '#fff',
-    borderRadius: '10px',
+    borderRadius: '2px',
     boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
     border: '1px solid ' + border,
     overflow: 'hidden',
@@ -49,8 +49,10 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
   };
 
   return (
-    <nav style={{ backgroundColor: bg, borderBottom: '1px solid ' + border, position: 'relative', zIndex: 90 }}>
+    <nav className="genre-nav-root" style={{ backgroundColor: bg, borderBottom: '1px solid ' + border, zIndex: 90 }}>
       <style>{`
+        .genre-nav-root { position: relative; }
+        @media (min-width: 769px) { .genre-nav-root { position: sticky; top: 0; } }
         .genre-nav-scroll { display: flex; align-items: center; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
         .genre-nav-scroll::-webkit-scrollbar { display: none; }
         .genre-link { position: relative; padding: 14px 14px; font-size: 13px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; cursor: pointer; background: none; border: none; transition: color 0.15s; font-family: inherit; }
@@ -62,6 +64,7 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
         @media (max-width: 640px) {
           .genre-link { padding: 10px 9px; font-size: 11px; letter-spacing: 0.3px; }
           .genre-link.active::after { left: 9px; right: 9px; height: 2px; }
+          .genre-nav-outer button.genre-link { padding: 6px 8px !important; font-size: 10px !important; margin-left: 4px; }
           .region-item { padding: 9px 14px; font-size: 12px; }
         }
       `}</style>
@@ -83,7 +86,7 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
             <button
               onClick={() => setShowMore(!showMore)}
               className={'genre-link' + (moreActive ? ' active' : '')}
-              style={{ color: moreActive ? '#fff' : textColor, backgroundColor: moreActive ? '#c41e3a' : 'transparent', borderRadius: '6px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '5px', border: moreActive ? 'none' : '1px solid ' + border }}
+              style={{ color: moreActive ? '#fff' : textColor, backgroundColor: moreActive ? '#c41e3a' : 'transparent', borderRadius: '2px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '5px', border: moreActive ? 'none' : '1px solid ' + border }}
             >
               {moreActive ? selectedGenre : 'More'}
               <span style={{ fontSize: '9px', transform: showMore ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>&#9660;</span>
@@ -118,7 +121,7 @@ export default function GenreNav({ selectedGenre, onSelectGenre, selectedDistric
             style={{
               color: regionActive ? '#fff' : textColor,
               backgroundColor: regionActive ? '#c41e3a' : 'transparent',
-              borderRadius: '6px',
+              borderRadius: '2px',
               padding: '8px 14px',
               display: 'flex',
               alignItems: 'center',

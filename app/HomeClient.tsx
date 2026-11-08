@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload, getWorkerAuthToken } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
@@ -11,6 +11,8 @@ import { useAuthStore } from '@/lib/authStore';
 import TopCreators from '@/components/TopCreators';
 import AdBanner from '@/components/AdBanner';
 import GenreNav from '@/components/GenreNav';
+import Masthead from '@/components/Masthead';
+import PostStoryPromo from '@/components/PostStoryPromo';
 import MagazineHero from '@/components/MagazineHero';
 import AdSlot from '@/components/AdSlot';
 import { AD_PLACEMENTS } from '@/lib/adConfig';
@@ -496,9 +498,9 @@ function MobileCard({ article, isDarkMode, index }: any) {
 function TopTen({ articles, isDarkMode }: any) {
   const top = getTopArticles(articles);
   return (
-    <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Top 10 This Month</h3>
+    <div style={{ borderTop: '3px solid var(--rule-strong)', paddingTop: '10px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+        <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '1.2px', margin: 0 }}>Top 10 This Month</h3>
       </div>
       {top.length === 0 ? (
         <p style={{ fontSize: '13px', color: isDarkMode ? '#666' : '#aaa', textAlign: 'center', padding: '10px' }}>No articles yet</p>
@@ -506,7 +508,7 @@ function TopTen({ articles, isDarkMode }: any) {
         top.map((a, i) => (
           <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
             <div style={{ display: 'flex', gap: '8px', padding: '7px 0', borderBottom: i < top.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f5f5f5') : 'none', alignItems: 'flex-start', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}>
-              <span style={{ width: '22px', height: '22px', borderRadius: '5px', backgroundColor: i < 3 ? '#c41e3a' : isDarkMode ? '#2a2a2a' : '#f5f5f5', color: i < 3 ? 'white' : isDarkMode ? '#aaa' : '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', flexShrink: 0, marginTop: '2px' }}>{i + 1}</span>
+              <span style={{ width: '22px', color: i < 3 ? '#c41e3a' : isDarkMode ? '#888' : '#aaa', fontFamily: 'var(--font-serif)', fontSize: '20px', fontWeight: '800', lineHeight: 1, flexShrink: 0, textAlign: 'center' }}>{i + 1}</span>
               <span style={{ fontSize: '12px', fontWeight: '600', color: isDarkMode ? '#ddd' : '#1a1a1a', lineHeight: '1.4' }}>{a.title}</span>
             </div>
           </Link>
@@ -521,8 +523,8 @@ function BreakingNewsSidebar({ articles, isDarkMode }: any) {
   const breaking = articles.filter((a: any) => a.isBreaking).slice(0, 3);
   if (breaking.length === 0) return null;
   return (
-    <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px', borderLeft: '4px solid #c41e3a' }}>
-      <h3 style={{ fontSize: '13px', fontWeight: '800', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>🔴 Breaking News</h3>
+    <div style={{ borderTop: '3px solid #c41e3a', paddingTop: '10px', marginBottom: '24px' }}>
+      <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: '800', color: '#c41e3a', textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 12px' }}>Breaking News</h3>
       {breaking.map((a: any, i: number) => (
         <Link key={a.$id} href={'/article/' + a.$id} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div style={{ paddingBottom: '10px', marginBottom: i < breaking.length - 1 ? '10px' : 0, borderBottom: i < breaking.length - 1 ? '1px solid ' + (isDarkMode ? '#2a2a2a' : '#f5f5f5') : 'none' }}>
@@ -542,12 +544,12 @@ function NavDropdown({ label, color, isDarkMode, children }: { label: string; co
   const [open, setOpen] = useState(false);
   return (
     <div onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} style={{ position: 'relative' }}>
-      <button style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: color || 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>
+      <button style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: color || 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.45)', padding: '4px 12px', borderRadius: '2px', cursor: 'pointer', fontWeight: '700', fontSize: '12px' }}>
         {label} <span style={{ fontSize: '9px' }}>▾</span>
       </button>
       {open && (
         <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', paddingTop: '8px' }}>
-          <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', boxShadow: '0 10px 28px rgba(0,0,0,0.25)', minWidth: '190px', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '2px', border: '1px solid var(--rule)', boxShadow: '0 10px 28px rgba(0,0,0,0.25)', minWidth: '190px', overflow: 'hidden' }}>
             {children}
           </div>
         </div>
@@ -580,6 +582,13 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
   const [showMenu, setShowMenu] = useState(false);
   const [showTopCreators, setShowTopCreators] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
+
+  // The shared design tokens (headlines, rules, section headers) switch on
+  // [data-theme="dark"], so mirror the page's own dark-mode toggle onto it.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    return () => { document.documentElement.removeAttribute('data-theme'); };
+  }, [isDarkMode]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -676,7 +685,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
   );
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#f0f2f5', color: isDarkMode ? '#e0e0e0' : '#1a1a1a', paddingBottom: isMobile ? '70px' : '0' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: isDarkMode ? '#121212' : '#ffffff', color: isDarkMode ? '#e0e0e0' : '#1a1a1a', paddingBottom: isMobile ? '70px' : '0' }}>
       {showProfilePrompt && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '28px 24px', width: '100%', maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto' as const, textAlign: 'center' }}>
@@ -838,67 +847,31 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
         </>
       )}
 
-      {/* BIGGER LOGO IN HEADER */}
-      <header style={{ backgroundColor: isDarkMode ? '#1e1e1e' : '#c41e3a', color: 'white', padding: '10px 16px', borderBottom: '3px solid #f5c518', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-          <Link href="/" style={{ textDecoration: 'none', color: 'white', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            {/* INCREASED FROM 42px to 56px */}
-            <img src="/assets/logo.png" alt="KhabarDarjeeling" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.4)' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            <div>
-              <div style={{ margin: 0, fontSize: isMobile ? '16px' : '20px', fontWeight: '800', lineHeight: '1.2' }}>Khabar Darjeeling</div>
-              {!isMobile && <p style={{ margin: 0, fontSize: '10px', opacity: 0.8 }}>Hamro Khabar, Hami Lekhaw</p>}
-            </div>
-          </Link>
-          {!isMobile && <input type="text" placeholder="Search news..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, maxWidth: '280px', padding: '8px 16px', borderRadius: '20px', border: 'none', fontSize: '14px', backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', outline: 'none' }} />}
-          {!isMobile && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <Link href="/post" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Post</button></Link>
-
-              <NavDropdown label="Culture" isDarkMode={isDarkMode}>
-                <NavDropdownItem href="/nepali-bhasa-diwas" isDarkMode={isDarkMode}>🎭 Bhasa Diwas</NavDropdownItem>
-              </NavDropdown>
-
-              <NavDropdown label="Updates" isDarkMode={isDarkMode}>
-                <NavDropdownItem href="/daily-updates" isDarkMode={isDarkMode}>📰 Daily Updates</NavDropdownItem>
-                <NavDropdownItem href="/weekly" isDarkMode={isDarkMode}>🗞️ Weekly Edition</NavDropdownItem>
-              </NavDropdown>
-
-              <Link href="/hills-in-frame" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Photos</button></Link>
-
-              <Link href="/apps" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Apps &amp; Games</button></Link>
-
-              {user ? (
-                <>
-                  <NotificationBell light={true} />
-                  <NavDropdown label={(user.name || 'Profile').split(' ')[0]} isDarkMode={isDarkMode}>
-                    <NavDropdownItem href="/profile" isDarkMode={isDarkMode}>👤 My Profile</NavDropdownItem>
-                    {isAdmin && <NavDropdownItem href="/admin" isDarkMode={isDarkMode}>⚙️ Admin Panel</NavDropdownItem>}
-                    {isReporter && <NavDropdownItem href="/reporter" isDarkMode={isDarkMode}>✍️ Reporter Panel</NavDropdownItem>}
-                    {isPhotographer && <NavDropdownItem href="/hills-in-frame/post" isDarkMode={isDarkMode}>📷 Photographer Panel</NavDropdownItem>}
-                    <NavDropdownItem onClick={() => logOut()} isDarkMode={isDarkMode} danger>🚪 Logout</NavDropdownItem>
-                  </NavDropdown>
-                </>
-              ) : (
-                <Link href="/auth" style={{ textDecoration: 'none' }}><button style={{ backgroundColor: '#f5c518', color: '#1a1a1a', border: 'none', padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}>Login</button></Link>
-              )}
-              <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', fontSize: '14px' }}>{isDarkMode ? 'L' : 'D'}</button>
-            </div>
-          )}
-          {isMobile && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer', fontSize: '12px' }}>{isDarkMode ? 'L' : 'D'}</button>
-              <NotificationBell light={true} />
-              <button onClick={() => setShowMenu(true)} style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px' }}>&#9776;</button>
-            </div>
-          )}
-        </div>
-      </header>
+      <Masthead
+        isMobile={isMobile}
+        isDarkMode={isDarkMode}
+        onToggleDark={() => setIsDarkMode(!isDarkMode)}
+        searchQuery={searchQuery}
+        onSearch={setSearchQuery}
+        loggedIn={!!user}
+        bell={<NotificationBell light={true} />}
+        userMenu={user ? (
+          <NavDropdown label={(user.name || 'Profile').split(' ')[0]} isDarkMode={isDarkMode}>
+            <NavDropdownItem href="/profile" isDarkMode={isDarkMode}>My Profile</NavDropdownItem>
+            {isAdmin && <NavDropdownItem href="/admin" isDarkMode={isDarkMode}>Admin Panel</NavDropdownItem>}
+            {isReporter && <NavDropdownItem href="/reporter" isDarkMode={isDarkMode}>Reporter Panel</NavDropdownItem>}
+            {isPhotographer && <NavDropdownItem href="/hills-in-frame/post" isDarkMode={isDarkMode}>Photographer Panel</NavDropdownItem>}
+            <NavDropdownItem onClick={() => logOut()} isDarkMode={isDarkMode} danger>Logout</NavDropdownItem>
+          </NavDropdown>
+        ) : null}
+        onOpenMenu={() => setShowMenu(true)}
+      />
       <GenreNav selectedGenre={selectedCategory} onSelectGenre={setSelectedCategory} selectedDistrict={selectedDistrict} onSelectDistrict={setSelectedDistrict} isDarkMode={isDarkMode} />
 
       {breakingArticles.length > 0 && (
-        <div style={{ backgroundColor: '#a01830', color: 'white', padding: '8px 0', overflow: 'hidden' }}>
+        <div style={{ backgroundColor: '#111', color: 'white', padding: '0', overflow: 'hidden', borderBottom: '1px solid #000' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ flexShrink: 0, fontWeight: '700', fontSize: '11px', letterSpacing: '1px', backgroundColor: '#6b0f1f', padding: '8px 14px', whiteSpace: 'nowrap' }}>BREAKING</div>
+            <div style={{ flexShrink: 0, fontWeight: '800', fontSize: '11px', letterSpacing: '1.5px', backgroundColor: '#c41e3a', padding: '9px 16px', whiteSpace: 'nowrap' }}>BREAKING</div>
             <div className="ticker-wrap">
               <div className="ticker-track">
                 {[...breakingArticles, ...breakingArticles].map((a, i) => (
@@ -912,9 +885,9 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
 
       {isMobile && (
         <div style={{ padding: '10px 16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#eee'), display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input id="mobile-search" type="text" placeholder="Search news..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5', color: isDarkMode ? '#fff' : '#1a1a1a', outline: 'none', boxSizing: 'border-box' }} />
+          <input id="mobile-search" type="text" placeholder="Search news..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '10px 14px', borderRadius: '2px', border: '1px solid ' + (isDarkMode ? '#444' : '#ddd'), fontSize: '14px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5', color: isDarkMode ? '#fff' : '#1a1a1a', outline: 'none', boxSizing: 'border-box' }} />
           <Link href="/post" style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <button style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '13px', whiteSpace: 'nowrap' }}>Post</button>
+            <button style={{ backgroundColor: '#c41e3a', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '2px', cursor: 'pointer', fontWeight: '800', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Post</button>
           </Link>
         </div>
       )}
@@ -922,20 +895,11 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
       {isMobile && !searchQuery && selectedCategory === 'All' && (
         <div style={{ padding: '10px 16px 0' }}>
           <WeatherStrip isDarkMode={isDarkMode} defaultCity={userDistrict || undefined} />
-          <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '12px', padding: '12px 16px', textDecoration: 'none', marginBottom: '8px' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: '700', fontSize: '13px' }}>Download our Android App</div>
-              <div style={{ fontSize: '11px', opacity: 0.8 }}>Faster news, offline reading</div>
-            </div>
-            <span style={{ backgroundColor: '#f5c518', color: '#1a1a1a', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>Download</span>
-          </a>
-          <a href="https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#25D366', color: 'white', borderRadius: '12px', padding: '12px 16px', textDecoration: 'none', marginBottom: '10px' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: '700', fontSize: '13px' }}>Follow on WhatsApp</div>
-              <div style={{ fontSize: '11px', opacity: 0.9 }}>Breaking news and alerts</div>
-            </div>
-            <span style={{ backgroundColor: 'white', color: '#25D366', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>Follow</span>
-          </a>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', padding: '8px 0 10px', fontSize: '12px', fontWeight: 700, borderBottom: '1px solid var(--rule)', marginBottom: '6px' }}>
+            <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ color: 'var(--color-text)', textDecoration: 'none' }}>Get the Android app</a>
+            <span style={{ color: 'var(--color-text-muted)' }}>|</span>
+            <a href="https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>WhatsApp alerts</a>
+          </div>
         </div>
       )}
 
@@ -965,7 +929,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
                 <span style={{ fontSize: '13px', fontWeight: '700', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Results' : 'Latest News'}</span>
                 <span style={{ marginLeft: 'auto', fontSize: '12px', color: isDarkMode ? '#999' : '#888' }}>{(selectedCategory === 'All' && !searchQuery) ? totalSiteArticles : filtered.length} stories</span>
               </div>
-              {filtered.slice(0, shown).map((article, i) => (<div key={article.$id}><MobileCard article={article} isDarkMode={isDarkMode} index={i} />{(i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
+              {filtered.slice(0, shown).map((article, i) => (<div key={article.$id}><MobileCard article={article} isDarkMode={isDarkMode} index={i} />{(i + 1) % 10 === 5 ? <PostStoryPromo index={Math.floor(i / 10)} /> : (i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
               {shown < filtered.length && (
                 <button onClick={() => setShown(s => s + 10)} style={{ width: '100%', padding: '14px', backgroundColor: '#c41e3a', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', marginTop: '8px' }}>Load More ({filtered.length - shown} more)</button>
               )}
@@ -973,8 +937,8 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
           )}
         </div>
       ) : (
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', minWidth: 0 }}>
-          <main style={{ minWidth: 0 }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: '0', minWidth: 0 }}>
+          <main style={{ minWidth: 0, paddingRight: '28px' }}>
             {/* HERO SECTION WITH 3 FEATURED ARTICLES */}
             {!searchQuery && selectedCategory === 'All' && <MagazineHero articles={articles} isDarkMode={isDarkMode} />}
             {!searchQuery && selectedCategory === 'All' && <WeatherAirWidget isDarkMode={isDarkMode} />}
@@ -993,7 +957,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
                   <h2 style={{ fontSize: '16px', fontWeight: '800', color: isDarkMode ? '#fff' : '#c41e3a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>{selectedCategory !== 'All' ? selectedCategory : searchQuery ? 'Search Results' : 'Latest News'}</h2>
                   <span style={{ marginLeft: 'auto', fontSize: '13px', color: isDarkMode ? '#999' : '#888' }}>{(selectedCategory === 'All' && !searchQuery) ? totalSiteArticles : filtered.length} articles</span>
                 </div>
-                {gridArticles.slice(0, shown).map((article, i) => (<div key={article.$id}><DesktopCard article={article} isDarkMode={isDarkMode} featured={false} />{(i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
+                {gridArticles.slice(0, shown).map((article, i) => (<div key={article.$id}><DesktopCard article={article} isDarkMode={isDarkMode} featured={false} />{(i + 1) % 10 === 5 ? <PostStoryPromo index={Math.floor(i / 10)} /> : (i + 1) % 5 === 0 && <AdBanner isDarkMode={isDarkMode} />}</div>))}
                 {filtered.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '60px 20px', color: isDarkMode ? '#666' : '#ccc' }}>
                     <p style={{ fontSize: '18px', fontWeight: '600' }}>No articles found</p>
@@ -1007,37 +971,37 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
               </>
             )}
           </main>
-          <aside style={{ position: 'sticky', top: '90px', alignSelf: 'start', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto', minWidth: 0, overflowX: 'hidden' }}>
+          <aside style={{ position: 'sticky', top: '64px', alignSelf: 'start', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto', minWidth: 0, overflowX: 'hidden', scrollbarWidth: 'none', paddingLeft: '28px', borderLeft: '1px solid var(--rule)' }}>
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
             <WeatherStrip isDarkMode={isDarkMode} defaultCity={userDistrict || undefined} />
               <AdSlot placement={AD_PLACEMENTS.homepageSidebar} />
-              <div style={{ marginTop: '16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}><TopCreators /></div>
+              <div style={{ marginTop: '16px', borderTop: '3px solid var(--rule-strong)', paddingTop: '12px' }}><TopCreators /></div>
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
             <SidebarTabs articles={articles} isDarkMode={isDarkMode} topTen={<TopTen articles={articles} isDarkMode={isDarkMode} />} breaking={<BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />} />
             <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ textDecoration: 'none' }}>
-              <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', border: '1px solid var(--rule)', borderRadius: '2px', padding: '14px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', marginTop: '16px' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '700', fontSize: '13px', color: isDarkMode ? '#fff' : '#1a1a1a' }}>Download App</div>
+                  <div style={{ fontWeight: '800', fontSize: '13px', color: isDarkMode ? '#fff' : '#1a1a1a' }}>Download the app</div>
                   <div style={{ fontSize: '11px', color: isDarkMode ? '#aaa' : '#888' }}>Android APK available</div>
                 </div>
-                <span style={{ backgroundColor: '#c41e3a', color: 'white', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>Get</span>
+                <span style={{ backgroundColor: '#c41e3a', color: 'white', padding: '7px 14px', borderRadius: '2px', fontSize: '11px', fontWeight: '800', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Get</span>
               </div>
             </a>
-            <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>Quick Links</h3>
+            <div style={{ borderTop: '3px solid var(--rule-strong)', paddingTop: '10px', marginBottom: '24px' }}>
+              <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 6px' }}>Quick Links</h3>
               {[{ label: 'Post a Story', href: '/post', color: '#c41e3a' }, { label: 'My Bookmarks', href: '/bookmarks', color: '#0F4C5C' }, { label: 'My Profile', href: '/profile', color: '#7b1fa2' }].map(item => (
-                <a key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', marginBottom: '6px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f9f9f9', borderRadius: '8px', textDecoration: 'none', borderLeft: '3px solid ' + item.color }}>
+                <a key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid var(--rule)', textDecoration: 'none' }}>
                   <span style={{ fontSize: '13px', fontWeight: '600', color: isDarkMode ? '#ddd' : '#1a1a1a' }}>{item.label}</span>
-                  <span style={{ color: item.color, fontWeight: '700', fontSize: '14px' }}>&rarr;</span>
+                  <span style={{ color: '#c41e3a', fontWeight: '700', fontSize: '14px' }}>&rarr;</span>
                 </a>
               ))}
             </div>
-            <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderRadius: '10px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '2px solid #f5c518' }}>About</h3>
+            <div style={{ borderTop: '3px solid var(--rule-strong)', paddingTop: '10px', marginBottom: '24px' }}>
+              <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: '800', color: isDarkMode ? '#fff' : '#1a1a1a', textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 0 10px' }}>About</h3>
               <p style={{ fontSize: '13px', color: isDarkMode ? '#aaa' : '#666', lineHeight: '1.6', margin: '0 0 12px' }}>The Digital Home of Darjeeling - bringing you the latest news from the hills, tea gardens, and Gorkha community.</p>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {['Darjeeling', 'Kalimpong', 'GTA', 'Tea Gardens', 'Politics'].map(tag => (
-                  <span key={tag} onClick={() => setSelectedCategory(tag)} style={{ padding: '4px 10px', backgroundColor: isDarkMode ? '#2a2a2a' : '#f0f0f0', color: isDarkMode ? '#ddd' : '#555', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>{tag}</span>
+                  <span key={tag} onClick={() => setSelectedCategory(tag)} style={{ padding: '4px 10px', border: '1px solid var(--rule)', color: isDarkMode ? '#ddd' : '#555', borderRadius: '2px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>{tag}</span>
                 ))}
               </div>
             </div>

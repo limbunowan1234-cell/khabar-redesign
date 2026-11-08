@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { useState } from 'react';
@@ -36,7 +36,7 @@ export default function DistrictSection({ articles, defaultDistrict }: { article
 
   if (articles.length === 0) return null;
   return (
-    <div style={{ marginBottom: '32px', background: 'var(--color-surface)', borderRadius: '8px', padding: '24px' }}>
+    <div style={{ marginBottom: '40px', borderTop: '3px solid var(--rule-strong)', paddingTop: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '18px' }}>
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>Regions</h2>
         <Link href={'/region/' + active.toLowerCase().replace(/\s+/g, '-')} style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600 }}>View all {active} &rarr;</Link>

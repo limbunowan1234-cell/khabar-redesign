@@ -50,7 +50,7 @@ export default function BhasaDiwasWidget() {
   const hasWinners = winners.poetry.length > 0 || winners.essay.length > 0;
 
   return (
-    <div style={{ marginBottom: '32px', background: 'var(--color-surface)', borderRadius: '8px', padding: '24px' }}>
+    <div style={{ marginBottom: '40px', borderTop: '3px solid var(--rule-strong)', paddingTop: '14px' }}>
       {/* HERO BANNER */}
       <Link href="/nepali-bhasa-diwas" style={{ textDecoration: 'none' }}>
         <div style={{

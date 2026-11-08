@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Fragment } from 'react';
 import StoryCard from '@/components/StoryCard';
+import PostStoryPromo from '@/components/PostStoryPromo';
 import SiteFooter from '@/components/SiteFooter';
 import { truncateChars } from '@/lib/textPreview';
 
@@ -163,8 +165,13 @@ export default async function RegionPage({ params }: { params: Promise<{ name: s
               <>
                 <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', fontWeight: 700, color: 'var(--color-text)', margin: '0 0 16px' }}>Latest Stories</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '28px' }}>
-                  {rest.map((a: any) => (
-                    <StoryCard key={a.$id} story={toStory(a)} variant='secondary' />
+                  {rest.map((a: any, i: number) => (
+                    <Fragment key={a.$id}>
+                      <StoryCard story={toStory(a)} variant='secondary' />
+                      {i >= 5 && (i - 5) % 12 === 0 && i < rest.length - 1 && (
+                        <div style={{ gridColumn: '1 / -1' }}><PostStoryPromo index={Math.floor((i - 5) / 12) + 1} /></div>
+                      )}
+                    </Fragment>
                   ))}
                 </div>
               </>

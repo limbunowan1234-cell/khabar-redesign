@@ -18,37 +18,38 @@ interface Story {
   readingTime?: string;
 }
 
-const GENRE_STYLE: Record<string, { gradient: string; icon: string }> = {
-  'Voice of People': { gradient: 'linear-gradient(135deg, #f59e0b, #c2410c)', icon: '🗣️' },
-  'Poetry': { gradient: 'linear-gradient(135deg, #a855f7, #6b21a8)', icon: '🖋️' },
-  'Editorial': { gradient: 'linear-gradient(135deg, #374151, #111827)', icon: '✍️' },
-  'Tourism': { gradient: 'linear-gradient(135deg, #06b6d4, #0e7490)', icon: '🏔️' },
-  'Politics': { gradient: 'linear-gradient(135deg, #c41e3a, #7a1220)', icon: '🏛️' },
-  'Culture': { gradient: 'linear-gradient(135deg, #ec4899, #9d174d)', icon: '🎭' },
-  'Health': { gradient: 'linear-gradient(135deg, #22c55e, #15803d)', icon: '⚕️' },
-  'Education': { gradient: 'linear-gradient(135deg, #3b82f6, #1e3a8a)', icon: '🎓' },
-  'Technology': { gradient: 'linear-gradient(135deg, #64748b, #1e293b)', icon: '💻' },
-  'Sports': { gradient: 'linear-gradient(135deg, #f97316, #9a3412)', icon: '⚽' },
-  'Business': { gradient: 'linear-gradient(135deg, #eab308, #854d0e)', icon: '💼' },
+const GENRE_ICON: Record<string, string> = {
+  'Voice of People': '🗣️',
+  'Poetry': '🖋️',
+  'Editorial': '✍️',
+  'Tourism': '🏔️',
+  'Politics': '🏛️',
+  'Culture': '🎭',
+  'Health': '⚕️',
+  'Education': '🎓',
+  'Technology': '💻',
+  'Sports': '⚽',
+  'Business': '💼',
 };
-const DEFAULT_STYLE = { gradient: 'linear-gradient(135deg, #94a3b8, #475569)', icon: '📰' };
 
-function styleFor(genre?: string) {
-  if (genre && GENRE_STYLE[genre]) return GENRE_STYLE[genre];
-  return DEFAULT_STYLE;
+// A story with no photo gets a quiet neutral block rather than a coloured
+// gradient, so the page reads as a newspaper, not a card gallery.
+const PLACEHOLDER_BG = 'var(--panel-bg)';
+
+function iconFor(genre?: string) {
+  return (genre && GENRE_ICON[genre]) || '📰';
 }
 
-function ImageBlock({ story, height }: { story: Story; height: string }) {
-  const s = styleFor(story.genre);
+function ImageBlock({ story, ratio }: { story: Story; ratio: string }) {
   return (
-    <div style={{ position: 'relative', width: '100%', height, borderRadius: '4px', overflow: 'hidden', background: s.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ fontSize: '28px', opacity: 0.55 }}>{s.icon}</span>
+    <div style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: '2px', overflow: 'hidden', background: PLACEHOLDER_BG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ fontSize: '28px', opacity: 0.35 }}>{iconFor(story.genre)}</span>
       {story.imageUrl && (
         <Image
           src={story.imageUrl}
           alt={story.title}
           fill
-          sizes='(max-width: 768px) 100vw, 400px'
+          sizes='(max-width: 768px) 100vw, 640px'
           style={{ objectFit: 'cover' }}
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
@@ -65,15 +66,16 @@ export default function StoryCard({
   variant?: 'hero' | 'secondary' | 'compact' | 'list';
 }) {
   const href = '/article/' + (story.slug || story.$id);
+  const linkStyle = { textDecoration: 'none', color: 'inherit', display: 'block' } as const;
 
   if (variant === 'hero') {
     return (
-      <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <Link href={href} className="kd-story" style={linkStyle}>
         <div>
-          <ImageBlock story={story} height="340px" />
+          <ImageBlock story={story} ratio="16 / 9" />
           {story.genre && <div style={{ marginTop: '14px' }}><GenreTag genre={story.genre} /></div>}
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-h1)', lineHeight: 1.2, margin: '8px 0', color: 'var(--color-text)' }}>{story.title}</h2>
-          {story.deck && <p style={{ fontFamily: 'var(--font-sans)', fontSize: '15px', color: 'var(--color-text-muted)', lineHeight: 1.5, margin: '0 0 10px' }}>{story.deck}</p>}
+          <h2 className="kd-headline" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.7rem, 1rem + 2.4vw, 2.5rem)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.01em', margin: '6px 0 10px', color: 'var(--color-text)' }}>{story.title}</h2>
+          {story.deck && <p style={{ fontFamily: 'var(--font-sans)', fontSize: '16px', color: 'var(--color-text-muted)', lineHeight: 1.55, margin: '0 0 12px' }}>{story.deck}</p>}
           <Byline author={story.authorName || 'Staff Reporter'} date={story.publishedAt} readingTime={story.readingTime} />
         </div>
       </Link>
@@ -82,11 +84,11 @@ export default function StoryCard({
 
   if (variant === 'secondary') {
     return (
-      <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <Link href={href} className="kd-story" style={linkStyle}>
         <div>
-          <ImageBlock story={story} height="150px" />
+          <ImageBlock story={story} ratio="16 / 10" />
           {story.genre && <div style={{ marginTop: '10px' }}><GenreTag genre={story.genre} /></div>}
-          <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-h3)', lineHeight: 1.3, margin: '6px 0 8px', color: 'var(--color-text)' }}>{story.title}</h3>
+          <h3 className="kd-headline" style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-h3)', fontWeight: 700, lineHeight: 1.28, margin: '5px 0 8px', color: 'var(--color-text)' }}>{story.title}</h3>
           <Byline author={story.authorName || 'Staff Reporter'} date={story.publishedAt} />
         </div>
       </Link>
@@ -95,14 +97,14 @@ export default function StoryCard({
 
   if (variant === 'compact') {
     return (
-      <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <Link href={href} className="kd-story" style={linkStyle}>
         <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-          <div style={{ width: '90px', height: '68px', flexShrink: 0 }}>
-            <ImageBlock story={story} height="68px" />
+          <div style={{ width: '96px', flexShrink: 0 }}>
+            <ImageBlock story={story} ratio="4 / 3" />
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             {story.genre && <GenreTag genre={story.genre} />}
-            <h3 style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '14px', lineHeight: 1.35, margin: '4px 0 4px', color: 'var(--color-text)' }}>{story.title}</h3>
+            <h3 className="kd-headline" style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '15px', lineHeight: 1.3, margin: '3px 0 4px', color: 'var(--color-text)' }}>{story.title}</h3>
             <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--color-text-muted)' }}>{story.publishedAt ? timeAgo(story.publishedAt) : ''}</div>
           </div>
         </div>
@@ -110,22 +112,20 @@ export default function StoryCard({
     );
   }
 
-  // variant === 'list'
+  // variant === 'list': text on the left, thumbnail on the right
   return (
-    <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '16px 0', minHeight: '108px', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ position: 'relative', width: '96px', height: '76px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: styleFor(story.genre).gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '20px', opacity: 0.55, position: 'absolute' }}>{styleFor(story.genre).icon}</span>
-          {story.imageUrl && (
-            <Image src={story.imageUrl} alt={story.title} fill sizes='96px' style={{ objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          )}
-        </div>
-        <div>
-          <h3 style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '16px', lineHeight: 1.35, margin: '0 0 6px', color: 'var(--color-text)' }}>{story.title}</h3>
+    <Link href={href} className="kd-story" style={linkStyle}>
+      <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--rule)' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          {story.genre && <GenreTag genre={story.genre} />}
+          <h3 className="kd-headline" style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '18px', lineHeight: 1.3, margin: '4px 0 6px', color: 'var(--color-text)' }}>{story.title}</h3>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-            {story.genre && <span>{story.genre} &middot; </span>}
-            {story.publishedAt ? timeAgo(story.publishedAt) : ''}
+            {story.authorName && <span>By {story.authorName}</span>}
+            {story.publishedAt && <span>{story.authorName ? ' · ' : ''}{timeAgo(story.publishedAt)}</span>}
           </div>
+        </div>
+        <div style={{ width: '120px', flexShrink: 0 }}>
+          <ImageBlock story={story} ratio="3 / 2" />
         </div>
       </div>
     </Link>

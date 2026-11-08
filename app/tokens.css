@@ -1,0 +1,63 @@
+/* Design tokens, loaded from app/layout.tsx.
+
+   These are the same variables that app/globals.css defines, but globals.css
+   has never been imported anywhere, so none of them existed at runtime and
+   every component written against them (StoryCard, SectionHeader, GenreTag,
+   Byline, the genre/region/topic pages...) silently fell back to inherited
+   styles -- no brand red, no serif headlines. Only variables and one
+   class-scoped helper live here; globals.css's element rules (body, h1-h3)
+   are deliberately NOT loaded so no other page changes. */
+:root {
+  --color-primary: #c41e3a;
+  --color-primary-dark: #7a1220;
+  --color-accent: #f5c518;
+
+  --color-bg: #ffffff;
+  --color-surface: #f9fafb;
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b7280;
+  --color-border: #e5e7eb;
+
+  --color-breaking: #c41e3a;
+  --color-link: #c41e3a;
+
+  /* clamp(min, preferred, max): scales down smoothly on narrow phone
+     screens instead of rendering the same desktop-sized headline at
+     every width. */
+  --text-h1: clamp(1.625rem, 1rem + 3.5vw, 2.25rem);
+  --text-h2: clamp(1.125rem, 0.6rem + 2.5vw, 1.5rem);
+  --text-h3: clamp(1rem, 0.55rem + 2vw, 1.25rem);
+  --text-body: 1rem;
+  --text-meta: 0.8125rem;
+  --text-caption: 0.75rem;
+
+  --font-serif: var(--font-noto-serif), var(--font-noto-serif-dev), Georgia, serif;
+  --font-sans: var(--font-inter), var(--font-noto-sans-dev), system-ui, -apple-system, sans-serif;
+
+  /* Newsroom palette: near-black ink on white paper, hairline rules, and the
+     brand red kept for labels and accents only. */
+  --ink: #111111;
+  --rule: #dedee2;
+  --rule-strong: #111111;
+  --panel-bg: #f6f6f7;
+}
+
+[data-theme="dark"] {
+  --color-bg: #121212;
+  --color-surface: #1e1e1e;
+  --color-text: #e0e0e0;
+  --color-text-muted: #9ca3af;
+  --color-border: #333333;
+
+  --ink: #f2f2f2;
+  --rule: #2e2e33;
+  --rule-strong: #f2f2f2;
+  --panel-bg: #1a1a1d;
+}
+
+/* Headlines in story links underline on hover, the way newspaper sites do. */
+.kd-story:hover .kd-headline {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}

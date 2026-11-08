@@ -9,8 +9,7 @@ import { useState, useEffect } from 'react';
 // broken, so WeatherStrip stays the one source of truth for weather;
 // this card's only job is the one thing WeatherStrip doesn't have.
 
-// 3-bucket scale as specified -- Good/Moderate/Poor, reusing the site's
-// own accent colors (gold, red) rather than inventing new ones.
+// 3-bucket scale as specified -- Good/Moderate/Poor.
 function aqiLabel(aqi: number): { text: string; color: string; textColor: string } {
   if (aqi <= 50) return { text: 'Good', color: '#2e7d32', textColor: '#fff' };
   if (aqi <= 100) return { text: 'Moderate', color: '#f5c518', textColor: '#1a1a1a' };
@@ -36,21 +35,29 @@ export default function WeatherAirWidget({ isDarkMode }: { isDarkMode?: boolean 
   const aqi = data?.aqi != null ? aqiLabel(data.aqi) : null;
   if (failed || !data || !aqi) return null;
 
-  const gold = '#f5c518';
-  const cardBg = isDarkMode ? 'linear-gradient(135deg,#2a1518,#1e1e1e)' : 'linear-gradient(135deg,#c41e3a,#a01830)';
-
+  // A quiet one-line data strip between hairlines, like the markets/weather
+  // line on a newspaper front page, rather than a coloured promo card.
   return (
-    <div style={{ background: cardBg, borderRadius: '14px', padding: '18px', marginBottom: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.15)', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
-        <div style={{ color: gold, fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Air Quality · Darjeeling
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ color: 'white', fontSize: '28px', fontWeight: 800, lineHeight: 1 }}>{data.aqi}</span>
-          <span style={{ backgroundColor: aqi.color, color: aqi.textColor, padding: '4px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: 800 }}>{aqi.text}</span>
-        </div>
-      </div>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '16px',
+        padding: '10px 2px',
+        marginBottom: '28px',
+        borderTop: '1px solid var(--rule)',
+        borderBottom: '1px solid var(--rule)',
+        color: isDarkMode ? '#e0e0e0' : '#1a1a1a',
+      }}
+    >
+      <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--color-text-muted)' }}>
+        Air quality · Darjeeling
+      </span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 800, lineHeight: 1 }}>{data.aqi}</span>
+        <span style={{ backgroundColor: aqi.color, color: aqi.textColor, padding: '3px 10px', borderRadius: '2px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{aqi.text}</span>
+      </span>
     </div>
   );
 }
