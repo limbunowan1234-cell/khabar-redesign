@@ -3,6 +3,7 @@ import AuthorBadge from '@/components/AuthorBadge';
 
 import { useEffect, useState } from 'react';
 import StoryCard from '@/components/StoryCard';
+import PostStoryPromo from '@/components/PostStoryPromo';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getArticleLikes, toggleArticleLike, getUserBookmarks, toggleBookmark, getCommentLikes, toggleCommentLike, getWorkerAuthToken } from '@/lib/appwrite';
@@ -773,6 +774,13 @@ export default function ArticleClient({ initialArticle, initialRelated = NO_RELA
             <p style={{ margin: 0, fontSize: '13px', color: isDarkMode ? '#ddd' : '#5a4a00', lineHeight: '1.6' }}>
               WhatsApp Khabar Darjeeling at <a href='https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b' target='_blank' rel='noopener noreferrer' style={{ color: '#c41e3a', fontWeight: '700', textDecoration: 'none' }}>our channel</a> or email <a href='mailto:nowanad@gmail.com' style={{ color: '#c41e3a', fontWeight: '700', textDecoration: 'none' }}>nowanad@gmail.com</a>. Your identity will be protected.
             </p>
+          </div>
+          <div style={{ padding: '0 28px' }}>
+            <PostStoryPromo
+              index={String(article.$id || id || '').split('').reduce((sum: number, ch: string) => sum + ch.charCodeAt(0), 0)}
+              heading="Read a story that moved you? Write yours."
+              buttonLabel={'Write yours — it’s free'}
+            />
           </div>
           {article.galleryImageIds && article.galleryImageIds.length > 0 && (
             <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', padding: '20px 28px 28px', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#f0f0f0') }}>

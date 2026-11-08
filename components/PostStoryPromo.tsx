@@ -15,7 +15,16 @@ const PROMPTS = [
 const IDEAS = ['A local hero', 'A festival memory', 'Your village today', 'A poem or a recipe'];
 
 // `index` picks a different prompt each time the banner repeats in a feed.
-export default function PostStoryPromo({ index = 0 }: { index?: number }) {
+// Article pages pass their own heading and button wording ("Write yours").
+export default function PostStoryPromo({
+  index = 0,
+  heading = 'Your story belongs on Khabar Darjeeling',
+  buttonLabel = 'Post your story — it’s free',
+}: {
+  index?: number;
+  heading?: string;
+  buttonLabel?: string;
+}) {
   const prompt = PROMPTS[index % PROMPTS.length];
   return (
     <aside className={styles.promo} aria-label="Post your story">
@@ -23,13 +32,13 @@ export default function PostStoryPromo({ index = 0 }: { index?: number }) {
       <div className={styles.shade} />
       <div className={styles.body}>
         <span className={styles.badge}>Free for everyone</span>
-        <h3 className={styles.title}>Your story belongs on Khabar Darjeeling</h3>
+        <h3 className={styles.title}>{heading}</h3>
         <p className={styles.kicker}>{prompt.kicker}</p>
         <p className={styles.line}>&ldquo;{prompt.line}&rdquo;</p>
         <div className={styles.chips} aria-hidden="true">
           {IDEAS.map((idea) => <span key={idea} className={styles.chip}>{idea}</span>)}
         </div>
-        <Link href="/post" className={styles.btn}>Post your story &mdash; it&apos;s free <span aria-hidden="true">&rarr;</span></Link>
+        <Link href="/post" className={styles.btn}>{buttonLabel} <span aria-hidden="true">&rarr;</span></Link>
       </div>
       <span className={styles.credit}>Photo: Johannes Bahrdt / Wikimedia Commons (CC BY-SA 4.0)</span>
     </aside>

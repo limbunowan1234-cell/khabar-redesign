@@ -975,7 +975,6 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
             <WeatherStrip isDarkMode={isDarkMode} defaultCity={userDistrict || undefined} />
               <AdSlot placement={AD_PLACEMENTS.homepageSidebar} />
-              <div style={{ marginTop: '16px', borderTop: '3px solid var(--rule-strong)', paddingTop: '12px' }}><TopCreators /></div>
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
             <SidebarTabs articles={articles} isDarkMode={isDarkMode} topTen={<TopTen articles={articles} isDarkMode={isDarkMode} />} breaking={<BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />} />
             <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ textDecoration: 'none' }}>
