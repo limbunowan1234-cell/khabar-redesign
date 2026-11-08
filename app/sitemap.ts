@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { TOPICS } from '@/lib/topics';
+import { allMonths, ymSlug } from '@/lib/patro/data';
 const SITE = 'https://khabardarjeeling.in';
 // Week 6+43 of the Cloudflare migration (see cloudflare/README.md).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
@@ -67,6 +68,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE + '/nepali-bhasa-diwas', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 },
     { url: SITE + '/hills-in-frame', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/weekly', lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
+    { url: SITE + '/patro', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
+    ...allMonths().map((m) => ({ url: SITE + '/patro/' + ymSlug(m.year, m.month), lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.5 })),
     { url: SITE + '/apps', lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.5 },
     { url: SITE + '/bring-anmol-home', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 },
     { url: SITE + '/play/simon-speed', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.5 },

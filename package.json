@@ -27,8 +27,10 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
+    "astronomy-engine": "^2.1.19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "nepali-date-converter": "^3.4.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
