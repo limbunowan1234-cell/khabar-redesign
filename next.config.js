@@ -35,6 +35,8 @@ const nextConfig = {
   // instead of a 404.
   async redirects() {
     return [
+      { source: '/patro', destination: '/calendar', permanent: true },
+      { source: '/patro/:ym', destination: '/calendar/:ym', permanent: true },
       { source: '/app', destination: '/apps', permanent: true },
       { source: '/app/:slug', destination: '/apps/:slug', permanent: true },
     ];

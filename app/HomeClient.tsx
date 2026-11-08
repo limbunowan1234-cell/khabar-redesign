@@ -818,7 +818,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
                 { href: '/', label: 'Home' },
                 { href: '/weekly', label: 'Weekly Edition' },
                 { href: '/daily-updates', label: 'Daily Updates' },
-                { href: '/patro', label: 'Patro (Calendar)' },
+                { href: '/calendar', label: 'Calendar (Panchang & Festivals)' },
                 { href: '/markets', label: 'Markets (Sensex, Gold, Silver)' },
                 { href: '/post', label: 'Create Post' },
                 { href: '/profile', label: 'My Profile' },

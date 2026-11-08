@@ -13,8 +13,8 @@ export function monthMetadata(year: number, month: number, canonicalSlug: string
   return {
     title,
     description,
-    alternates: { canonical: `${SITE}/patro/${canonicalSlug}` },
-    openGraph: { title: `${title} | Khabar Darjeeling`, description, url: `${SITE}/patro/${canonicalSlug}`, siteName: 'Khabar Darjeeling', type: 'website' },
+    alternates: { canonical: `${SITE}/calendar/${canonicalSlug}` },
+    openGraph: { title: `${title} | Khabar Darjeeling`, description, url: `${SITE}/calendar/${canonicalSlug}`, siteName: 'Khabar Darjeeling', type: 'website' },
   };
 }
 

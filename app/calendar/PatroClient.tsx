@@ -117,7 +117,7 @@ export default function PatroClient({ year, month, days, events, prev, next, cur
       <main className={styles.wrap}>
         <header className={styles.head}>
           <div>
-            <p className={styles.kicker}>{L('Darjeeling Patro', 'दार्जिलिङ पात्रो')}</p>
+            <p className={styles.kicker}>{L('Darjeeling Calendar', 'दार्जिलिङ पात्रो')}</p>
             <h1 className={styles.h1}>{L(`Calendar · ${monthTitle}`, `पात्रो · ${monthTitle}`)}</h1>
             <p className={styles.sub}>
               {L('Indian panchang, tithi and festivals for Darjeeling, with Nepali (BS) dates alongside.', 'दार्जिलिङका लागि भारतीय पञ्चाङ्ग, तिथि र चाडपर्व — नेपाली (वि.सं.) मिति सहित।')}
@@ -130,17 +130,18 @@ export default function PatroClient({ year, month, days, events, prev, next, cur
         </header>
 
         <nav className={styles.monthNav} aria-label={L('Choose month', 'महिना छान्नुहोस्')}>
-          {prev ? <Link href={`/patro/${prev}`} className={styles.navBtn} aria-label={L('Previous month', 'अघिल्लो महिना')}>‹</Link> : <span className={`${styles.navBtn} ${styles.navOff}`}>‹</span>}
+          {prev ? <Link href={`/calendar/${prev}`} className={styles.navBtn} aria-label={L('Previous month', 'अघिल्लो महिना')}>‹</Link> : <span className={`${styles.navBtn} ${styles.navOff}`}>‹</span>}
           <div className={styles.monthTitle}>
             <strong>{monthTitle}</strong>
             <span>{bsRange} · {L('Lunar', 'चन्द्र')} {monthLabel(first)}{monthLabel(first) !== monthLabel(last) ? ` – ${monthLabel(last)}` : ''}</span>
           </div>
-          {next ? <Link href={`/patro/${next}`} className={styles.navBtn} aria-label={L('Next month', 'अर्को महिना')}>›</Link> : <span className={`${styles.navBtn} ${styles.navOff}`}>›</span>}
-          <Link href={`/patro/${current}`} className={styles.todayBtn}>{L('This month', 'यो महिना')}</Link>
+          {next ? <Link href={`/calendar/${next}`} className={styles.navBtn} aria-label={L('Next month', 'अर्को महिना')}>›</Link> : <span className={`${styles.navBtn} ${styles.navOff}`}>›</span>}
+          <Link href={`/calendar/${current}`} className={styles.todayBtn}>{L('This month', 'यो महिना')}</Link>
+          <Link href="/calendar/converter" className={styles.todayBtn}>{L('Date converter', 'मिति रूपान्तरण')}</Link>
           <select
             className={styles.jump}
             value={`${year}-${String(month).padStart(2, '0')}`}
-            onChange={(e) => { window.location.href = `/patro/${e.target.value}`; }}
+            onChange={(e) => { window.location.href = `/calendar/${e.target.value}`; }}
             aria-label={L('Jump to month', 'महिनामा जानुहोस्')}
           >
             {slugs.map((s) => {
@@ -258,7 +259,7 @@ export default function PatroClient({ year, month, days, events, prev, next, cur
               <ul className={styles.list}>
                 {upcoming.map((e) => (
                   <li key={e.id + e.date}>
-                    <Link href={`/patro/${e.date.slice(0, 7)}`} className={styles.listBtn}>
+                    <Link href={`/calendar/${e.date.slice(0, 7)}`} className={styles.listBtn}>
                       <span className={styles.listDate}>{shortDate(e.date)}</span>
                       <span>{festivalName(e.id, lang)}</span>
                       <em className={styles.count}>{countdown(e.date)}</em>
