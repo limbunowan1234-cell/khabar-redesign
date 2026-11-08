@@ -12,6 +12,7 @@ import TopCreators from '@/components/TopCreators';
 import AdBanner from '@/components/AdBanner';
 import GenreNav from '@/components/GenreNav';
 import Masthead from '@/components/Masthead';
+import MarketsStrip from '@/components/MarketsStrip';
 import PostStoryPromo from '@/components/PostStoryPromo';
 import MagazineHero from '@/components/MagazineHero';
 import AdSlot from '@/components/AdSlot';
@@ -818,6 +819,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
                 { href: '/weekly', label: 'Weekly Edition' },
                 { href: '/daily-updates', label: 'Daily Updates' },
                 { href: '/patro', label: 'Patro (Calendar)' },
+                { href: '/markets', label: 'Markets (Sensex, Gold, Silver)' },
                 { href: '/post', label: 'Create Post' },
                 { href: '/profile', label: 'My Profile' },
                 { href: '/bookmarks', label: 'Saved Articles' },
@@ -883,6 +885,8 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
           </div>
         </div>
       )}
+
+      <MarketsStrip isDarkMode={isDarkMode} />
 
       {isMobile && (
         <div style={{ padding: '10px 16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#eee'), display: 'flex', gap: '10px', alignItems: 'center' }}>
