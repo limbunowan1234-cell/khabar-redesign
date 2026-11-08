@@ -1,0 +1,111 @@
+{
+  "checked": "2026-11-08",
+  "stays": [
+    {
+      "id": "windamere-hotel",
+      "name": "Windamere Hotel",
+      "group": "heritage",
+      "area": "Observatory Hill, Darjeeling",
+      "tag": "Colonial heritage",
+      "blurb": "A Raj-era hotel on Observatory Hill that began life in 1841 as Ada Villa. Guests stay in cottage-style rooms, and the hotel takes enquiries and bookings directly.",
+      "facts": ["Heritage property since 1841", "Cottage-style accommodation"],
+      "website": "https://www.windamerehotel.com/",
+      "phones": ["+91 76699 11913"],
+      "email": "reservations@windamerehotel.net",
+      "mapQuery": "Windamere Hotel Darjeeling",
+      "photo": {
+        "src": "/stays/windamere.jpg",
+        "alt": "The garden stairway and the Windamere sign on Observatory Hill",
+        "author": "P.K. Niyogi",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Darjeeling_Windermere_Hotel.jpg"
+      },
+      "pricing": {
+        "summary": "From ₹13,000 a night",
+        "detail": "Preferred double or twin room on the CP plan (room with breakfast), before 18% tax. Other rooms and cottages cost more, up to ₹78,000 for the two-bedroom Tinkerbelle's Cottage. Rates are 25% higher on 24, 25, 26 and 31 December.",
+        "validFrom": "2025-06-01",
+        "validTo": "2026-03-31",
+        "sourceUrl": "https://www.windamerehotel.com/tariff"
+      }
+    },
+    {
+      "id": "the-elgin-darjeeling",
+      "name": "The Elgin, Darjeeling",
+      "group": "heritage",
+      "area": "Central Darjeeling, a short walk from the town centre",
+      "tag": "Heritage resort and spa",
+      "blurb": "A manor house built in 1887, once the summer residence of the Maharaja of Cooch Behar. Today it is a heritage resort with a spa, the Timber Bar and the Orchid Dining Room.",
+      "facts": ["Built 1887", "Suites and rooms with fireplaces", "Spa on site"],
+      "website": "https://www.elginhotels.com/ho",
+      "phones": ["+91 354 2257226", "+91 354 2257227", "+91 84201 99177"],
+      "email": null,
+      "mapQuery": "The Elgin Darjeeling",
+      "photo": {
+        "src": "/stays/elgin.jpg",
+        "alt": "Green-roofed colonial buildings of the Elgin hotel among tall trees",
+        "author": "Adam Jones",
+        "license": "CC BY-SA 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Colonial-Era_Hotel_Elgin_-_Darjeeling_-_West_Bengal_-_India_(12406988513).jpg"
+      }
+    },
+    {
+      "id": "glenburn-tea-estate",
+      "name": "Glenburn Tea Estate",
+      "group": "heritage",
+      "area": "Working tea estate near Darjeeling",
+      "tag": "Tea estate stay",
+      "blurb": "A working tea estate with a small set of named bungalow suites and rooms, plus a lodge and campsite. Guests can see how the tea is made.",
+      "facts": ["Working tea plantation", "Bungalow suites, lodge and campsite"],
+      "website": "https://www.glenburnteaestate.com/",
+      "phones": [],
+      "email": "info@glenburnteaestate.com",
+      "mapQuery": "Glenburn Tea Estate Darjeeling",
+      "bookingUrl": "https://www.boutiquehoteldirectbookings.com/hotels/GlenburnTeaEstateandBoutiqueHotel?src=hws",
+      "photo": {
+        "src": "/stays/glenburn.jpg",
+        "alt": "Kangchenjunga and the Himalayan range seen from Glenburn Tea Estate",
+        "caption": "Kangchenjunga seen from the estate",
+        "author": "A. J. T. Johnsingh, WWF-India and NCF",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kangchenjunga_from_Glenburn_Tea_Estate_AJTJohnsingh_DSC01329.jpg"
+      },
+      "pricing": {
+        "summary": "₹48,500 a night for two sharing",
+        "detail": "All-inclusive package: all meals, airport or station transfers, guided activities and tea tastings, before 18% GST. ₹30,200 for one person.",
+        "validFrom": "2023-10-01",
+        "validTo": "2024-09-30",
+        "sourceUrl": "https://www.glenburnteaestate.com/tariff.php"
+      }
+    },
+    {
+      "id": "singell-tea-estate",
+      "name": "Singell Tea Estate (CGH Earth)",
+      "group": "heritage",
+      "area": "St Mary's Hill, Kurseong",
+      "tag": "Tea estate bungalow",
+      "blurb": "A stay built around a 100-year-old planter's bungalow on a tea estate planted in 1871. Rooms include heritage rooms and a room with a solarium, and guests can join tea tastings and factory visits.",
+      "facts": ["About 4,864 ft above sea level", "Estate planted 1871", "Tea tastings and factory visits"],
+      "website": "https://www.cghearth.com/singell-tea-estate/",
+      "phones": [],
+      "email": "contact@cghearth.com",
+      "mapQuery": "Singell Tea Estate Kurseong",
+      "bookingUrl": "https://bookings.cghearth.com/?chainId=8850&propertyId=12126"
+    },
+    {
+      "id": "hotel-seven-seventeen",
+      "name": "Hotel Seven Seventeen",
+      "group": "local",
+      "area": "H.D. Lama Road, Darjeeling 734101",
+      "tag": "Tibetan-style hotel",
+      "blurb": "A traditional Tibetan-style hotel on H.D. Lama Road in the middle of town, with 23 rooms.",
+      "facts": ["23 rooms", "Tibetan-style building"],
+      "website": "https://www.hotel717.com/",
+      "phones": ["+91 354 2255099", "+91 83728 08717"],
+      "email": "hotel717@gmail.com",
+      "mapQuery": "Hotel Seven Seventeen Darjeeling"
+    }
+  ]
+}

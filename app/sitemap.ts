@@ -68,6 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE + '/nepali-bhasa-diwas', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 },
     { url: SITE + '/hills-in-frame', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/weekly', lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
+    { url: SITE + '/stays', lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
     { url: SITE + '/markets', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/calendar/converter', lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
     { url: SITE + '/calendar', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },

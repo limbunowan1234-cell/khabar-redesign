@@ -62,6 +62,7 @@ export default function Masthead({ isMobile, isDarkMode, onToggleDark, searchQue
             <Link href="/daily-updates" className={styles.utilityLink}>Daily Updates</Link>
             <Link href="/calendar" className={styles.utilityLink}>Calendar</Link>
             <Link href="/markets" className={styles.utilityLink}>Markets</Link>
+            <Link href="/stays" className={styles.utilityLink}>Stays</Link>
             <Link href="/hills-in-frame" className={styles.utilityLink}>Photos</Link>
             <Link href="/nepali-bhasa-diwas" className={`${styles.utilityLink} ${styles.hideMd}`}>Bhasa Diwas</Link>
             <Link href="/apps" className={styles.utilityLink}>Apps &amp; Games</Link>
