@@ -1,4 +1,6 @@
-﻿export const metadata = {
+﻿import OrgJsonLd from '@/components/OrgJsonLd';
+
+export const metadata = {
   title: 'About Us',
   description: 'About Khabar Darjeeling — the digital home of Darjeeling and the Gorkha community.',
   alternates: { canonical: 'https://khabardarjeeling.in/about' }
@@ -7,6 +9,7 @@
 export default function AboutPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#fff', padding: '40px 20px 100px' }}>
+      <OrgJsonLd />
       <div style={{ maxWidth: '760px', margin: '0 auto' }}>
         <a href="/" style={{ color: '#c41e3a', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>← Back to Home</a>
         <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#1a1a1a', margin: '16px 0 24px' }}>About Khabar Darjeeling</h1>
@@ -24,6 +27,10 @@ export default function AboutPage() {
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Our Values</h2>
           <p>Accuracy, community, and independence guide everything we publish. We aim to be a platform the hills can trust, built with modern technology to stay fast, accessible, and free to read.</p>
+
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Standards and Accountability</h2>
+          <p>How we choose, verify and publish stories is set out in our <a href="/editorial-guidelines" style={{ color: '#c41e3a' }}>Editorial Guidelines</a>. Our <a href="/code-of-ethics" style={{ color: '#c41e3a' }}>Code of Ethics</a> covers accuracy, fairness, sourcing, privacy and conflicts of interest.</p>
+          <p><strong>Corrections.</strong> When we get something wrong, we correct it; the process is in the Corrections and Retractions section of the Code of Ethics. If you think a story is wrong or harmful, you can <a href="/grievance" style={{ color: '#c41e3a' }}>file a grievance</a>. We aim to acknowledge it within 24 hours and resolve it within 15 days.</p>
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Who We Are</h2>
           <p>Khabar Darjeeling is an independent digital media project developed by Darjeeling Web Studio, dedicated to strengthening the online presence and voice of the Darjeeling and Gorkha community.</p>

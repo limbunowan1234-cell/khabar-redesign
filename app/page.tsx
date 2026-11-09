@@ -1,5 +1,6 @@
 ﻿import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
+import OrgJsonLd from '@/components/OrgJsonLd';
 import { truncateChars } from '@/lib/textPreview';
 import type { BulletinVideo } from '@/components/GorkhaTVSection';
 
@@ -82,6 +83,7 @@ export default async function Page() {
 
   return (
     <>
+      <OrgJsonLd />
       {itemListJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       )}

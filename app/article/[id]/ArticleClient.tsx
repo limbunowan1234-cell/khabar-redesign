@@ -775,6 +775,9 @@ export default function ArticleClient({ initialArticle, initialRelated = NO_RELA
               WhatsApp Khabar Darjeeling at <a href='https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b' target='_blank' rel='noopener noreferrer' style={{ color: '#c41e3a', fontWeight: '700', textDecoration: 'none' }}>our channel</a> or email <a href='mailto:nowanad@gmail.com' style={{ color: '#c41e3a', fontWeight: '700', textDecoration: 'none' }}>nowanad@gmail.com</a>. Your identity will be protected.
             </p>
           </div>
+          <p style={{ margin: '0 28px 20px', fontSize: '12.5px', lineHeight: 1.6, color: isDarkMode ? '#aaa' : '#666' }}>
+            How we report: <a href='/editorial-guidelines' style={{ color: isDarkMode ? '#ddd' : '#444' }}>Editorial Guidelines</a> · <a href='/code-of-ethics' style={{ color: isDarkMode ? '#ddd' : '#444' }}>Code of Ethics and corrections</a> · Spotted an error? <a href='/grievance' style={{ color: isDarkMode ? '#ddd' : '#444' }}>Tell us</a> or <a href='/contact' style={{ color: isDarkMode ? '#ddd' : '#444' }}>contact the newsroom</a>.
+          </p>
           <div style={{ padding: '0 28px' }}>
             <PostStoryPromo
               index={String(article.$id || id || '').split('').reduce((sum: number, ch: string) => sum + ch.charCodeAt(0), 0)}
