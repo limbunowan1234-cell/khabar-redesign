@@ -13,6 +13,7 @@ import AdBanner from '@/components/AdBanner';
 import GenreNav from '@/components/GenreNav';
 import Masthead from '@/components/Masthead';
 import MarketsStrip from '@/components/MarketsStrip';
+import TodayCard from '@/components/TodayCard';
 import PostStoryPromo from '@/components/PostStoryPromo';
 import MagazineHero from '@/components/MagazineHero';
 import AdSlot from '@/components/AdSlot';
@@ -888,6 +889,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
       )}
 
       <MarketsStrip isDarkMode={isDarkMode} />
+      {isMobile && <TodayCard compact />}
 
       {isMobile && (
         <div style={{ padding: '10px 16px', backgroundColor: isDarkMode ? '#1e1e1e' : 'white', borderBottom: '1px solid ' + (isDarkMode ? '#333' : '#eee'), display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -978,6 +980,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
             )}
           </main>
           <aside style={{ position: 'sticky', top: '64px', alignSelf: 'start', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto', minWidth: 0, overflowX: 'hidden', scrollbarWidth: 'none', paddingLeft: '28px', borderLeft: '1px solid var(--rule)' }}>
+            <TodayCard />
             {/* NEW: BREAKING NEWS WIDGET ON RIGHT SIDEBAR */}
             <WeatherStrip isDarkMode={isDarkMode} defaultCity={userDistrict || undefined} />
               <AdSlot placement={AD_PLACEMENTS.homepageSidebar} />

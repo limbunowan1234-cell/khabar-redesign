@@ -271,6 +271,12 @@ export default function PatroClient({ year, month, days, events, prev, next, cur
           </section>
         </div>
 
+        <p className={styles.subscribe}>
+          {L('Get these festivals in your phone or Google Calendar:', 'यी चाडपर्व आफ्नो फोन वा गुगल क्यालेन्डरमा पाउनुहोस्:')}{' '}
+          <a href="webcal://khabardarjeeling.in/calendar/festivals.ics">{L('Subscribe', 'सब्सक्राइब')}</a>{' · '}
+          <a href="/calendar/festivals.ics" download="darjeeling-festivals.ics">{L('Download .ics file', '.ics फाइल डाउनलोड')}</a>
+        </p>
+
         <p className={styles.note}>
           {L(
             'Panchang is calculated for Darjeeling (27.04° N, 88.26° E) in Indian Standard Time using the Lahiri ayanamsha, and cross-checked against Drik Panchang. The day’s tithi is the one running at sunrise. Festival dates follow the usual rules and can differ by a day in some traditions or villages. Eid, Muharram and other moon-sighting dates are not included. Tihar days for the hills (Kaag, Kukur and Gai Tihar) are not listed yet.',
