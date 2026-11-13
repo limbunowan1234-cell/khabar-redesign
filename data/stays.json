@@ -159,6 +159,15 @@
       "email": null,
       "mapQuery": "The Elgin Silver Oaks Kalimpong",
       "bookingUrl": "https://book.elginhotels.com/inst/#home?propertyId=721MaTfawQx61Emx7HGYRvJp5ZuVfmY86btlq5MZTMxMDU=&JDRN=Y",
+      "photo": {
+        "src": "/stays/elgin-silver-oaks.jpg",
+        "alt": "Flower beds, clipped shrubs and a small pond in the hillside garden at Silver Oaks",
+        "caption": "Garden at Silver Oaks",
+        "author": "Anuj Kumar Pradhan",
+        "license": "CC BY-SA 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kalimpong_11.jpg"
+      },
       "checked": "2026-11-13"
     },
     {
