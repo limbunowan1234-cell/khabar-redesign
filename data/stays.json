@@ -215,6 +215,15 @@
       "phones": ["+91 93328 23294", "+91 80013 37000"],
       "email": "mirik@mounthotels.in",
       "mapQuery": "Mount Queens Hill Lake Resort Mirik",
+      "photo": {
+        "src": "/stays/mount-queens-hill-mirik.jpg",
+        "alt": "Mirik Lake with the hillside town above it under a blue sky",
+        "caption": "Mirik Lake, beside the resort (not the resort itself)",
+        "author": "Shubh.ch1994",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mirik_Lake_a.k.a_Sumendu_Lake.jpg"
+      },
       "checked": "2026-11-13"
     },
     {
@@ -230,6 +239,15 @@
       "phones": ["+91 98007 07039", "+91 91533 22286", "+91 78727 81187"],
       "email": "parkhotel64@gmail.com",
       "mapQuery": "The Park Hotel Mirik",
+      "photo": {
+        "src": "/stays/park-hotel-mirik.jpg",
+        "alt": "Sumendu Lake in Mirik with a boat on the water and the town on the far shore",
+        "caption": "Sumendu Lake, which the hotel overlooks (not the hotel itself)",
+        "author": "Benoy",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mirik_Sumendu_Lake.jpg"
+      },
       "checked": "2026-11-13"
     },
     {
@@ -246,6 +264,15 @@
       "email": "reservations@mayfairhotels.com",
       "mapQuery": "Mayfair Tea Resort Siliguri",
       "bookingUrl": "https://staahmax.staah.net/be/indexpackdetail?propertyId=MjAyNw==&groupId=NTg3",
+      "photo": {
+        "src": "/stays/mayfair-tea-resort-siliguri.jpg",
+        "alt": "Rows of tea bushes under tall shade trees at New Chumta Tea Garden",
+        "caption": "New Chumta Tea Garden, where the resort is set (not the resort itself)",
+        "author": "Alexkom000",
+        "license": "CC BY 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:2024-03-15_New_Chumta_Tea_Garden_01.jpg"
+      },
       "checked": "2026-11-13"
     },
     {
@@ -287,6 +314,15 @@
       "email": null,
       "mapQuery": "The Elgin Nor-Khill Gangtok",
       "bookingUrl": "https://book.elginhotels.com/inst/#home?propertyId=902MTiHSPaJ4jB638WFLl3JXeJAhxfPIZK1D8nQlt2rrgCvruqM5Mzc=&JDRN=Y",
+      "photo": {
+        "src": "/stays/elgin-nor-khill.jpg",
+        "alt": "Snow peaks of the Kanchenjunga range above forested hills, seen from the hotel",
+        "caption": "Narsing and Pandim, seen from the hotel",
+        "author": "Bernard Gagnon",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:View_of_Narsing_and_Pandim_from_Elgin_Nor-Khill_Hotel,_Gangtok.jpg"
+      },
       "checked": "2026-11-13"
     },
     {
