@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { TOPICS } from '@/lib/topics';
 import { allMonths, ymSlug } from '@/lib/patro/data';
+import { REGIONS as STAY_REGIONS } from '@/lib/stays';
 const SITE = 'https://khabardarjeeling.in';
 // Week 6+43 of the Cloudflare migration (see cloudflare/README.md).
 const WORKER_URL = 'https://khabar-worker.limbunowan1234.workers.dev';
@@ -69,6 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE + '/hills-in-frame', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/weekly', lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
     { url: SITE + '/stays', lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
+    ...STAY_REGIONS.map((r) => ({ url: SITE + '/stays/' + r.id, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.5 })),
     { url: SITE + '/markets', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/calendar/converter', lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
     { url: SITE + '/calendar', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },

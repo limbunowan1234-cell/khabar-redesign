@@ -1,12 +1,26 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { REGIONS, type Region, type Stay, type StayRating } from '@/lib/stays';
+import { REGIONS, type Region, type Stay, type StayPhoto, type StayRating } from '@/lib/stays';
 import styles from './Stays.module.css';
 
 type Filter = 'all' | Stay['group'];
 type Sort = 'featured' | 'rating' | 'name' | 'price';
+type View = 'grid' | 'list';
+const VIEW_KEY = 'kd-stays-view';
+const regionHref = (id: 'all' | Region) => (id === 'all' ? '/stays' : '/stays/' + id);
+
+// The all-regions hero; a region page uses the first photo among its own stays instead, when it has one.
+const DEFAULT_HERO: StayPhoto = {
+  src: '/stays/glenburn.jpg',
+  alt: '',
+  author: 'A. J. T. Johnsingh',
+  license: 'CC BY-SA 4.0',
+  licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  sourceUrl: 'https://commons.wikimedia.org/wiki/File:Kangchenjunga_from_Glenburn_Tea_Estate_AJTJohnsingh_DSC01329.jpg',
+};
 
 const TYPES: { id: Filter; label: string }[] = [
   { id: 'all', label: 'All stays' },
@@ -78,8 +92,9 @@ function enquiryText(stay: Stay, t: Trip, name: string, phone: string): string {
   ].join('\n');
 }
 
-export default function StaysClient({ stays, checked }: { stays: Stay[]; checked: string }) {
-  const [region, setRegion] = useState<'all' | Region>('all');
+export default function StaysClient({ stays, checked, region }: { stays: Stay[]; checked: string; region: 'all' | Region }) {
+  const router = useRouter();
+  const [view, setView] = useState<View>('grid');
   const [type, setType] = useState<Filter>('all');
   const [sort, setSort] = useState<Sort>('featured');
   const [ratesOnly, setRatesOnly] = useState(false);
@@ -89,6 +104,9 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
 
   // today in IST, set after mount so server and client markup match
   useEffect(() => { setToday(new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10)); }, []);
+  // remembered grid/list choice; storage can be unavailable (private mode), so it's best-effort
+  useEffect(() => { try { if (localStorage.getItem(VIEW_KEY) === 'list') setView('list'); } catch { /* storage unavailable */ } }, []);
+  const chooseView = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* storage unavailable */ } };
 
   const list = useMemo(() => {
     let out = stays.filter((s) => (region === 'all' || s.region === region) && (type === 'all' || s.group === type) && (!ratesOnly || !!s.pricing));
@@ -99,7 +117,9 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
   }, [stays, region, type, sort, ratesOnly]);
 
   const sections = REGIONS.map((r) => ({ ...r, stays: list.filter((s) => s.region === r.id) })).filter((r) => r.stays.length > 0);
-  const regionLabel = region === 'all' ? 'Darjeeling, Sikkim and the hills' : REGIONS.find((r) => r.id === region)!.label;
+  const here = region === 'all' ? null : REGIONS.find((r) => r.id === region)!;
+  const regionLabel = here ? here.label : 'Darjeeling, Sikkim and the hills';
+  const hero = (here && stays.find((s) => s.region === here.id && s.photo)?.photo) || DEFAULT_HERO;
   // the newest per-stay check date, for the note at the foot of the page
   const lastChecked = stays.reduce((max, s) => (s.checked && s.checked > max ? s.checked : max), checked);
 
@@ -173,16 +193,25 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
   return (
     <>
       <section className={styles.hero}>
-        <img className={styles.heroImg} src="/stays/glenburn.jpg" alt="" />
+        <img className={styles.heroImg} src={hero.src} alt="" />
         <div className={styles.heroShade} />
         <div className={styles.heroInner}>
+          {here && (
+            <nav className={styles.crumbs} aria-label="Breadcrumb">
+              <Link href="/stays">Stays</Link> <span aria-hidden="true">/</span> <span aria-current="page">{here.label}</span>
+            </nav>
+          )}
           <p className={styles.eyebrow}>Khabar Darjeeling Stays</p>
-          <h1 className={styles.h1}>Trusted by Locals, Loved by Travelers</h1>
-          <p className={styles.lead}>Heritage hotels, tea estates, resorts and hotels across Darjeeling, Kurseong, Kalimpong, Mirik, Siliguri and Sikkim. Compare verified guest ratings, see each stay&rsquo;s own rates and contact them directly. No booking fees.</p>
+          <h1 className={styles.h1}>{here ? `Hotels and stays in ${here.label}` : 'Trusted by Locals, Loved by Travelers'}</h1>
+          <p className={styles.lead}>
+            {here
+              ? <>{here.blurb} Compare verified guest ratings, see each stay&rsquo;s own rates and contact them directly. No booking fees.</>
+              : <>Heritage hotels, tea estates, resorts and hotels across Darjeeling, Kurseong, Kalimpong, Mirik, Siliguri and Sikkim. Compare verified guest ratings, see each stay&rsquo;s own rates and contact them directly. No booking fees.</>}
+          </p>
         </div>
         <p className={styles.heroCredit}>
-          Photo: A. J. T. Johnsingh, <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>,{' '}
-          <a href="https://commons.wikimedia.org/wiki/File:Kangchenjunga_from_Glenburn_Tea_Estate_AJTJohnsingh_DSC01329.jpg" target="_blank" rel="noopener noreferrer">via Wikimedia Commons</a>
+          Photo{hero.caption ? `: ${hero.caption}` : ''} · {hero.author}, <a href={hero.licenseUrl} target="_blank" rel="noopener noreferrer">{hero.license}</a>,{' '}
+          <a href={hero.sourceUrl} target="_blank" rel="noopener noreferrer">via Wikimedia Commons</a>
         </p>
       </section>
 
@@ -190,7 +219,7 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
         <form className={styles.search} onSubmit={(e) => e.preventDefault()} aria-label="Plan your stay">
           <label className={styles.f}>
             <span>Where</span>
-            <select value={region} onChange={(e) => setRegion(e.target.value as 'all' | Region)}>
+            <select value={region} onChange={(e) => router.push(regionHref(e.target.value as 'all' | Region))}>
               <option value="all">All of Darjeeling, Sikkim & the hills</option>
               {REGIONS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
@@ -234,9 +263,9 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
           {[{ id: 'all' as const, label: 'All regions' }, ...REGIONS].map((r) => {
             const n = r.id === 'all' ? stays.length : stays.filter((s) => s.region === r.id).length;
             return (
-              <button key={r.id} type="button" aria-pressed={region === r.id} className={region === r.id ? styles.regionOn : ''} onClick={() => setRegion(r.id)}>
+              <Link key={r.id} href={regionHref(r.id)} scroll={false} aria-current={region === r.id ? 'page' : undefined} className={region === r.id ? styles.regionOn : ''}>
                 {r.label} <span>{n}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>
@@ -247,6 +276,10 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
               <button key={g.id} type="button" aria-pressed={type === g.id} className={type === g.id ? styles.chipOn : ''} onClick={() => setType(g.id)}>{g.label}</button>
             ))}
             <button type="button" aria-pressed={ratesOnly} className={ratesOnly ? styles.chipOn : ''} onClick={() => setRatesOnly((v) => !v)}>Rates published</button>
+          </div>
+          <div className={styles.viewToggle} role="group" aria-label="Layout">
+            <button type="button" aria-pressed={view === 'grid'} onClick={() => chooseView('grid')}><span aria-hidden="true">▦</span> Grid</button>
+            <button type="button" aria-pressed={view === 'list'} onClick={() => chooseView('list')}><span aria-hidden="true">☰</span> List</button>
           </div>
           <label className={styles.sort}>
             <span>Sort by</span>
@@ -269,7 +302,7 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
               <h2 id={'region-' + r.id}>Stays in {r.label}</h2>
               <p>{r.blurb} <span>{r.stays.length} stay{r.stays.length === 1 ? '' : 's'}</span></p>
             </header>
-            <ul className={styles.results}>{r.stays.map(card)}</ul>
+            <ul className={`${styles.results} ${view === 'grid' ? styles.grid : ''}`}>{r.stays.map(card)}</ul>
           </section>
         ))}
 
