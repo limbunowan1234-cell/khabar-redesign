@@ -66,6 +66,25 @@
 .noPhoto { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: linear-gradient(135deg, var(--panel-bg), var(--rule)); color: var(--color-text-muted); }
 .noPhoto span { font-family: var(--font-serif); font-size: 56px; font-weight: 700; color: var(--ink); opacity: 0.5; line-height: 1; }
 .noPhoto small { font-size: 12px; }
+.googleBtn { margin-top: 10px; border: 1px solid var(--rule-strong); border-radius: 999px; background: var(--color-bg); color: var(--ink); padding: 9px 16px; font: 700 13px var(--font-sans); cursor: pointer; box-shadow: 0 2px 8px rgba(10, 20, 35, 0.08); }
+.googleBtn:hover { border-color: var(--ink); }
+.morePhotos { position: absolute; top: 10px; right: 10px; border: 0; border-radius: 999px; background: rgba(10, 20, 35, 0.72); color: #fff; padding: 6px 12px; font: 700 12px var(--font-sans); cursor: pointer; }
+.morePhotos:hover { background: rgba(10, 20, 35, 0.9); }
+.googleBtn:focus-visible, .morePhotos:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+/* Google photos viewer */
+.gallery { max-width: 820px; }
+.galleryMsg { margin: 18px 0 6px; font-size: 14px; color: var(--color-text-muted); }
+.galleryMsg a, .galleryCap a, .gallery .dialogNote a { color: var(--color-link); font-weight: 600; }
+.galleryFig { margin: 14px 0 0; }
+.galleryImg { position: relative; background: #111; border-radius: 10px; overflow: hidden; aspect-ratio: 3 / 2; }
+.galleryImg img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.galleryPrev, .galleryNext { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.9); color: #111; font-size: 26px; line-height: 1; cursor: pointer; }
+.galleryPrev { left: 10px; }
+.galleryNext { right: 10px; }
+.galleryPrev:disabled, .galleryNext:disabled { opacity: 0.35; cursor: default; }
+.galleryPrev:focus-visible, .galleryNext:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.galleryCap { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 12.5px; color: var(--color-text-muted); }
 
 .body { padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .tag { margin: 0; font-size: 11.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); }

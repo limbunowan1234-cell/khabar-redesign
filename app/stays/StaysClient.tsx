@@ -86,6 +86,7 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
   const [today, setToday] = useState<string | null>(null);
   const [trip, setTrip] = useState<Trip>({ checkIn: '', checkOut: '', adults: 2, children: 0, rooms: 1 });
   const [enquiring, setEnquiring] = useState<Stay | null>(null);
+  const [googleFor, setGoogleFor] = useState<Stay | null>(null);
 
   // today in IST, set after mount so server and client markup match
   useEffect(() => { setToday(new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10)); }, []);
@@ -116,6 +117,7 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
           {s.photo ? (
             <>
               <img src={s.photo.src} alt={s.photo.alt} loading="lazy" />
+              <button type="button" className={styles.morePhotos} onClick={() => setGoogleFor(s)}>📷 More photos</button>
               <p className={styles.credit}>
                 {s.photo.caption ? s.photo.caption + ' · ' : ''}{s.photo.author},{' '}
                 <a href={s.photo.licenseUrl} target="_blank" rel="noopener noreferrer">{s.photo.license}</a>,{' '}
@@ -123,7 +125,10 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
               </p>
             </>
           ) : (
-            <div className={styles.noPhoto} aria-hidden="true"><span>{s.name.charAt(0)}</span><small>Photo coming soon</small></div>
+            <div className={styles.noPhoto}>
+              <span aria-hidden="true">{s.name.charAt(0)}</span>
+              <button type="button" className={styles.googleBtn} onClick={() => setGoogleFor(s)}>📷 See photos on Google</button>
+            </div>
           )}
         </div>
 
@@ -287,6 +292,7 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
       </div>
 
       {enquiring && <EnquiryDialog stay={enquiring} trip={trip} onClose={() => setEnquiring(null)} />}
+      {googleFor && <GooglePhotosDialog stay={googleFor} onClose={() => setGoogleFor(null)} />}
     </>
   );
 }
@@ -347,6 +353,92 @@ function EnquiryDialog({ stay, trip, onClose }: { stay: Stay; trip: Trip; onClos
           {!stay.email && !stay.phones[0] && <a className={styles.cta} href={stay.bookingUrl || stay.website} target="_blank" rel="noopener noreferrer">Open their website</a>}
         </div>
         <p className={styles.dialogNote}>This opens your own email app or phone. Khabar Darjeeling does not receive or store what you write.</p>
+      </div>
+    </div>
+  );
+}
+
+interface GooglePhoto { url: string; width: number; height: number; authors: { name: string; uri: string | null }[] }
+
+// Photos come live from Google Places on each open: Google's terms don't allow storing them, and
+// every credit Google returns must stay visible next to the photo, with "Google Maps" as the source.
+function GooglePhotosDialog({ stay, onClose }: { stay: Stay; onClose: () => void }) {
+  const [data, setData] = useState<{ photos: GooglePhoto[]; mapsUrl: string } | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [i, setI] = useState(0);
+  const closeBtn = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/stays/google-photos?stay=' + encodeURIComponent(stay.id));
+        const json = await res.json();
+        if (!live) return;
+        if (!res.ok || !json.photos?.length) setFailed(true);
+        else setData(json);
+      } catch {
+        if (live) setFailed(true);
+      }
+    })();
+    return () => { live = false; };
+  }, [stay.id]);
+
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    closeBtn.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight') setI((n) => n + 1);
+      if (e.key === 'ArrowLeft') setI((n) => Math.max(0, n - 1));
+    };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; opener?.focus?.(); };
+  }, [onClose]);
+
+  const n = data?.photos.length ?? 0;
+  const photo = data ? data.photos[Math.min(i, n - 1)] : null;
+  const fallbackMaps = mapHref(stay.mapQuery);
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={`${styles.dialog} ${styles.gallery}`} role="dialog" aria-modal="true" aria-labelledby="gp-title" onClick={(e) => e.stopPropagation()}>
+        <button ref={closeBtn} type="button" className={styles.close} onClick={onClose} aria-label="Close">×</button>
+        <p className={styles.tag}>Photos from Google Maps</p>
+        <h2 id="gp-title" className={styles.dialogTitle}>{stay.name}</h2>
+
+        {!data && !failed && <p className={styles.galleryMsg} aria-live="polite">Loading photos…</p>}
+        {failed && (
+          <p className={styles.galleryMsg}>
+            Photos could not be loaded right now. <a href={fallbackMaps} target="_blank" rel="noopener noreferrer">See {stay.name} on Google Maps</a>.
+          </p>
+        )}
+
+        {photo && data && (
+          <figure className={styles.galleryFig}>
+            <div className={styles.galleryImg}>
+              <img src={photo.url} alt={`${stay.name}, photo ${Math.min(i, n - 1) + 1} of ${n} from Google Maps`} />
+              {n > 1 && <>
+                <button type="button" className={styles.galleryPrev} onClick={() => setI((x) => Math.max(0, Math.min(x, n - 1) - 1))} disabled={i === 0} aria-label="Previous photo">‹</button>
+                <button type="button" className={styles.galleryNext} onClick={() => setI((x) => Math.min(n - 1, x + 1))} disabled={i >= n - 1} aria-label="Next photo">›</button>
+              </>}
+            </div>
+            <figcaption className={styles.galleryCap}>
+              <span>
+                {photo.authors.length > 0 && <>Photo: {photo.authors.map((a, k) => (
+                  <span key={k}>{k > 0 && ', '}{a.uri ? <a href={a.uri} target="_blank" rel="noopener noreferrer">{a.name}</a> : a.name}</span>
+                ))} · </>}
+                <strong>Google Maps</strong>
+              </span>
+              {n > 1 && <span>{Math.min(i, n - 1) + 1} / {n}</span>}
+            </figcaption>
+            <p className={styles.dialogNote}>
+              <a href={data.mapsUrl} target="_blank" rel="noopener noreferrer">See all photos and reviews on Google Maps</a>. Photos are uploaded by the hotel and by Google Maps users and may not show the stay as it is today.
+            </p>
+          </figure>
+        )}
       </div>
     </div>
   );

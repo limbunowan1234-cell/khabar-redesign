@@ -62,6 +62,7 @@ export interface Stay {
   photo?: StayPhoto;
   pricing?: StayPricing;
   rating?: StayRating;
+  googlePlaceId?: string; // Google Maps place ID, for the on-demand Google photos (IDs may be stored; photos may not)
   checked?: string; // set when this stay was checked on a later date than the file-wide `checked`
 }
 export const STAYS = (data as unknown as { stays: Stay[] }).stays;
