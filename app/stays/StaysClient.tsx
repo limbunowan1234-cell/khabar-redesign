@@ -2,16 +2,17 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Stay } from '@/lib/stays';
+import { REGIONS, type Region, type Stay, type StayRating } from '@/lib/stays';
 import styles from './Stays.module.css';
 
 type Filter = 'all' | Stay['group'];
-type Sort = 'featured' | 'name' | 'price';
+type Sort = 'featured' | 'rating' | 'name' | 'price';
 
 const TYPES: { id: Filter; label: string }[] = [
   { id: 'all', label: 'All stays' },
   { id: 'heritage', label: 'Heritage & tea estates' },
-  { id: 'local', label: 'Local hotels' },
+  { id: 'resort', label: 'Resorts & spas' },
+  { id: 'local', label: 'Hotels' },
 ];
 
 const telHref = (p: string) => 'tel:' + p.replace(/[^+\d]/g, '');
@@ -22,6 +23,32 @@ const addDays = (iso: string, n: number) => new Date(Date.parse(iso + 'T00:00:00
 const nightsBetween = (a: string, b: string) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400e3);
 // first number in the published summary, used only to sort ("From ₹13,000 a night" -> 13000)
 const priceKey = (s: Stay) => { const m = s.pricing?.summary.replace(/,/g, '').match(/\d+/); return m ? Number(m[0]) : Infinity; };
+// unrated stays sort after rated ones
+const ratingKey = (s: Stay) => (s.rating ? s.rating.score / s.rating.outOf : -1);
+const scoreWord = (r: StayRating) => { const x = (r.score / r.outOf) * 10; return x >= 9 ? 'Wonderful' : x >= 8 ? 'Excellent' : x >= 7 ? 'Good' : x >= 6 ? 'Pleasant' : 'Fair'; };
+
+function Rating({ r }: { r: StayRating }) {
+  return (
+    <div className={styles.rating}>
+      {r.hotelClass && (
+        <p className={styles.stars} aria-label={`${r.hotelClass}-star hotel`}>
+          <span aria-hidden="true">{'★'.repeat(r.hotelClass)}<span className={styles.starsOff}>{'★'.repeat(5 - r.hotelClass)}</span></span>
+          <small>{r.hotelClass}-star hotel</small>
+        </p>
+      )}
+      <p className={styles.score}>
+        <b>{r.score.toFixed(1)}</b>
+        <span>
+          <strong>{scoreWord(r)}</strong>
+          <small>
+            {r.reviews.toLocaleString('en-IN')} verified guest reviews on{' '}
+            <a href={r.url} target="_blank" rel="noopener noreferrer">{r.source}</a>, {fmtShort(r.checked)} {r.checked.slice(0, 4)}
+          </small>
+        </span>
+      </p>
+    </div>
+  );
+}
 
 interface Trip { checkIn: string; checkOut: string; adults: number; children: number; rooms: number }
 
@@ -52,6 +79,7 @@ function enquiryText(stay: Stay, t: Trip, name: string, phone: string): string {
 }
 
 export default function StaysClient({ stays, checked }: { stays: Stay[]; checked: string }) {
+  const [region, setRegion] = useState<'all' | Region>('all');
   const [type, setType] = useState<Filter>('all');
   const [sort, setSort] = useState<Sort>('featured');
   const [ratesOnly, setRatesOnly] = useState(false);
@@ -63,16 +91,84 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
   useEffect(() => { setToday(new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10)); }, []);
 
   const list = useMemo(() => {
-    let out = stays.filter((s) => (type === 'all' || s.group === type) && (!ratesOnly || !!s.pricing));
+    let out = stays.filter((s) => (region === 'all' || s.region === region) && (type === 'all' || s.group === type) && (!ratesOnly || !!s.pricing));
+    if (sort === 'rating') out = [...out].sort((a, b) => ratingKey(b) - ratingKey(a));
     if (sort === 'name') out = [...out].sort((a, b) => a.name.localeCompare(b.name));
     if (sort === 'price') out = [...out].sort((a, b) => priceKey(a) - priceKey(b));
     return out;
-  }, [stays, type, sort, ratesOnly]);
+  }, [stays, region, type, sort, ratesOnly]);
+
+  const sections = REGIONS.map((r) => ({ ...r, stays: list.filter((s) => s.region === r.id) })).filter((r) => r.stays.length > 0);
+  const regionLabel = region === 'all' ? 'Darjeeling, Sikkim and the hills' : REGIONS.find((r) => r.id === region)!.label;
+  // the newest per-stay check date, for the note at the foot of the page
+  const lastChecked = stays.reduce((max, s) => (s.checked && s.checked > max ? s.checked : max), checked);
 
   const setCheckIn = (v: string) => setTrip((t) => ({
     ...t, checkIn: v,
     checkOut: v && (!t.checkOut || nightsBetween(v, t.checkOut) < 1) ? addDays(v, 1) : t.checkOut,
   }));
+
+  const card = (s: Stay) => {
+    const expired = !!(s.pricing && today && today > s.pricing.validTo);
+    return (
+      <li key={s.id} className={styles.card}>
+        <div className={styles.media}>
+          {s.photo ? (
+            <>
+              <img src={s.photo.src} alt={s.photo.alt} loading="lazy" />
+              <p className={styles.credit}>
+                {s.photo.caption ? s.photo.caption + ' · ' : ''}{s.photo.author},{' '}
+                <a href={s.photo.licenseUrl} target="_blank" rel="noopener noreferrer">{s.photo.license}</a>,{' '}
+                <a href={s.photo.sourceUrl} target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
+              </p>
+            </>
+          ) : (
+            <div className={styles.noPhoto} aria-hidden="true"><span>{s.name.charAt(0)}</span><small>Photo coming soon</small></div>
+          )}
+        </div>
+
+        <div className={styles.body}>
+          <p className={styles.tag}>{s.tag}</p>
+          <h3 className={styles.name}>{s.name}</h3>
+          <p className={styles.area}>
+            <a href={mapHref(s.mapQuery)} target="_blank" rel="noopener noreferrer">{s.area}</a>
+          </p>
+          {s.rating && <Rating r={s.rating} />}
+          <p className={styles.blurb}>{s.blurb}</p>
+          <ul className={styles.facts}>{s.facts.map((f) => <li key={f}>{f}</li>)}</ul>
+          <p className={styles.links}>
+            <a href={s.website} target="_blank" rel="noopener noreferrer">Official website</a>
+            {s.phones.length > 0 && <>
+              {' · '}
+              {s.phones.map((p, i) => <span key={p}>{i > 0 && ', '}<a href={telHref(p)}>{p}</a></span>)}
+            </>}
+          </p>
+        </div>
+
+        <aside className={styles.buy}>
+          {s.pricing ? (
+            <>
+              <p className={styles.priceLabel}>{expired ? 'Last published rate' : 'Published rate'}</p>
+              <p className={styles.price}>{s.pricing.summary}</p>
+              {expired && <p className={styles.stale}>Out of date</p>}
+              <p className={styles.priceNote}>{s.pricing.detail}</p>
+              <p className={styles.priceMeta}>
+                <a href={s.pricing.sourceUrl} target="_blank" rel="noopener noreferrer">Tariff</a> for {fmtShort(s.pricing.validFrom)} {s.pricing.validFrom.slice(0, 4)} to {fmtShort(s.pricing.validTo)} {s.pricing.validTo.slice(0, 4)}. Ask for today&rsquo;s price.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className={styles.priceLabel}>Rates</p>
+              <p className={styles.price}>On request</p>
+              <p className={styles.priceNote}>This stay does not publish a price list. Send an enquiry to get a quote.</p>
+            </>
+          )}
+          <button type="button" className={styles.cta} onClick={() => setEnquiring(s)}>Check availability</button>
+          {s.bookingUrl && <a className={styles.alt} href={s.bookingUrl} target="_blank" rel="noopener noreferrer">Book on their site</a>}
+        </aside>
+      </li>
+    );
+  };
 
   return (
     <>
@@ -82,7 +178,7 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
         <div className={styles.heroInner}>
           <p className={styles.eyebrow}>Khabar Darjeeling Stays</p>
           <h1 className={styles.h1}>Trusted by Locals, Loved by Travelers</h1>
-          <p className={styles.lead}>Heritage hotels, tea estate bungalows and local hotels in the hills. See each stay&rsquo;s own rates and contact them directly. No booking fees.</p>
+          <p className={styles.lead}>Heritage hotels, tea estates, resorts and hotels across Darjeeling, Kurseong, Kalimpong, Mirik, Siliguri and Sikkim. Compare verified guest ratings, see each stay&rsquo;s own rates and contact them directly. No booking fees.</p>
         </div>
         <p className={styles.heroCredit}>
           Photo: A. J. T. Johnsingh, <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>,{' '}
@@ -94,7 +190,10 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
         <form className={styles.search} onSubmit={(e) => e.preventDefault()} aria-label="Plan your stay">
           <label className={styles.f}>
             <span>Where</span>
-            <input value="Darjeeling & the hills" readOnly aria-readonly="true" />
+            <select value={region} onChange={(e) => setRegion(e.target.value as 'all' | Region)}>
+              <option value="all">All of Darjeeling, Sikkim & the hills</option>
+              {REGIONS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+            </select>
           </label>
           <label className={styles.f}>
             <span>Check-in</span>
@@ -126,9 +225,21 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
 
         <ul className={styles.trust}>
           <li>Details checked on each stay&rsquo;s own website</li>
+          <li>Verified guest ratings, with the source shown</li>
           <li>You deal directly with the stay</li>
           <li>No booking fees</li>
         </ul>
+
+        <nav className={styles.regions} aria-label="Regions">
+          {[{ id: 'all' as const, label: 'All regions' }, ...REGIONS].map((r) => {
+            const n = r.id === 'all' ? stays.length : stays.filter((s) => s.region === r.id).length;
+            return (
+              <button key={r.id} type="button" aria-pressed={region === r.id} className={region === r.id ? styles.regionOn : ''} onClick={() => setRegion(r.id)}>
+                {r.label} <span>{n}</span>
+              </button>
+            );
+          })}
+        </nav>
 
         <div className={styles.toolbar}>
           <div className={styles.chips} role="group" aria-label="Type of stay">
@@ -141,78 +252,26 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
             <span>Sort by</span>
             <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
               <option value="featured">Featured</option>
+              <option value="rating">Guest rating, high to low</option>
               <option value="name">Name A to Z</option>
               <option value="price">Published price, low to high</option>
             </select>
           </label>
         </div>
 
-        <p className={styles.count} aria-live="polite">{list.length} stay{list.length === 1 ? '' : 's'} in Darjeeling and the hills · {tripSummary(trip)}</p>
+        <p className={styles.count} aria-live="polite">{list.length} stay{list.length === 1 ? '' : 's'} in {regionLabel} · {tripSummary(trip)}</p>
 
-        {list.length === 0 && <p className={styles.empty}>No stays match these filters. Try clearing &ldquo;Rates published&rdquo;.</p>}
+        {list.length === 0 && <p className={styles.empty}>No stays match these filters. Try another region or type of stay, or clear &ldquo;Rates published&rdquo;.</p>}
 
-        <ul className={styles.results}>
-          {list.map((s) => {
-            const expired = !!(s.pricing && today && today > s.pricing.validTo);
-            return (
-              <li key={s.id} className={styles.card}>
-                <div className={styles.media}>
-                  {s.photo ? (
-                    <>
-                      <img src={s.photo.src} alt={s.photo.alt} loading="lazy" />
-                      <p className={styles.credit}>
-                        {s.photo.caption ? s.photo.caption + ' · ' : ''}{s.photo.author},{' '}
-                        <a href={s.photo.licenseUrl} target="_blank" rel="noopener noreferrer">{s.photo.license}</a>,{' '}
-                        <a href={s.photo.sourceUrl} target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
-                      </p>
-                    </>
-                  ) : (
-                    <div className={styles.noPhoto} aria-hidden="true"><span>{s.name.charAt(0)}</span><small>Photo coming soon</small></div>
-                  )}
-                </div>
-
-                <div className={styles.body}>
-                  <p className={styles.tag}>{s.tag}</p>
-                  <h2 className={styles.name}>{s.name}</h2>
-                  <p className={styles.area}>
-                    <a href={mapHref(s.mapQuery)} target="_blank" rel="noopener noreferrer">{s.area}</a>
-                  </p>
-                  <p className={styles.blurb}>{s.blurb}</p>
-                  <ul className={styles.facts}>{s.facts.map((f) => <li key={f}>{f}</li>)}</ul>
-                  <p className={styles.links}>
-                    <a href={s.website} target="_blank" rel="noopener noreferrer">Official website</a>
-                    {s.phones.length > 0 && <>
-                      {' · '}
-                      {s.phones.map((p, i) => <span key={p}>{i > 0 && ', '}<a href={telHref(p)}>{p}</a></span>)}
-                    </>}
-                  </p>
-                </div>
-
-                <aside className={styles.buy}>
-                  {s.pricing ? (
-                    <>
-                      <p className={styles.priceLabel}>{expired ? 'Last published rate' : 'Published rate'}</p>
-                      <p className={styles.price}>{s.pricing.summary}</p>
-                      {expired && <p className={styles.stale}>Out of date</p>}
-                      <p className={styles.priceNote}>{s.pricing.detail}</p>
-                      <p className={styles.priceMeta}>
-                        <a href={s.pricing.sourceUrl} target="_blank" rel="noopener noreferrer">Tariff</a> for {fmtShort(s.pricing.validFrom)} {s.pricing.validFrom.slice(0, 4)} to {fmtShort(s.pricing.validTo)} {s.pricing.validTo.slice(0, 4)}. Ask for today&rsquo;s price.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className={styles.priceLabel}>Rates</p>
-                      <p className={styles.price}>On request</p>
-                      <p className={styles.priceNote}>This stay does not publish a price list. Send an enquiry to get a quote.</p>
-                    </>
-                  )}
-                  <button type="button" className={styles.cta} onClick={() => setEnquiring(s)}>Check availability</button>
-                  {s.bookingUrl && <a className={styles.alt} href={s.bookingUrl} target="_blank" rel="noopener noreferrer">Book on their site</a>}
-                </aside>
-              </li>
-            );
-          })}
-        </ul>
+        {sections.map((r) => (
+          <section key={r.id} className={styles.regionSection} aria-labelledby={'region-' + r.id}>
+            <header className={styles.regionHead}>
+              <h2 id={'region-' + r.id}>Stays in {r.label}</h2>
+              <p>{r.blurb} <span>{r.stays.length} stay{r.stays.length === 1 ? '' : 's'}</span></p>
+            </header>
+            <ul className={styles.results}>{r.stays.map(card)}</ul>
+          </section>
+        ))}
 
         <section className={styles.listCta}>
           <div>
@@ -223,7 +282,7 @@ export default function StaysClient({ stays, checked }: { stays: Stay[]; checked
         </section>
 
         <p className={styles.note}>
-          Details were read from each property&rsquo;s own website on {fmtDate(checked)}. Prices are the rates a stay itself has published, for the dates shown, and are not a quote. Khabar Darjeeling does not take bookings or payments, and a listing is not a recommendation or a rating. Confirm rates, availability and cancellation terms with the stay before you pay.
+          Details were read from each property&rsquo;s own website between {fmtDate(checked)} and {fmtDate(lastChecked)}. Prices are the rates a stay itself has published, for the dates shown, and are not a quote. Guest scores and star classes are copied from the booking site named on each card, on the date shown, and are based on its verified guest reviews. Khabar Darjeeling does not rate stays itself, and a listing is not a recommendation. Khabar Darjeeling does not take bookings or payments. Confirm rates, availability and cancellation terms with the stay before you pay.
         </p>
       </div>
 

@@ -7,12 +7,12 @@ import { STAYS, STAYS_CHECKED } from '@/lib/stays';
 const SITE = 'https://khabardarjeeling.in';
 
 export const metadata: Metadata = {
-  title: 'Stays in Darjeeling - Heritage Hotels, Tea Estates and Local Hotels',
-  description: "Find a place to stay in Darjeeling: heritage hotels, tea estate bungalows and local hotels, with the property's own rates, phone and email. Send an enquiry directly.",
+  title: 'Stays in Darjeeling, Kurseong, Kalimpong, Mirik, Siliguri and Sikkim - Hotels with Guest Ratings',
+  description: "Find a place to stay in Darjeeling, Kurseong, Kalimpong, Mirik, Siliguri and Sikkim: heritage hotels, tea estates, resorts and hotels, with verified guest ratings and each property's own rates, phone and email. Send an enquiry directly.",
   alternates: { canonical: SITE + '/stays' },
   openGraph: {
-    title: 'Stays in Darjeeling | Khabar Darjeeling',
-    description: 'Heritage hotels, tea estates and local hotels in Darjeeling. Enquire directly with the stay.',
+    title: 'Stays in Darjeeling, Sikkim and the Hills | Khabar Darjeeling',
+    description: 'Heritage hotels, tea estates, resorts and hotels across Darjeeling, Kalimpong, Mirik, Siliguri and Sikkim, with verified guest ratings. Enquire directly with the stay.',
     url: SITE + '/stays',
     siteName: 'Khabar Darjeeling',
     type: 'website',
