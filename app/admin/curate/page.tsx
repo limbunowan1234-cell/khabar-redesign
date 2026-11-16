@@ -78,7 +78,10 @@ export default function CuratePage() {
 
   async function loadArticles() {
     const param = mode === 'genre' ? 'genre' : 'district';
-    const res = await fetch(WORKER_URL + '/articles?' + param + '=' + encodeURIComponent(selected) + '&limit=40');
+    // The whole section, not just the newest few: a pin on an older story
+    // would otherwise fall off the list -- invisible here, impossible to
+    // unpin, yet still counted against the limit of 3 on the live page.
+    const res = await fetch(WORKER_URL + '/articles?' + param + '=' + encodeURIComponent(selected) + '&limit=500');
     if (res.ok) {
       const data = await res.json();
       setArticles(data.documents || []);
@@ -117,7 +120,7 @@ export default function CuratePage() {
     const pinField = mode === 'genre' ? 'isGenrePinned' : 'isRegionPinned';
     const currentPinnedCount = articles.filter((a) => a[pinField]).length;
     if (!currentlyPinned && currentPinnedCount >= 3) {
-      alert('Maximum 3 pinned articles already set. Unpin one first.');
+      alert('Maximum 3 pinned articles already set. Unpin one first, or use "Unpin all" above the list.');
       return;
     }
     setBusyId(articleId);
@@ -126,6 +129,26 @@ export default function CuratePage() {
       await editArticle(articleId, { [pinField]: !currentlyPinned }, workerToken);
       await loadArticles();
     } finally {
+      setBusyId('');
+    }
+  }
+
+  // Clears every pin in the section being viewed (this genre or region),
+  // so a fresh set of up to 3 can be chosen without hunting for the old ones.
+  async function unpinAll() {
+    const pinField = mode === 'genre' ? 'isGenrePinned' : 'isRegionPinned';
+    const pinned = articles.filter((a) => a[pinField]);
+    if (pinned.length === 0) return;
+    setBusyId('unpin-all');
+    try {
+      const workerToken = await getWorkerAuthToken();
+      for (const p of pinned) {
+        await editArticle(p.$id, { [pinField]: false }, workerToken);
+      }
+    } catch {
+      alert('Could not unpin everything -- some pins may still be set. Try again.');
+    } finally {
+      await loadArticles();
       setBusyId('');
     }
   }
@@ -180,11 +203,24 @@ export default function CuratePage() {
           {options.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
 
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#555' }}>
+            📌 Pinned in {selected}: {articles.filter((a) => a[pinField]).length} of 3
+          </span>
+          <button
+            disabled={busyId === 'unpin-all' || articles.filter((a) => a[pinField]).length === 0}
+            onClick={unpinAll}
+            style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid #c41e3a', background: 'white', color: '#c41e3a', cursor: 'pointer', fontSize: '12px', fontWeight: 700, opacity: articles.filter((a) => a[pinField]).length === 0 ? 0.4 : 1 }}
+          >
+            {busyId === 'unpin-all' ? 'Unpinning...' : 'Unpin all'}
+          </button>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {articles.length === 0 && <p style={{ color: '#888', textAlign: 'center', padding: '30px' }}>No articles found for {selected}.</p>}
           {articles.map((a) => (
             <div key={a.$id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', borderRadius: '10px', padding: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              {a.imageFileId && <img src={getImageUrl(a.imageFileId)} alt={a.title} style={{ width: '56px', height: '56px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />}
+              {a.imageFileId && <img loading="lazy" src={getImageUrl(a.imageFileId)} alt={a.title} style={{ width: '56px', height: '56px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{a.title}</div>
                 <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{new Date(a.publishedAt || a.$createdAt).toLocaleDateString()}</div>
