@@ -541,3 +541,22 @@ CREATE TABLE app_reviews (
 );
 CREATE UNIQUE INDEX idx_app_reviews_one_per_player ON app_reviews(app_id, player_id);
 CREATE INDEX idx_app_reviews_app ON app_reviews(app_id, updated_at DESC);
+
+-- Simon Speed prize claims (db/migrations/2026-11-17-prize-claims.sql)
+CREATE TABLE prize_claims (
+  id          TEXT PRIMARY KEY,
+  player_id   TEXT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  game        TEXT NOT NULL,                  -- 'simon-speed'
+  mode        TEXT NOT NULL,                  -- 'easy' | 'medium' | 'hard'
+  period      TEXT NOT NULL,                  -- the round, e.g. '2026-11'
+  amount      INTEGER NOT NULL,               -- rupees, fixed when claimed
+  qr_key      TEXT NOT NULL,                  -- private R2 key under prize-qr/, never public
+  qr_type     TEXT NOT NULL,
+  upi_id      TEXT,
+  status      TEXT NOT NULL DEFAULT 'submitted', -- 'submitted' | 'paid'
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  paid_at     TEXT
+);
+CREATE UNIQUE INDEX idx_prize_claims_round ON prize_claims(game, mode, period);
+CREATE INDEX idx_prize_claims_player ON prize_claims(player_id);

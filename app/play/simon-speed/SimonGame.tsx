@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import styles from './play.module.css';
 import PlayerAuth from '@/components/PlayerAuth';
+import PrizeClaims from './PrizeClaims';
 import { getPlayerSession, logoutPlayer, onPlayerChange, playerFetch, type PlayerProfile, errorMessage } from '@/lib/player';
 import { PADS_PER_MODE, SIMON_MODES, flashMs, simonSequence, type SimonMode } from '@/lib/simonSpeed';
 
@@ -277,6 +278,8 @@ export default function SimonGame() {
           </div>
         )}
 
+        <PrizeClaims player={player} />
+
         <div className={styles.layout}>
           <section className={styles.gamePanel} aria-label="Game">
             {!player && (
@@ -380,7 +383,7 @@ export default function SimonGame() {
             <li>Each round the player ranked #1 in each mode wins: <strong>₹{PRIZE.easy}</strong> for Easy, <strong>₹{PRIZE.medium}</strong> for Medium and <strong>₹{PRIZE.hard}</strong> for Hard.</li>
             <li>The first round runs from 18 October to 18 November 2026. Each round closes at midnight (India time) at the end of the 18th, and the next one starts fresh on the 19th.</li>
             <li>Only games played while logged in count. If two players have the same score, the one who reached it first ranks higher.</li>
-            <li>We contact winners on the mobile number they registered with and pay by UPI. Please register with your own number.</li>
+            <li>When the round ends, the winner logs in here and uploads the QR code of their UPI account, and we send the prize to it. We may also contact winners on the mobile number they registered with, so please use your own number.</li>
             <li>One account per person. Accounts that cheat, use bots or share a number may be removed from the leaderboard.</li>
           </ol>
         </section>

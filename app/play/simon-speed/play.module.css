@@ -168,3 +168,23 @@
 .rules h2 { margin: 0 0 12px; font-size: 20px; font-weight: 900; }
 .rules ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--pl-muted); line-height: 1.6; max-width: 75ch; }
 .rules strong { color: var(--pl-gold); }
+
+/* Prize claims for round winners */
+.prizePanel { display: grid; gap: 14px; margin: 0 0 22px; }
+.prizeCard { padding: clamp(18px, 3vw, 24px); border-radius: 20px; background: linear-gradient(135deg, rgba(255, 210, 63, 0.14), rgba(255, 210, 63, 0.04)); border: 1.5px solid rgba(255, 210, 63, 0.55); }
+.prizeHead { display: flex; align-items: center; gap: 14px; }
+.prizeHead strong { display: block; font-size: 20px; font-weight: 900; color: var(--pl-gold); }
+.prizeHead div span { display: block; font-size: 13.5px; color: var(--pl-muted); margin-top: 2px; }
+.trophy { font-size: 34px; line-height: 1; }
+.prizeForm { display: grid; gap: 10px; margin-top: 16px; max-width: 460px; }
+.prizeForm > p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--pl-text); }
+.qrPick { display: grid; place-items: center; width: 180px; height: 180px; max-width: 100%; border-radius: 16px; border: 2px dashed rgba(255, 210, 63, 0.6); background: rgba(0, 0, 0, 0.25); cursor: pointer; overflow: hidden; font-weight: 700; color: var(--pl-gold); }
+.qrPick img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.visuallyHidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.qrPick:focus-within, input.visuallyHidden:focus + .fieldLabel { outline: 3px solid var(--pl-accent); }
+.fieldLabel { font-size: 13px; font-weight: 700; margin-top: 4px; }
+.textInput { width: 100%; box-sizing: border-box; padding: 12px 14px; font-size: 16px; border-radius: 12px; border: 1.5px solid var(--pa-line); background: var(--pa-input); color: var(--pl-text); }
+.prizeActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.prizeNote { font-size: 12px !important; color: var(--pl-muted) !important; }
+.prizeDone { margin: 14px 0 0; font-size: 14px; line-height: 1.55; color: var(--pl-text); }
+.prizeDone p { margin: 0 0 6px; }

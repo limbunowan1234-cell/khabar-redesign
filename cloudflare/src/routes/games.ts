@@ -15,7 +15,7 @@ export const games = new Hono<{ Bindings: Bindings }>();
 // out the score. Results that finish faster than the pattern could even be
 // shown are rejected too.
 
-const GAME = 'simon-speed';
+export const GAME = 'simon-speed';
 const MAX_TAPS = 20_000;
 const SESSION_MAX_AGE_MS = 3 * 60 * 60 * 1000;
 const MAX_STARTS_PER_HOUR = 200;
@@ -23,24 +23,24 @@ const MAX_STARTS_PER_HOUR = 200;
 // quicker than the theoretical minimum.
 const TIMING_TOLERANCE = 0.8;
 
-function isMode(m: unknown): m is SimonMode {
+export function isMode(m: unknown): m is SimonMode {
   return typeof m === 'string' && (SIMON_MODES as readonly string[]).includes(m);
 }
 
 // Competition rounds end at midnight India time at the end of the 18th, and
 // are named by the month they end in: '2026-12' runs 19 Nov - 18 Dec. The
 // first round opened at launch on 18 Oct 2026 and runs to 18 Nov.
-const ROUND_END_DAY = 18;
-const FIRST_PERIOD = '2026-11';
-const FIRST_ROUND_START = '2026-10-18';
+export const ROUND_END_DAY = 18;
+export const FIRST_PERIOD = '2026-11';
+export const FIRST_ROUND_START = '2026-10-18';
 
-function shiftPeriod(period: string, months: number): string {
+export function shiftPeriod(period: string, months: number): string {
   const [y, m] = period.split('-').map(Number);
   const d = new Date(Date.UTC(y, m - 1 + months, 1));
   return d.toISOString().slice(0, 7);
 }
 
-function currentPeriod(): string {
+export function currentPeriod(): string {
   const ist = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
   let period = ist.toISOString().slice(0, 7);
   if (ist.getUTCDate() > ROUND_END_DAY) period = shiftPeriod(period, 1);
@@ -48,12 +48,12 @@ function currentPeriod(): string {
 }
 
 // First and last day (inclusive, India time) of a round, as 'YYYY-MM-DD'.
-function roundDates(period: string): { start: string; end: string } {
+export function roundDates(period: string): { start: string; end: string } {
   const start = period === FIRST_PERIOD ? FIRST_ROUND_START : `${shiftPeriod(period, -1)}-${ROUND_END_DAY + 1}`;
   return { start, end: `${period}-${ROUND_END_DAY}` };
 }
 
-function isPeriod(p: unknown): p is string {
+export function isPeriod(p: unknown): p is string {
   return typeof p === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(p) && p >= FIRST_PERIOD;
 }
 
@@ -63,7 +63,7 @@ function parseSqlTime(s: string): number {
 
 // Each player's best score this period, ranked. Ties go to whoever got
 // there first.
-const BOARD_SQL = `
+export const BOARD_SQL = `
   WITH best AS (
     SELECT player_id, MAX(score) AS score
     FROM game_scores WHERE game = ?1 AND mode = ?2 AND period = ?3
