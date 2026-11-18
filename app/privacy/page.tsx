@@ -27,6 +27,9 @@ export default function PrivacyPage() {
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Push Notifications</h2>
           <p>Users can opt in to receive browser push notifications about new articles and updates. When you subscribe, we collect your browser endpoint, encryption keys (p256dh and auth token), and user ID to deliver notifications. Push subscriptions can be disabled at any time from your browser settings or by clicking the notification bell on our site. We do not share push subscription data with third parties.</p>
 
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Khabar Darjeeling Android App</h2>
+          <p>The Khabar Darjeeling app for Android shows the same articles as this website. Stories you save in the app are stored only on your phone and are never sent to us. If you allow notifications, the app sends us a notification token for your device (a random identifier created by Google Firebase Cloud Messaging), the app version and the platform, so we can send you breaking news alerts. We do not link this token to your name, email or account. Notifications are delivered through Google Firebase Cloud Messaging. You can turn them off at any time in your phone's settings, or remove the token by uninstalling the app. The app has no ads and no analytics tracking. If you log in on khabardarjeeling.in inside the app, the rest of this policy applies as it does on the website.</p>
+
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Games and App Reviews</h2>
           <p>To play Simon Speed for the leaderboard or to rate apps in Khabar Apps, you create a player account with an in-game name, your mobile number and a 4-digit PIN. Your in-game name, scores, ratings and comments are shown publicly. Your mobile number is never shown publicly; we use it only to identify your account and to contact you if you win a competition. Your PIN is stored in scrambled (hashed) form, so we cannot read it. To delete your player account, contact us using the details below.</p>
 
@@ -34,10 +37,13 @@ export default function PrivacyPage() {
           <p>We may display advertisements served by third-party ad networks such as Google AdSense. These partners may use cookies and similar technologies to show ads based on your visits to this and other websites. Google's use of advertising cookies enables it and its partners to serve ads based on your visit to our site. You can opt out of personalized advertising by visiting Google's Ads Settings.</p>
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Third-Party Services</h2>
-          <p>We rely on trusted providers to run the platform, including Appwrite for data and authentication, Vercel for hosting, and Cloudflare for security and delivery. These providers process data only as needed to operate the service.</p>
+          <p>We rely on trusted providers to run the platform, including Cloudflare for data storage, authentication, security and delivery, Vercel for hosting, and Google Firebase Cloud Messaging for app notifications. These providers process data only as needed to operate the service.</p>
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Your Rights</h2>
           <p>You can access, update, or delete your account information at any time from your profile. To request full deletion of your data, contact us at the email below.</p>
+
+          <h2 id="delete-account" style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Delete Your Account</h2>
+          <p>To delete your Khabar Darjeeling account (website or app), email <a href="mailto:nowanad@gmail.com" style={{ color: '#c41e3a' }}>nowanad@gmail.com</a> from the email address you signed up with and ask us to delete your account. We delete your account, profile, bookmarks, likes, follows and push subscriptions within 30 days. Articles, comments or poems you have published may be removed or kept without your name, as you choose. App notification tokens are not linked to accounts; uninstalling the app stops notifications.</p>
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Children's Privacy</h2>
           <p>Our service is not directed to children under 13, and we do not knowingly collect their personal information.</p>
