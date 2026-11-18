@@ -26,6 +26,7 @@ import { players } from './routes/players';
 import { games } from './routes/games';
 import { reviews } from './routes/reviews';
 import { prizes } from './routes/prizes';
+import { deviceTokens } from './routes/deviceTokens';
 
 type Bindings = { DB: D1Database; IMAGES: R2Bucket; AUTH_JWT_SECRET: string; AI: Ai };
 
@@ -93,6 +94,7 @@ app.route('/players', players);
 app.route('/games', games);
 app.route('/app-reviews', reviews);
 app.route('/prizes', prizes);
+app.route('/device-tokens', deviceTokens);
 
 export default {
   fetch: app.fetch,

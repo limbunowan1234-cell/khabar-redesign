@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { verifyUser, isReporterOrAdmin, type AppUser } from '../lib/auth';
+import { pushBreakingIfNew } from './deviceTokens';
+import type { FcmEnv } from '../lib/fcm';
 
-type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
+type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string } & FcmEnv;
 
 export const articles = new Hono<{ Bindings: Bindings }>();
 
@@ -311,6 +313,10 @@ articles.post('/', async (c) => {
     }
   }
 
+  // Breaking-news push to the Android app (see routes/deviceTokens.ts).
+  // Background, so a slow/failed push never delays or fails the save.
+  if (body.isBreaking) c.executionCtx.waitUntil(pushBreakingIfNew(c.env, body.id));
+
   return c.json({ ok: true });
 });
 
@@ -381,6 +387,14 @@ articles.patch('/:id', async (c) => {
         .bind(id, img.fileId, img.caption || null, i)
         .run();
     }
+  }
+
+  // Breaking-news push: fires when this write could have made the article
+  // published + breaking (the admin "Breaking" toggle, or approving an
+  // article already marked breaking). pushBreakingIfNew re-reads the row
+  // and only ever sends once per article.
+  if (body.isBreaking || body.status === 'published') {
+    c.executionCtx.waitUntil(pushBreakingIfNew(c.env, id));
   }
 
   if (Array.isArray(body.galleryImageIds)) {
