@@ -75,6 +75,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE + '/calendar/converter', lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
     { url: SITE + '/calendar', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     ...allMonths().map((m) => ({ url: SITE + '/calendar/' + ymSlug(m.year, m.month), lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.5 })),
+    { url: SITE + '/road-status', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.6 },
     { url: SITE + '/apps', lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.5 },
     { url: SITE + '/bring-anmol-home', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 },
     { url: SITE + '/play/simon-speed', lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.5 },

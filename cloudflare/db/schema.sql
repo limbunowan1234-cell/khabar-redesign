@@ -582,3 +582,28 @@ CREATE TABLE breaking_pushes (
   sent_at      TEXT NOT NULL DEFAULT (datetime('now')),
   message_id   TEXT
 );
+
+-- ─── Road status ────────────────────────────────────────────────────────
+
+-- The /road-status page: closures, restrictions, diversions and road /
+-- bridge projects on the routes linking the hills and the plains. One row
+-- per road or project, edited from /admin/roads. `diversion` is the
+-- alternative route, shown in its own box on the public page. Rows are
+-- never auto-expired; the page instead shows each row's own updated_at and
+-- warns when it's gone stale, so an old "closed until..." can't quietly
+-- pass for current.
+CREATE TABLE road_status (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  status      TEXT NOT NULL,   -- 'closed' | 'restricted' | 'open' | 'planned'
+  summary     TEXT NOT NULL,
+  details     TEXT,
+  diversion   TEXT,
+  next_date   TEXT,
+  source      TEXT,
+  link_url    TEXT,
+  active      INTEGER NOT NULL DEFAULT 1,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_road_status_active ON road_status(active, status, updated_at DESC);

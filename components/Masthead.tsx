@@ -60,6 +60,7 @@ export default function Masthead({ isMobile, isDarkMode, onToggleDark, searchQue
           <nav className={styles.utilityLinks} aria-label="Sections">
             <Link href="/weekly" className={styles.utilityLink}>Weekly Edition</Link>
             <Link href="/daily-updates" className={styles.utilityLink}>Daily Updates</Link>
+            <Link href="/road-status" className={styles.utilityLink}>Road Status</Link>
             <Link href="/calendar" className={styles.utilityLink}>Calendar</Link>
             <Link href="/markets" className={styles.utilityLink}>Markets</Link>
             <Link href="/stays" className={styles.utilityLink}>Stays</Link>
