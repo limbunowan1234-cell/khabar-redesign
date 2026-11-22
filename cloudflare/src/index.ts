@@ -28,6 +28,7 @@ import { reviews } from './routes/reviews';
 import { prizes } from './routes/prizes';
 import { deviceTokens } from './routes/deviceTokens';
 import { roads } from './routes/roads';
+import { reports } from './routes/reports';
 
 type Bindings = { DB: D1Database; IMAGES: R2Bucket; AUTH_JWT_SECRET: string; AI: Ai };
 
@@ -97,6 +98,7 @@ app.route('/app-reviews', reviews);
 app.route('/prizes', prizes);
 app.route('/device-tokens', deviceTokens);
 app.route('/roads', roads);
+app.route('/reports', reports);
 
 export default {
   fetch: app.fetch,

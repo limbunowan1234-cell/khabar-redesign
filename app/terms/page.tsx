@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import Link from 'next/link';
 
 export default function Terms() {
@@ -41,6 +41,20 @@ export default function Terms() {
 
         <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#c41e3a', marginTop: '30px', marginBottom: '12px' }}>5. User-Generated Content</h2>
         <p>Comments and replies remain your property, but grant Khabar Darjeeling permission to display and moderate them. We may delete comments at our sole discretion.</p>
+
+        <h3 id="community-rules" style={{ fontSize: '16px', fontWeight: '800', marginTop: '18px', marginBottom: '8px' }}>Community rules (website and Android app)</h3>
+        <p>Anyone posting a comment, story, poem, photo or opinion on Khabar Darjeeling agrees to these rules. We have <strong>zero tolerance</strong> for objectionable content and abusive users. Do not post:</p>
+        <ul style={{ marginLeft: '20px' }}>
+          <li>Hate speech, or attacks on anyone for their community, caste, religion, gender, sexuality, disability or origin</li>
+          <li>Harassment, bullying, threats, or encouragement of violence or self-harm</li>
+          <li>Sexual or pornographic content, or anything that sexualises minors</li>
+          <li>Spam, advertising, scams, or links to malware</li>
+          <li>False news presented as fact, or impersonation of another person or organisation</li>
+          <li>Other people's private information, or content you do not have the rights to</li>
+          <li>Anything illegal under Indian law</li>
+        </ul>
+        <h3 style={{ fontSize: '16px', fontWeight: '800', marginTop: '18px', marginBottom: '8px' }}>Reporting and blocking</h3>
+        <p>Every comment and story has a <strong>Report</strong> option, and in the Android app you can also <strong>Block</strong> a user to hide everything they post. Reports come to our editors, who review them within 24 hours. A comment reported by several readers is hidden until it is reviewed. Content that breaks these rules is removed, and accounts that break them are suspended or banned. You can also email reports to <strong>nowanad@gmail.com</strong>.</p>
 
         <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#c41e3a', marginTop: '30px', marginBottom: '12px' }}>6. Disclaimers</h2>
         <p>Content is provided "as-is" without warranty. We do not guarantee accuracy or timeliness. We are not liable for decisions made based on our content.</p>

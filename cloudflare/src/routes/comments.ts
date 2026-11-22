@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { verifyUser, isAdmin } from '../lib/auth';
+import { HIDE_AFTER_REPORTS } from './reports';
 
 type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
 
@@ -44,6 +45,10 @@ comments.get('/', async (c) => {
   }
 
   // Newest-first, matching every existing caller's orderDesc($createdAt).
+  // Comments reported by HIDE_AFTER_REPORTS+ different people stay hidden
+  // until an admin reviews them (routes/reports.ts).
+  where.push(`id NOT IN (SELECT target_id FROM reports WHERE target_type = 'comment' AND status = 'open'
+                         GROUP BY target_id HAVING COUNT(*) >= ${HIDE_AFTER_REPORTS})`);
   const sql = `SELECT * FROM comments WHERE ${where.join(' AND ')} ORDER BY created_at DESC LIMIT 5000`;
   const { results } = await c.env.DB.prepare(sql).bind(...params).all();
   const docs = (results || []).map(toCommentJson);
