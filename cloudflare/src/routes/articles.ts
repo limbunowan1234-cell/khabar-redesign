@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { verifyUser, isReporterOrAdmin, type AppUser } from '../lib/auth';
+import { verifyUser, isReporterOrAdmin, isSuspended, type AppUser } from '../lib/auth';
 import { pushBreakingIfNew } from './deviceTokens';
 import type { FcmEnv } from '../lib/fcm';
 
@@ -264,6 +264,24 @@ articles.post('/', async (c) => {
   }
   if (!user || user.$id !== body.submitterId) return c.json({ error: 'Unauthorized' }, 401);
 
+  // Open publishing, but with staff-only powers. Anyone logged in can post,
+  // yet only reporters/admins may mark a story breaking (which pushes a
+  // notification to every app user) or featured, publish it as "rejected",
+  // or credit it to someone else. For everyone else the byline is always
+  // their own account, so nobody can post under another person's name.
+  const staff = isReporterOrAdmin(user);
+  if (!staff && (await isSuspended(c.env.DB, user.$id))) {
+    return c.json({ error: 'Your account can no longer publish. Contact nowanad@gmail.com.' }, 403);
+  }
+  const OPEN_STATUSES = ['published', 'draft', 'pending_review'];
+  const status = staff ? body.status || 'published' : OPEN_STATUSES.includes(body.status) ? body.status : 'published';
+  const isBreaking = staff && !!body.isBreaking;
+  const isFeatured = staff && !!body.isFeatured;
+  const submitterName = staff ? body.submitterName || user.name : user.name;
+  const submitterEmail = staff ? body.submitterEmail || user.email : user.email;
+  const authorName = staff ? body.authorName || user.name : user.name;
+  const authorEmail = staff ? body.authorEmail || user.email : user.email;
+
   // OR IGNORE rather than a targeted ON CONFLICT (id): slug is also
   // UNIQUE, and while a real collision is very unlikely (every slug
   // generator here appends a Date.now() suffix), a slug conflict should
@@ -281,12 +299,12 @@ articles.post('/', async (c) => {
     )
     .bind(
       body.id, body.slug || null, body.title, body.sideHeader || null, body.content || null,
-      body.genre || null, body.category || null, body.status || 'published',
+      body.genre || null, body.category || null, status,
       body.locationDistrict || null, body.locationArea || null, body.location || null, body.imageFileId || null,
       body.imageCaption || null, body.youtube_id || null,
-      body.submitterId, body.submitterName || null, body.submitterEmail || null, body.submitterAvatar || null,
-      body.authorName || null, body.authorEmail || null,
-      body.isBreaking ? 1 : 0, body.isFeatured ? 1 : 0, body.isContestEntry ? 1 : 0, body.trackerData || null,
+      body.submitterId, submitterName || null, submitterEmail || null, body.submitterAvatar || null,
+      authorName || null, authorEmail || null,
+      isBreaking ? 1 : 0, isFeatured ? 1 : 0, body.isContestEntry ? 1 : 0, body.trackerData || null,
       body.submittedAt || null, body.publishedAt || null
     )
     .run();
@@ -315,7 +333,7 @@ articles.post('/', async (c) => {
 
   // Breaking-news push to the Android app (see routes/deviceTokens.ts).
   // Background, so a slow/failed push never delays or fails the save.
-  if (body.isBreaking) c.executionCtx.waitUntil(pushBreakingIfNew(c.env, body.id));
+  if (isBreaking) c.executionCtx.waitUntil(pushBreakingIfNew(c.env, body.id));
 
   return c.json({ ok: true });
 });
@@ -339,6 +357,15 @@ const PATCH_FIELD_MAP: Record<string, string> = {
   isGenreFeatured: 'is_genre_featured', isGenrePinned: 'is_genre_pinned',
   isRegionFeatured: 'is_region_featured', isRegionPinned: 'is_region_pinned',
 };
+// Fields only reporters/admins may change. An author editing their own
+// story can fix its text, photos and place, but can't make it breaking
+// (that sends a push to every phone), feature it, pick it for the weekly
+// edition or change who it's credited to.
+const STAFF_ONLY_FIELDS = new Set([
+  'isBreaking', 'isFeatured', 'isWeeklyPick', 'weeklyLive', 'weeklyIssue', 'weeklySection',
+  'weeklyOrder', 'isWeeklyLead', 'isGenreFeatured', 'isGenrePinned', 'isRegionFeatured',
+  'isRegionPinned', 'rejectionReason', 'submitterName',
+]);
 const BOOL_FIELDS = new Set([
   'isBreaking', 'isFeatured', 'isContestEntry', 'isWeeklyPick', 'weeklyLive',
   'isWeeklyLead', 'isGenreFeatured', 'isGenrePinned', 'isRegionFeatured', 'isRegionPinned',
@@ -355,12 +382,22 @@ articles.patch('/:id', async (c) => {
 
   const row = await c.env.DB.prepare('SELECT submitter_id FROM articles WHERE id = ?').bind(id).first();
   if (!row) return c.json({ error: 'Not found' }, 404);
-  if ((row as any).submitter_id !== user.$id && !isReporterOrAdmin(user)) {
+  const staff = isReporterOrAdmin(user);
+  if ((row as any).submitter_id !== user.$id && !staff) {
     return c.json({ error: 'Unauthorized' }, 401);
+  }
+  if (!staff && (await isSuspended(c.env.DB, user.$id))) {
+    return c.json({ error: 'Your account can no longer publish. Contact nowanad@gmail.com.' }, 403);
   }
 
   const body = await c.req.json().catch(() => null);
   if (!body || typeof body !== 'object') return c.json({ error: 'Body required' }, 400);
+  if (!staff) {
+    for (const key of STAFF_ONLY_FIELDS) delete body[key];
+    // Authors can publish, unpublish to a draft or send for review, never
+    // set any other status (e.g. un-reject their own rejected story).
+    if (body.status !== undefined && !['published', 'draft', 'pending_review'].includes(body.status)) delete body.status;
+  }
 
   const sets: string[] = [];
   const params: unknown[] = [];
@@ -412,13 +449,18 @@ articles.patch('/:id', async (c) => {
   return c.json({ ok: true });
 });
 
-// DELETE /articles/:id -- reporter/admin only, not scoped to own
-// articles (matches admin/page.tsx's handleDelete, which any reporter or
-// admin can invoke on any article today).
+// DELETE /articles/:id -- the story's own author, or any reporter/admin
+// (admin/page.tsx's handleDelete). Open publishing means people need to be
+// able to take down what they posted themselves.
 articles.delete('/:id', async (c) => {
   const id = c.req.param('id');
   const user = await verifyUser(c.req.raw, c.env);
-  if (!user || !isReporterOrAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+  if (!isReporterOrAdmin(user)) {
+    const row = await c.env.DB.prepare('SELECT submitter_id FROM articles WHERE id = ?').bind(id).first<{ submitter_id: string }>();
+    if (!row) return c.json({ ok: true });
+    if (row.submitter_id !== user.$id) return c.json({ error: 'Unauthorized' }, 401);
+  }
 
   await c.env.DB.prepare('DELETE FROM articles WHERE id = ?').bind(id).run();
   return c.json({ ok: true });

@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { verifyUser, isAdmin } from '../lib/auth';
+import { verifyUser, isAdmin, isSuspended } from '../lib/auth';
 import { HIDE_AFTER_REPORTS } from './reports';
 
 type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; };
@@ -69,6 +69,9 @@ comments.post('/', async (c) => {
     return c.json({ error: 'id, articleId, userId, and commentText are required' }, 400);
   }
   if (!user || user.$id !== body.userId) return c.json({ error: 'Unauthorized' }, 401);
+  if (!isAdmin(user) && (await isSuspended(c.env.DB, user.$id))) {
+    return c.json({ error: 'Your account can no longer comment. Contact nowanad@gmail.com.' }, 403);
+  }
 
   await c.env.DB
     .prepare('INSERT INTO comments (id, article_id, parent_comment_id, user_id, author_name, comment_text, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING')

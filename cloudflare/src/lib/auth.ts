@@ -68,3 +68,18 @@ export function verifyService(request: Request, env: { SERVICE_SECRET?: string }
   const secret = request.headers.get('X-Service-Secret');
   return !!env.SERVICE_SECRET && secret === env.SERVICE_SECRET;
 }
+
+// Publishing ban. An admin adds the label "suspended" to a user (users.labels)
+// and that account can no longer create or edit articles, comments or
+// uploads. Checked against the database on every write, not the JWT's own
+// labels claim, so a suspension takes effect at once instead of when the
+// user's 15-minute token expires.
+export async function isSuspended(db: D1Database, userId: string): Promise<boolean> {
+  const row = await db.prepare('SELECT labels FROM users WHERE id = ?').bind(userId).first<{ labels: string }>();
+  if (!row) return false;
+  try {
+    return (JSON.parse(row.labels || '[]') as string[]).includes('suspended');
+  } catch {
+    return false;
+  }
+}

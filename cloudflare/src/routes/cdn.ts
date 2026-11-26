@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import { verifyUser, verifyService } from '../lib/auth';
+import { verifyUser, verifyService, isSuspended } from '../lib/auth';
 
-type Bindings = { IMAGES: R2Bucket; AUTH_JWT_SECRET: string; SERVICE_SECRET: string };
+type Bindings = { IMAGES: R2Bucket; DB: D1Database; AUTH_JWT_SECRET: string; SERVICE_SECRET: string };
 
 export const cdn = new Hono<{ Bindings: Bindings }>();
 
@@ -16,6 +16,8 @@ async function serve(c: any, bucket: R2Bucket, key: string) {
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set('etag', object.httpEtag);
+  // Never let a browser guess a different type (e.g. treat an upload as HTML).
+  headers.set('x-content-type-options', 'nosniff');
   headers.set('cache-control', 'public, max-age=31536000, immutable');
 
   return new Response(object.body, { headers });
@@ -33,6 +35,19 @@ async function readUploadedFile(c: any): Promise<File | null> {
   }
   if (file.size > MAX_UPLOAD_BYTES) return null;
   return file;
+}
+
+// Works out what an upload really is from its first bytes, ignoring the
+// file name and the type the browser claims. Only these image formats are
+// accepted for article photos, avatars and app icons.
+function sniffImage(b: Uint8Array): { type: string; ext: string } | null {
+  const ascii = (from: number, to: number) => String.fromCharCode(...b.subarray(from, to));
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { type: 'image/jpeg', ext: 'jpg' };
+  if (b.length >= 8 && b[0] === 0x89 && ascii(1, 4) === 'PNG') return { type: 'image/png', ext: 'png' };
+  if (b.length >= 6 && (ascii(0, 6) === 'GIF87a' || ascii(0, 6) === 'GIF89a')) return { type: 'image/gif', ext: 'gif' };
+  if (b.length >= 12 && ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return { type: 'image/webp', ext: 'webp' };
+  if (b.length >= 12 && ascii(4, 8) === 'ftyp' && ['avif', 'avis'].includes(ascii(8, 12))) return { type: 'image/avif', ext: 'avif' };
+  return null;
 }
 
 function keyFor(file: File): string {
@@ -56,14 +71,19 @@ cdn.get('/articles/:key', (c) => serve(c, c.env.IMAGES, c.req.param('key')));
 cdn.post('/articles', async (c) => {
   const user = await verifyUser(c.req.raw, c.env);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
+  if (await isSuspended(c.env.DB, user.$id)) {
+    return c.json({ error: 'Your account can no longer upload. Contact nowanad@gmail.com.' }, 403);
+  }
 
   const file = await readUploadedFile(c);
   if (!file) return c.json({ error: 'file is required (max 10MB)' }, 400);
 
-  const key = keyFor(file);
-  await c.env.IMAGES.put(key, await file.arrayBuffer(), {
-    httpMetadata: { contentType: file.type || 'application/octet-stream' },
-  });
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const kind = sniffImage(bytes);
+  if (!kind) return c.json({ error: 'Only JPEG, PNG, WebP, GIF or AVIF images can be uploaded.' }, 415);
+
+  const key = crypto.randomUUID() + '.' + kind.ext;
+  await c.env.IMAGES.put(key, bytes, { httpMetadata: { contentType: kind.type } });
 
   return c.json({ fileId: key });
 });
