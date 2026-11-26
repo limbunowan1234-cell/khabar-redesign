@@ -818,6 +818,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
                 { href: '/apps', label: 'Apps & Games' },
                 { href: '/', label: 'Home' },
                 { href: '/weekly', label: 'Weekly Edition' },
+                { href: '/flash', label: 'Flash News' },
                 { href: '/daily-updates', label: 'Daily Updates' },
                 { href: '/road-status', label: 'Road Status' },
                 { href: '/calendar', label: 'Calendar (Panchang & Festivals)' },

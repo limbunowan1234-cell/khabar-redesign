@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { verifyUser, isAdmin } from '../lib/auth';
+import { logModeration } from '../lib/moderation';
 
 type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string };
 
@@ -53,10 +54,13 @@ reports.get('/', async (c) => {
               GROUP_CONCAT(DISTINCT r.reason) AS reasons,
               MIN(r.created_at) AS first_at, MAX(r.created_at) AS last_at,
               cm.comment_text, cm.author_name AS comment_author, cm.user_id AS comment_user_id, cm.article_id AS comment_article_id,
-              a.title AS article_title, a.slug AS article_slug
+              a.title AS article_title, a.slug AS article_slug, a.submitter_id AS article_submitter_id,
+              a.submitter_name AS article_submitter_name, a.kind AS article_kind, a.status AS article_status,
+              u.name AS user_name, u.labels AS user_labels
          FROM reports r
          LEFT JOIN comments cm ON r.target_type = 'comment' AND cm.id = r.target_id
          LEFT JOIN articles a ON r.target_type = 'article' AND a.id = r.target_id
+         LEFT JOIN users u ON r.target_type = 'user' AND u.id = r.target_id
         WHERE r.status = ?
         GROUP BY r.target_type, r.target_id
         ORDER BY last_at DESC
@@ -80,5 +84,6 @@ reports.patch('/', async (c) => {
     .prepare(`UPDATE reports SET status = ?, reviewed_at = datetime('now') WHERE target_type = ? AND target_id = ? AND status = 'open'`)
     .bind(body.status, body.targetType, body.targetId)
     .run();
+  await logModeration(c.env.DB, user!, body.status === 'dismissed' ? 'dismiss_report' : 'action_report', body.targetType, body.targetId, body.note || null);
   return c.json({ ok: true });
 });

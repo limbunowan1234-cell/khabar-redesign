@@ -59,6 +59,7 @@ export default function Masthead({ isMobile, isDarkMode, onToggleDark, searchQue
           <span className={styles.date}>{today || ' '}</span>
           <nav className={styles.utilityLinks} aria-label="Sections">
             <Link href="/weekly" className={styles.utilityLink}>Weekly Edition</Link>
+            <Link href="/flash" className={styles.utilityLink}>Flash News</Link>
             <Link href="/daily-updates" className={styles.utilityLink}>Daily Updates</Link>
             <Link href="/road-status" className={styles.utilityLink}>Road Status</Link>
             <Link href="/calendar" className={styles.utilityLink}>Calendar</Link>

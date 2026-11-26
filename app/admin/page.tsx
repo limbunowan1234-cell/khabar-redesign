@@ -578,6 +578,7 @@ function generateSlug(text: string): string {
     if (activeTab === 'breaking') return a.isBreaking;
     if (activeTab === 'featured') return a.isFeatured;
     if (activeTab === 'contest') return a.isContestEntry;
+    if (activeTab === 'flash') return a.kind === 'flash';
     return a.status !== 'pending_review'; // "All Articles" means the live site's content, not drafts awaiting review
   }).filter((a) => !search || a.title?.toLowerCase().includes(search.toLowerCase()));
   const pagedArticles = filteredArticles.slice(listPage * 10, listPage * 10 + 10);
@@ -600,6 +601,7 @@ function generateSlug(text: string): string {
                 <>
               <button onClick={() => { setView('weekly'); loadWeeklyPicks(); }} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: view === 'weekly' ? '#D4AF37' : 'rgba(255,255,255,0.12)', color: view === 'weekly' ? '#0F4C5C' : 'white' , whiteSpace: 'nowrap', flexShrink: 0, transition: 'background-color 0.15s' }}>🗓️ Weekly</button>
                 <button onClick={() => { setView('certificates'); loadCertRankings(); }} style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: view === 'certificates' ? '#D4AF37' : 'rgba(255,255,255,0.12)', color: view === 'certificates' ? '#0F4C5C' : 'white', whiteSpace: 'nowrap', flexShrink: 0, transition: 'background-color 0.15s' }}>🎓 Certificates</button>
+                <Link href="/admin/reports"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: '#c41e3a', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>🚩 Reports</button></Link>
                 <Link href="/admin/ai-draft"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.12)', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>🤖 AI Draft</button></Link>
                 <Link href="/admin/roads"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.12)', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>🚧 Road Status</button></Link>
                 <Link href="/admin/apps"><button style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.12)', color: 'white', whiteSpace: 'nowrap', flexShrink: 0 }}>📦 Apps &amp; Games</button></Link>
@@ -645,9 +647,9 @@ function generateSlug(text: string): string {
             </div>
 
             <div style={{ display: 'flex', gap: '0', marginBottom: '16px', borderBottom: '2px solid #ddd' }}>
-              {['all', 'pending', 'breaking', 'featured', 'contest'].map((tab) => (
+              {['all', 'pending', 'breaking', 'featured', 'contest', 'flash'].map((tab) => (
                 <button key={tab} onClick={() => { setListPage(0); setActiveTab(tab); }} style={{ padding: '12px 24px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px', color: activeTab === tab ? '#c41e3a' : '#666', borderBottom: activeTab === tab ? '3px solid #c41e3a' : '3px solid transparent', marginBottom: '-2px' }}>
-                  {tab === 'all' ? 'All Articles' : tab === 'pending' ? `Pending (${articles.filter(a => a.status === 'pending_review').length})` : tab === 'breaking' ? 'Breaking' : tab === 'featured' ? 'Featured' : 'Contest'}
+                  {tab === 'all' ? 'All Articles' : tab === 'pending' ? `Pending (${articles.filter(a => a.status === 'pending_review').length})` : tab === 'breaking' ? 'Breaking' : tab === 'featured' ? 'Featured' : tab === 'flash' ? `⚡ Flash (${articles.filter(a => a.kind === 'flash').length})` : 'Contest'}
                 </button>
               ))}
             </div>
@@ -669,6 +671,7 @@ function generateSlug(text: string): string {
                       <div style={{ fontWeight: '600', fontSize: '14px', color: '#0F4C5C', marginBottom: '4px' }}>{article.title}</div>
                       <div style={{ fontSize: '12px', color: '#999', marginBottom: '6px' }}>By {article.submitterName || article.authorName || 'Unknown'} • {article.category} • {formatDate(article.$createdAt)} • {(article.views || 0).toLocaleString()} views</div>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {article.kind === 'flash' && <span style={{ padding: '2px 8px', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: '12px', fontSize: '11px', fontWeight: '700' }}>⚡ FLASH</span>}
                         {article.status === 'pending_review' && <span style={{ padding: '2px 8px', backgroundColor: '#ede9fe', color: '#6d28d9', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>PENDING REVIEW</span>}
                         {article.isBreaking && <span style={{ padding: '2px 8px', backgroundColor: '#ffebee', color: '#c41e3a', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>BREAKING</span>}
                         {article.isFeatured && <span style={{ padding: '2px 8px', backgroundColor: '#fff3e0', color: '#e65100', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>FEATURED</span>}

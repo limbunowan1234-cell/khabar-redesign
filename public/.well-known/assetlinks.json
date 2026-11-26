@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.khabardarjeeling.app",
+      "sha256_cert_fingerprints": [
+        "68:63:8C:70:EE:EE:8E:88:5E:0A:5D:86:D0:8F:58:17:A2:3E:E6:B2:14:68:BC:CC:59:CD:F7:F8:B0:25:48:20",
+        "80:1A:AB:6D:AA:19:D4:6B:C5:FB:25:E3:3C:3F:9B:8E:9A:B2:37:12:A3:E9:55:AE:CD:FF:05:77:FC:56:B3:3B"
+      ]
+    }
+  }
+]

@@ -46,3 +46,35 @@ export async function sendPasswordResetEmail(
     // here except not let it propagate.
   }
 }
+
+// Email-address confirmation (required before publishing, from app 1.4.0).
+// The link opens GET /auth/verify-email on this Worker, which marks the
+// address confirmed and shows a short "you're confirmed" page.
+export async function sendVerificationEmail(
+  env: { RESEND_API_KEY?: string },
+  to: string,
+  name: string,
+  rawToken: string
+): Promise<void> {
+  if (!env.RESEND_API_KEY) return;
+  const url = `https://api.khabardarjeeling.in/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'Khabar Darjeeling <noreply@khabardarjeeling.in>',
+        to: [to],
+        subject: 'Confirm your email for Khabar Darjeeling',
+        html:
+          `<p>Namaste ${name.replace(/[<>&"]/g, '')},</p>` +
+          `<p>Please confirm this email address so you can publish news and Flash News on Khabar Darjeeling. ` +
+          `This link works for 48 hours.</p>` +
+          `<p><a href="${url}">Confirm my email</a></p>` +
+          `<p>If you didn't create an account, you can ignore this email.</p>`,
+      }),
+    });
+  } catch {
+    // Best-effort, like the password-reset email above.
+  }
+}

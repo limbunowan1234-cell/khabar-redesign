@@ -43,6 +43,22 @@ export default function PostPage() {
   const [imageFileId, setImageFileId] = useState('');
   const [imagePreview, setImagePreview] = useState('');
   const [imageCaption, setImageCaption] = useState('');
+  // Set when the Worker refuses to publish because the email address isn't
+  // confirmed yet (accounts created from Nov 2026 on).
+  const [needsVerify, setNeedsVerify] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState('');
+
+  async function resendVerification() {
+    setVerifyMsg('');
+    try {
+      const token = await getWorkerAuthToken();
+      const res = await fetch(WORKER_URL + '/auth/send-verification', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+      const d = await res.json().catch(() => ({}));
+      setVerifyMsg(res.ok ? 'Sent! Check your inbox (and spam folder), tap the link, then publish again.' : d.error || 'Could not send the email.');
+    } catch {
+      setVerifyMsg('Could not send the email.');
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -131,7 +147,12 @@ export default function PostPage() {
         method: 'POST', headers: { Authorization: 'Bearer ' + workerToken, 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...articleData })
       });
-      if (!res.ok) throw new Error('Submit failed');
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        if (d.code === 'EMAIL_NOT_VERIFIED') setNeedsVerify(true);
+        throw new Error(d.error || 'Submit failed');
+      }
+      setNeedsVerify(false);
       setSuccess('Article published successfully!');
       setTimeout(() => router.push('/article/' + id), 1500);
     } catch (err: any) { setError(err.message || 'Submit failed'); }
@@ -181,6 +202,13 @@ export default function PostPage() {
 
           {success && <div style={{ padding: '14px', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '8px', marginBottom: '20px', fontWeight: '600' }}>{success}</div>}
           {error && <div style={{ padding: '14px', backgroundColor: '#ffebee', color: '#c41e3a', borderRadius: '8px', marginBottom: '20px' }}>{error}</div>}
+          {needsVerify && (
+            <div style={{ padding: '14px', backgroundColor: '#fff8e1', color: '#7a5200', borderRadius: '8px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+              <span style={{ flex: '1 1 240px' }}>We sent a confirmation link to your email when you signed up. Confirm it once, then you can publish.</span>
+              <button type="button" onClick={resendVerification} style={{ padding: '8px 16px', borderRadius: '999px', border: 'none', background: '#c41e3a', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Send confirmation email</button>
+              {verifyMsg && <span style={{ flexBasis: '100%', fontSize: '13px' }}>{verifyMsg}</span>}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>

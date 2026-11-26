@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { hashPassword, verifyPassword } from '../lib/password';
 import { signAccessToken } from '../lib/jwt';
-import { sendPasswordResetEmail } from '../lib/email';
+import { sendPasswordResetEmail, sendVerificationEmail } from '../lib/email';
+import { logModeration } from '../lib/moderation';
 import { verifyUser, isAdmin } from '../lib/auth';
 
 // Replaces Appwrite Auth entirely -- see the migration plan for why
@@ -42,7 +43,33 @@ function randomToken(bytes = 32): string {
 // AppUser interface and every isAdmin()/isReporterOrAdmin()/isPhotographer()
 // caller across the app.
 function toUserJson(row: any) {
-  return { $id: row.id, name: row.name, email: row.email, labels: JSON.parse(row.labels || '[]') };
+  return {
+    $id: row.id,
+    name: row.name,
+    email: row.email,
+    labels: JSON.parse(row.labels || '[]'),
+    emailVerified: !!row.email_verified,
+  };
+}
+
+const VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
+
+// Creates a one-time confirmation link and emails it.
+async function issueVerification(env: Bindings, userId: string, email: string, name: string): Promise<void> {
+  const raw = randomToken();
+  await env.DB.prepare('INSERT INTO email_verification_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)')
+    .bind(crypto.randomUUID(), userId, await sha256Hex(raw), new Date(Date.now() + VERIFY_TTL_MS).toISOString())
+    .run();
+  await sendVerificationEmail(env, email, name, raw);
+}
+
+function verifyPage(title: string, message: string): string {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title} · Khabar Darjeeling</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f6f3ef;font:16px/1.5 system-ui,sans-serif;color:#16161d}
+main{background:#fff;border-radius:22px;padding:32px 28px;max-width:420px;margin:16px;box-shadow:0 6px 24px rgba(90,58,42,.1);text-align:center}
+h1{font-size:22px;margin:0 0 8px}p{color:#6e6c76;margin:0 0 18px}a{display:inline-block;background:#c41e3a;color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px}</style>
+</head><body><main><h1>${title}</h1><p>${message}</p><a href="https://khabardarjeeling.in">Open Khabar Darjeeling</a></main></body></html>`;
 }
 
 async function createSession(env: Bindings, userId: string, req: Request): Promise<{ raw: string; expires: string }> {
@@ -125,9 +152,75 @@ auth.post('/signup', async (c) => {
   }
 
   const row = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first() as any;
+  if (!row.email_verified) c.executionCtx.waitUntil(issueVerification(c.env, userId, row.email, row.name));
   const { raw } = await createSession(c.env, userId, c.req.raw);
   c.header('Set-Cookie', sessionCookie(raw));
   return c.json(toUserJson(row));
+});
+
+// POST /auth/send-verification -- emails a fresh confirmation link to the
+// logged-in user (once a minute at most).
+auth.post('/send-verification', async (c) => {
+  const user = await verifyUser(c.req.raw, c.env);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+  const row = await c.env.DB.prepare('SELECT id, email, name, email_verified FROM users WHERE id = ?').bind(user.$id).first<any>();
+  if (!row) return c.json({ error: 'Unauthorized' }, 401);
+  if (row.email_verified) return c.json({ ok: true, alreadyVerified: true });
+  const recent = await c.env.DB
+    .prepare("SELECT 1 FROM email_verification_tokens WHERE user_id = ? AND created_at > datetime('now', '-60 seconds')")
+    .bind(user.$id)
+    .first();
+  if (recent) return c.json({ error: 'We just sent one. Please wait a minute and check your inbox and spam folder.' }, 429);
+  await issueVerification(c.env, row.id, row.email, row.name);
+  return c.json({ ok: true });
+});
+
+// GET /auth/verify-email?token=... -- the link in the confirmation email.
+auth.get('/verify-email', async (c) => {
+  const token = c.req.query('token') || '';
+  const rec = token
+    ? await c.env.DB
+        .prepare('SELECT * FROM email_verification_tokens WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?')
+        .bind(await sha256Hex(token), new Date().toISOString())
+        .first<any>()
+    : null;
+  if (!rec) {
+    return c.html(verifyPage('Link expired', 'This confirmation link has expired or was already used. Open the app and tap "Send link again".'), 400);
+  }
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE users SET email_verified = 1, updated_at = datetime('now') WHERE id = ?").bind(rec.user_id),
+    c.env.DB.prepare("UPDATE email_verification_tokens SET used_at = datetime('now') WHERE id = ?").bind(rec.id),
+  ]);
+  return c.html(verifyPage('Email confirmed', 'Thank you! You can now publish news and Flash News. Go back to the app and carry on.'));
+});
+
+// POST /auth/admin/suspend  { userId, suspended: boolean, note? } -- admin
+// only. Adds or removes the "suspended" label, which blocks publishing,
+// commenting and uploads (lib/auth.ts isSuspended).
+auth.post('/admin/suspend', async (c) => {
+  const admin = await verifyUser(c.req.raw, c.env);
+  if (!isAdmin(admin)) return c.json({ error: 'Admin access required' }, 403);
+  const body = await c.req.json().catch(() => null);
+  if (!body?.userId || typeof body.suspended !== 'boolean') return c.json({ error: 'userId and suspended are required' }, 400);
+  const row = await c.env.DB.prepare('SELECT labels FROM users WHERE id = ?').bind(body.userId).first<any>();
+  if (!row) return c.json({ error: 'No such user' }, 404);
+  let labels: string[] = [];
+  try { labels = JSON.parse(row.labels || '[]'); } catch {}
+  if (labels.includes('admin')) return c.json({ error: 'Admins cannot be suspended here.' }, 400);
+  labels = labels.filter((l) => l !== 'suspended');
+  if (body.suspended) labels.push('suspended');
+  await c.env.DB.prepare("UPDATE users SET labels = ?, updated_at = datetime('now') WHERE id = ?").bind(JSON.stringify(labels), body.userId).run();
+  await logModeration(c.env.DB, admin!, body.suspended ? 'suspend' : 'unsuspend', 'user', body.userId, body.note || null);
+  return c.json({ ok: true, labels });
+});
+
+// GET /auth/admin/moderation-log?limit=100 -- admin only.
+auth.get('/admin/moderation-log', async (c) => {
+  const admin = await verifyUser(c.req.raw, c.env);
+  if (!isAdmin(admin)) return c.json({ error: 'Admin access required' }, 403);
+  const limit = Math.min(parseInt(c.req.query('limit') || '100', 10) || 100, 500);
+  const { results } = await c.env.DB.prepare('SELECT * FROM moderation_log ORDER BY created_at DESC LIMIT ?').bind(limit).all();
+  return c.json({ documents: results || [] });
 });
 
 // POST /auth/login  { email, password }

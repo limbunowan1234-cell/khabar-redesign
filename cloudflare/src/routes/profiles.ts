@@ -17,14 +17,52 @@ function toProfileJson(row: any) {
     bannerTheme: row.banner_theme,
     homeDistrict: row.home_district,
     joinedAT: row.joined_at,
+    handle: row.handle || null,
   };
 }
 
-// GET /profiles/:userId
-profiles.get('/:userId', async (c) => {
-  const row = await c.env.DB.prepare('SELECT * FROM profiles WHERE user_id = ?').bind(c.req.param('userId')).first();
+// GET /profiles/handle/:handle -- look a profile up by its @handle.
+profiles.get('/handle/:handle', async (c) => {
+  const row = await c.env.DB.prepare('SELECT * FROM profiles WHERE handle = ? COLLATE NOCASE').bind(c.req.param('handle')).first();
   if (!row) return c.json({ error: 'Not found' }, 404);
   return c.json(toProfileJson(row));
+});
+
+// GET /profiles/:userId  (?stats=1 adds story, Flash News, comment and
+// follower counts for the public profile page; no private data).
+profiles.get('/:userId', async (c) => {
+  const userId = c.req.param('userId');
+  let row: any = await c.env.DB.prepare('SELECT * FROM profiles WHERE user_id = ?').bind(userId).first();
+  if (!row && c.req.query('stats') === '1') {
+    // People who never filled in a profile still have a public page.
+    const u = await c.env.DB.prepare('SELECT id, name, created_at FROM users WHERE id = ?').bind(userId).first<any>();
+    if (u) row = { user_id: u.id, display_name: u.name, joined_at: u.created_at };
+  }
+  if (!row) return c.json({ error: 'Not found' }, 404);
+  const json: Record<string, unknown> = toProfileJson(row);
+  if (c.req.query('stats') === '1') {
+    const s = await c.env.DB
+      .prepare(`SELECT
+        (SELECT COUNT(*) FROM articles WHERE submitter_id = ?1 AND status = 'published' AND kind = 'story') AS stories,
+        (SELECT COUNT(*) FROM articles WHERE submitter_id = ?1 AND status = 'published' AND kind = 'flash') AS flash,
+        (SELECT COUNT(*) FROM comments WHERE user_id = ?1) AS comments,
+        (SELECT COUNT(*) FROM follows WHERE following_id = ?1) AS followers,
+        (SELECT name FROM users WHERE id = ?1) AS account_name,
+        (SELECT created_at FROM users WHERE id = ?1) AS account_created,
+        (SELECT labels FROM users WHERE id = ?1) AS labels`)
+      .bind(userId)
+      .first<any>();
+    json.stats = { stories: s?.stories || 0, flash: s?.flash || 0, comments: s?.comments || 0, followers: s?.followers || 0 };
+    if (!json.displayName) json.displayName = s?.account_name || null;
+    if (!json.joinedAT) json.joinedAT = s?.account_created || null;
+    try {
+      const labels = JSON.parse(s?.labels || '[]');
+      json.isStaff = labels.includes('admin') || labels.includes('reporter');
+    } catch {
+      json.isStaff = false;
+    }
+  }
+  return c.json(json);
 });
 
 // POST /profiles  { userId, displayName?, userName?, bio?, avatarUrl?,
@@ -40,13 +78,36 @@ profiles.get('/:userId', async (c) => {
 const PROFILE_FIELD_MAP: Record<string, string> = {
   displayName: 'display_name', userName: 'user_name', bio: 'bio',
   avatarUrl: 'avatar_url', coverUrl: 'cover_url', bannerTheme: 'banner_theme',
-  homeDistrict: 'home_district',
+  homeDistrict: 'home_district', handle: 'handle',
 };
+
+const HANDLE_RE = /^[a-z0-9_.]{3,30}$/;
+const RESERVED_HANDLES = new Set(['admin', 'khabar', 'khabardarjeeling', 'support', 'editor', 'reporter', 'official']);
 profiles.post('/', async (c) => {
   const user = await verifyUser(c.req.raw, c.env);
   const body = await c.req.json().catch(() => null);
   if (!body?.userId) return c.json({ error: 'userId is required' }, 400);
   if (!user || user.$id !== body.userId) return c.json({ error: 'Unauthorized' }, 401);
+
+  // Light validation so profiles stay readable and nobody takes another
+  // person's @handle.
+  if (body.displayName !== undefined) {
+    body.displayName = String(body.displayName || '').trim().slice(0, 60);
+    if (!body.displayName) return c.json({ error: 'Name cannot be empty.' }, 400);
+  }
+  if (body.bio !== undefined) body.bio = String(body.bio || '').slice(0, 300);
+  if (body.handle !== undefined) {
+    const h = String(body.handle || '').trim().replace(/^@/, '').toLowerCase();
+    if (!h) {
+      body.handle = null;
+    } else {
+      if (!HANDLE_RE.test(h)) return c.json({ error: 'Usernames are 3–30 letters, numbers, dots or underscores.', code: 'BAD_HANDLE' }, 400);
+      if (RESERVED_HANDLES.has(h)) return c.json({ error: 'That username is reserved.', code: 'HANDLE_TAKEN' }, 409);
+      const taken = await c.env.DB.prepare('SELECT user_id FROM profiles WHERE handle = ? COLLATE NOCASE AND user_id <> ?').bind(h, body.userId).first();
+      if (taken) return c.json({ error: 'That username is taken.', code: 'HANDLE_TAKEN' }, 409);
+      body.handle = h;
+    }
+  }
 
   const cols = ['user_id'];
   const placeholders = ['?'];

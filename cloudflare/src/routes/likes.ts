@@ -45,7 +45,9 @@ likes.get('/', async (c) => {
     return c.json({ error: 'articleId, commentId, articleIds, or userId is required' }, 400);
   }
 
-  if (q.userId && (q.articleId || q.commentId)) {
+  // ...&userId=Y also narrows a multi-article lookup to Y's own likes, so
+  // the app can ask "which of these 30 stories did I like" in one call.
+  if (q.userId && (q.articleId || q.commentId || q.articleIds)) {
     where.push('user_id = ?');
     params.push(q.userId);
   }

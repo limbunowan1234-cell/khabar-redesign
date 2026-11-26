@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { verifyUser, isReporterOrAdmin, isSuspended, type AppUser } from '../lib/auth';
 import { pushBreakingIfNew } from './deviceTokens';
 import type { FcmEnv } from '../lib/fcm';
+import { logModeration, PUBLISH_LIMITS } from '../lib/moderation';
 
 type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string } & FcmEnv;
 
@@ -60,13 +61,59 @@ function toArticleJson(row: any, includeEmails = false) {
     location: row.location,
     publishedAt: row.published_at,
     submittedAt: row.submitted_at,
+    kind: row.kind || 'story',
+    relatedArticleId: row.related_article_id || null,
+    tags: parseTags(row.tags),
   };
+  // Only present when the caller asked for stats=1 (the app's feeds).
+  if (row.like_count !== undefined) json.likeCount = row.like_count;
+  if (row.comment_count !== undefined) json.commentCount = row.comment_count;
+  if (row.submitter_labels !== undefined) json.byStaff = isStaffLabels(row.submitter_labels);
+  if (row.submitter_handle !== undefined) json.submitterHandle = row.submitter_handle || null;
+  if (row.submitter_avatar_now !== undefined && row.submitter_avatar_now) json.submitterAvatar = row.submitter_avatar_now;
   if (!includeEmails) {
     delete json.submitterEmail;
     delete json.authorEmail;
   }
   return json;
 }
+
+function parseTags(raw: unknown): string[] {
+  if (!raw || typeof raw !== 'string') return [];
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v.filter((t) => typeof t === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function isStaffLabels(raw: unknown): boolean {
+  try {
+    const labels = JSON.parse(String(raw || '[]')) as string[];
+    return labels.includes('admin') || labels.includes('reporter');
+  } catch {
+    return false;
+  }
+}
+
+// Up to 8 short tags, trimmed, lower-cased, de-duplicated.
+function cleanTags(input: unknown): string | null {
+  if (!Array.isArray(input)) return null;
+  const tags = Array.from(
+    new Set(input.filter((t) => typeof t === 'string').map((t) => t.trim().toLowerCase().slice(0, 30)).filter(Boolean))
+  ).slice(0, 8);
+  return tags.length ? JSON.stringify(tags) : null;
+}
+
+// Extra columns for stats=1: like and comment counts, whether the author
+// is staff (for the "Community" label), their @handle and current avatar.
+const STATS_SELECT = `,
+  (SELECT COUNT(*) FROM likes l WHERE l.article_id = articles.id AND l.comment_id IS NULL) AS like_count,
+  (SELECT COUNT(*) FROM comments cm WHERE cm.article_id = articles.id) AS comment_count,
+  (SELECT u.labels FROM users u WHERE u.id = articles.submitter_id) AS submitter_labels,
+  (SELECT p.handle FROM profiles p WHERE p.user_id = articles.submitter_id) AS submitter_handle,
+  (SELECT p.avatar_url FROM profiles p WHERE p.user_id = articles.submitter_id) AS submitter_avatar_now`;
 
 // Reporters/admins see every article's emails; anyone else only their own.
 function canSeeEmails(user: AppUser | null, row: any): boolean {
@@ -148,6 +195,14 @@ articles.get('/', async (c) => {
   if (q.weeklyLive === '1') { where.push('weekly_live = 1'); }
   if (q.weeklyLive === '0') { where.push('weekly_live = 0'); }
   if (q.isWeeklyPick === '1') { where.push('is_weekly_pick = 1'); }
+  // Flash News lives in the same table. Existing feeds (website home,
+  // sitemaps, region/genre pages) keep getting stories only; Flash News
+  // shows up when asked for (kind=flash), and kind=all returns both. Id
+  // lookups (bookmarks) and staff/author dashboards (status=all) see every
+  // kind unless they say otherwise.
+  const kind = q.kind || (q.ids || q.status === 'all' ? 'all' : 'story');
+  if (kind === 'story' || kind === 'flash') { where.push('kind = ?'); params.push(kind); }
+  if (q.tag) { where.push("tags LIKE ?"); params.push('%"' + q.tag.toLowerCase().replace(/[%_"]/g, '') + '"%'); }
   if (q.ids) {
     const ids = q.ids.split(',').filter(Boolean);
     if (ids.length === 0) return c.json({ documents: [], total: 0, nextCursor: null });
@@ -171,7 +226,7 @@ articles.get('/', async (c) => {
   const pageWhere = q.cursor ? `${whereSql} AND created_at < ?` : whereSql;
   const pageParams = q.cursor ? [...params, q.cursor] : params;
 
-  const sql = `SELECT * FROM articles WHERE ${pageWhere} ORDER BY ${sortSql} LIMIT ?`;
+  const sql = `SELECT *${q.stats === '1' ? STATS_SELECT : ''} FROM articles WHERE ${pageWhere} ORDER BY ${sortSql} LIMIT ?`;
   const { results } = await c.env.DB.prepare(sql).bind(...pageParams, limit).all();
   const docs = (results || []).map((r: any) => toArticleJson(r, canSeeEmails(user, r)));
   const nextCursor = docs.length === limit && sortSql === SORT_MAP.createdAtDesc ? (results![results!.length - 1] as any).created_at : null;
@@ -189,9 +244,10 @@ articles.get('/', async (c) => {
 articles.get('/:idOrSlug', async (c) => {
   const idOrSlug = c.req.param('idOrSlug');
 
-  let row = await c.env.DB.prepare('SELECT * FROM articles WHERE id = ?').bind(idOrSlug).first();
+  const extra = c.req.query('stats') === '1' ? STATS_SELECT : '';
+  let row = await c.env.DB.prepare(`SELECT *${extra} FROM articles WHERE id = ?`).bind(idOrSlug).first();
   if (!row) {
-    row = await c.env.DB.prepare('SELECT * FROM articles WHERE slug = ?').bind(idOrSlug).first();
+    row = await c.env.DB.prepare(`SELECT *${extra} FROM articles WHERE slug = ?`).bind(idOrSlug).first();
   }
   if (!row) return c.json({ error: 'Not found' }, 404);
 
@@ -273,6 +329,39 @@ articles.post('/', async (c) => {
   if (!staff && (await isSuspended(c.env.DB, user.$id))) {
     return c.json({ error: 'Your account can no longer publish. Contact nowanad@gmail.com.' }, 403);
   }
+  const kind = body.kind === 'flash' ? 'flash' : 'story';
+  if (kind === 'flash' && !body.imageFileId) return c.json({ error: 'Flash News needs a photo.' }, 400);
+  if (kind === 'flash' && String(body.content || '').length > 600) {
+    return c.json({ error: 'Keep the Flash News description under 600 characters.' }, 400);
+  }
+
+  if (!staff) {
+    // Publishing needs a confirmed email address (reading, liking and
+    // commenting don't). Accounts that existed before 1.4.0 count as
+    // confirmed.
+    const acct = await c.env.DB
+      .prepare('SELECT email_verified, created_at FROM users WHERE id = ?')
+      .bind(user.$id)
+      .first<{ email_verified: number; created_at: string }>();
+    if (!acct?.email_verified) {
+      return c.json({ error: 'Please confirm your email address before publishing.', code: 'EMAIL_NOT_VERIFIED' }, 403);
+    }
+    // Daily limits, lower for brand-new accounts (lib/moderation.ts).
+    const isDraft = body.status === 'draft';
+    if (!isDraft) {
+      const firstDay = Date.now() - new Date(acct.created_at.replace(' ', 'T') + 'Z').getTime() < 86400_000;
+      const limit = firstDay ? PUBLISH_LIMITS[kind].firstDay : PUBLISH_LIMITS[kind].perDay;
+      const recent = await c.env.DB
+        .prepare("SELECT COUNT(*) AS n FROM articles WHERE submitter_id = ? AND kind = ? AND status <> 'draft' AND created_at > datetime('now', '-1 day')")
+        .bind(user.$id, kind)
+        .first<{ n: number }>();
+      if ((recent?.n || 0) >= limit) {
+        const what = kind === 'flash' ? 'Flash News posts' : 'stories';
+        return c.json({ error: `You can publish up to ${limit} ${what} a day. Please try again tomorrow.`, code: 'RATE_LIMITED' }, 429);
+      }
+    }
+  }
+
   const OPEN_STATUSES = ['published', 'draft', 'pending_review'];
   const status = staff ? body.status || 'published' : OPEN_STATUSES.includes(body.status) ? body.status : 'published';
   const isBreaking = staff && !!body.isBreaking;
@@ -294,8 +383,8 @@ articles.post('/', async (c) => {
         location_district, location_area, location, image_file_id, image_caption, youtube_id,
         submitter_id, submitter_name, submitter_email, submitter_avatar, author_name, author_email,
         views, is_breaking, is_featured, is_contest_entry, tracker_data,
-        submitted_at, published_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`
+        submitted_at, published_at, kind, related_article_id, tags
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       body.id, body.slug || null, body.title, body.sideHeader || null, body.content || null,
@@ -305,7 +394,8 @@ articles.post('/', async (c) => {
       body.submitterId, submitterName || null, submitterEmail || null, body.submitterAvatar || null,
       authorName || null, authorEmail || null,
       isBreaking ? 1 : 0, isFeatured ? 1 : 0, body.isContestEntry ? 1 : 0, body.trackerData || null,
-      body.submittedAt || null, body.publishedAt || null
+      body.submittedAt || null, status === 'published' ? body.publishedAt || new Date().toISOString() : body.publishedAt || null,
+      kind, body.relatedArticleId || null, cleanTags(body.tags)
     )
     .run();
 
@@ -356,6 +446,7 @@ const PATCH_FIELD_MAP: Record<string, string> = {
   weeklySection: 'weekly_section', weeklyOrder: 'weekly_order', isWeeklyLead: 'is_weekly_lead',
   isGenreFeatured: 'is_genre_featured', isGenrePinned: 'is_genre_pinned',
   isRegionFeatured: 'is_region_featured', isRegionPinned: 'is_region_pinned',
+  relatedArticleId: 'related_article_id', publishedAt: 'published_at',
 };
 // Fields only reporters/admins may change. An author editing their own
 // story can fix its text, photos and place, but can't make it breaking
@@ -406,8 +497,14 @@ articles.patch('/:id', async (c) => {
     sets.push(`${column} = ?`);
     params.push(BOOL_FIELDS.has(key) ? (body[key] ? 1 : 0) : body[key]);
   }
+  if (body.tags !== undefined) { sets.push('tags = ?'); params.push(cleanTags(body.tags)); }
   const hasImageUpdate = Array.isArray(body.supportingImages) || Array.isArray(body.galleryImageIds);
   if (sets.length === 0 && !hasImageUpdate) return c.json({ error: 'No recognized fields in body' }, 400);
+
+  if (staff && (row as any).submitter_id !== user.$id && body.status !== undefined) {
+    const action = body.status === 'published' ? 'republish' : 'unpublish';
+    c.executionCtx.waitUntil(logModeration(c.env.DB, user, action, 'article', id, body.rejectionReason || null));
+  }
 
   if (sets.length > 0) {
     sets.push("updated_at = datetime('now')");
@@ -456,10 +553,11 @@ articles.delete('/:id', async (c) => {
   const id = c.req.param('id');
   const user = await verifyUser(c.req.raw, c.env);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
-  if (!isReporterOrAdmin(user)) {
-    const row = await c.env.DB.prepare('SELECT submitter_id FROM articles WHERE id = ?').bind(id).first<{ submitter_id: string }>();
-    if (!row) return c.json({ ok: true });
-    if (row.submitter_id !== user.$id) return c.json({ error: 'Unauthorized' }, 401);
+  const owner = await c.env.DB.prepare('SELECT submitter_id, title FROM articles WHERE id = ?').bind(id).first<{ submitter_id: string; title: string }>();
+  if (!owner) return c.json({ ok: true });
+  if (owner.submitter_id !== user.$id) {
+    if (!isReporterOrAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
+    await logModeration(c.env.DB, user, 'delete', 'article', id, owner.title);
   }
 
   await c.env.DB.prepare('DELETE FROM articles WHERE id = ?').bind(id).run();
