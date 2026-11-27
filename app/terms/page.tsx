@@ -54,7 +54,7 @@ export default function Terms() {
           <li>Anything illegal under Indian law</li>
         </ul>
         <h3 style={{ fontSize: '16px', fontWeight: '800', marginTop: '18px', marginBottom: '8px' }}>Reporting and blocking</h3>
-        <p>Every comment and story has a <strong>Report</strong> option, and in the Android app you can also <strong>Block</strong> a user to hide everything they post. Reports come to our editors, who review them within 24 hours. A comment reported by several readers is hidden until it is reviewed. Content that breaks these rules is removed, and accounts that break them are suspended or banned. You can also email reports to <strong>nowanad@gmail.com</strong>.</p>
+        <p>Every comment and story has a <strong>Report</strong> option, and in the Android app you can also <strong>Block</strong> a user to hide everything they post. Reports come to our editors, who review them within 24 hours. A comment reported by several readers is hidden until it is reviewed. Content that breaks these rules is removed, and accounts that break them are suspended or banned. You can also email reports to <strong>contact@khabardarjeeling.in</strong>.</p>
 
         <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#c41e3a', marginTop: '30px', marginBottom: '12px' }}>6. Disclaimers</h2>
         <p>Content is provided "as-is" without warranty. We do not guarantee accuracy or timeliness. We are not liable for decisions made based on our content.</p>
@@ -62,8 +62,7 @@ export default function Terms() {
         <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#c41e3a', marginTop: '30px', marginBottom: '12px' }}>7. Contact</h2>
         <p>For permissions or copyright concerns:</p>
         <ul style={{ marginLeft: '20px' }}>
-          <li><strong>Email:</strong> nowanad@gmail.com</li>
-          <li><strong>WhatsApp:</strong> <a href="https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b" target="_blank" rel="noopener noreferrer" style={{ color: '#c41e3a', textDecoration: 'none', fontWeight: '700' }}>Our Channel</a></li>
+          <li><strong>Email:</strong> <a href="mailto:contact@khabardarjeeling.in" style={{ color: '#c41e3a', textDecoration: 'none', fontWeight: '700' }}>contact@khabardarjeeling.in</a></li>
         </ul>
 
         <hr style={{ margin: '40px 0', border: 'none', borderTop: '1px solid #ddd' }} />

@@ -36,7 +36,7 @@ export default function AboutPage() {
           <p>Khabar Darjeeling is an independent digital media project developed by Darjeeling Web Studio, dedicated to strengthening the online presence and voice of the Darjeeling and Gorkha community.</p>
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Get In Touch</h2>
-          <p>Have a story, tip, or feedback? Reach us at <a href="mailto:nowanad@gmail.com" style={{ color: '#c41e3a' }}>nowanad@gmail.com</a> or visit our <a href="/contact" style={{ color: '#c41e3a' }}>Contact page</a>.</p>
+          <p>Have a story, tip, or feedback? Reach us at <a href="mailto:contact@khabardarjeeling.in" style={{ color: '#c41e3a' }}>contact@khabardarjeeling.in</a> or visit our <a href="/contact" style={{ color: '#c41e3a' }}>Contact page</a>.</p>
         </div>
       </div>
     </div>

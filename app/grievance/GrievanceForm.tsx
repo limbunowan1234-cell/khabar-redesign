@@ -39,7 +39,7 @@ export default function GrievanceForm() {
       setResult({ ok: true, message: "Your grievance has been submitted. We'll acknowledge it within 24 hours and aim to resolve it within 15 days." });
       setName(''); setEmail(''); setPhone(''); setComplaintType(''); setArticleUrl(''); setDescription(''); setResolutions([]);
     } catch (err: any) {
-      setResult({ ok: false, message: err.message || 'Something went wrong. Please email grievance@khabardarjeeling.in directly.' });
+      setResult({ ok: false, message: err.message || 'Something went wrong. Please email contact@khabardarjeeling.in directly.' });
     }
     setSubmitting(false);
   }

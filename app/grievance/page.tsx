@@ -31,7 +31,7 @@ export default function GrievancePage() {
 
         <div style={{ marginTop: '32px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', color: '#555', fontSize: '14px', lineHeight: 1.6 }}>
           You can also email us directly at{' '}
-          <a href="mailto:grievance@khabardarjeeling.in" style={{ color: '#c41e3a', fontWeight: 700 }}>grievance@khabardarjeeling.in</a>.
+          <a href="mailto:contact@khabardarjeeling.in" style={{ color: '#c41e3a', fontWeight: 700 }}>contact@khabardarjeeling.in</a>.
         </div>
       </div>
     </div>

@@ -43,7 +43,7 @@ export default function PrivacyPage() {
           <p>You can access, update, or delete your account information at any time from your profile. To request full deletion of your data, contact us at the email below.</p>
 
           <h2 id="delete-account" style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Delete Your Account</h2>
-          <p>To delete your Khabar Darjeeling account (website or app), email <a href="mailto:nowanad@gmail.com" style={{ color: '#c41e3a' }}>nowanad@gmail.com</a> from the email address you signed up with and ask us to delete your account. We delete your account, profile, bookmarks, likes, follows and push subscriptions within 30 days. Articles, comments or poems you have published may be removed or kept without your name, as you choose. App notification tokens are not linked to accounts; uninstalling the app stops notifications.</p>
+          <p>To delete your Khabar Darjeeling account (website or app), email <a href="mailto:contact@khabardarjeeling.in" style={{ color: '#c41e3a' }}>contact@khabardarjeeling.in</a> from the email address you signed up with and ask us to delete your account. We delete your account, profile, bookmarks, likes, follows and push subscriptions within 30 days. Articles, comments or poems you have published may be removed or kept without your name, as you choose. App notification tokens are not linked to accounts; uninstalling the app stops notifications.</p>
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Children's Privacy</h2>
           <p>Our service is not directed to children under 13, and we do not knowingly collect their personal information.</p>
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
           <p>We retain your account data for as long as your account is active. If you delete your account, we remove your personal data within 30 days, except where required by law.</p>
 
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#c41e3a', margin: '28px 0 10px' }}>Contact</h2>
-          <p>For any questions about this Privacy Policy, email us at <a href="mailto:nowanad@gmail.com" style={{ color: '#c41e3a' }}>nowanad@gmail.com</a>.</p>
+          <p>For any questions about this Privacy Policy, email us at <a href="mailto:contact@khabardarjeeling.in" style={{ color: '#c41e3a' }}>contact@khabardarjeeling.in</a>.</p>
         </div>
       </div>
     </div>

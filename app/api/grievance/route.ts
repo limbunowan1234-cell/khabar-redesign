@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Grievance Redressal intake required under Rule 13 of the IT Rules, 2021
 // (Level I of the three-tier mechanism: publisher -> self-regulatory body
-// -> MIB oversight). Sends straight to grievance@khabardarjeeling.in via
+// -> MIB oversight). Sends straight to contact@khabardarjeeling.in via
 // Resend's HTTP API, same provider and pattern as the Worker's own
 // password-reset email (see cloudflare/src/lib/email.ts) -- needs
 // RESEND_API_KEY set as a Vercel env var too (same value already set as
 // the Worker secret).
 
-const GRIEVANCE_EMAIL = 'grievance@khabardarjeeling.in';
+const GRIEVANCE_EMAIL = 'contact@khabardarjeeling.in';
 const COMPLAINT_TYPES = ['Editorial', 'Platform', 'Privacy', 'Other'];
 
 function esc(s: string): string {
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.error('grievance: RESEND_API_KEY is not set');
-    return NextResponse.json({ error: 'Grievance submission is temporarily unavailable. Please email grievance@khabardarjeeling.in directly.' }, { status: 503 });
+    return NextResponse.json({ error: 'Grievance submission is temporarily unavailable. Please email contact@khabardarjeeling.in directly.' }, { status: 503 });
   }
 
   const html = `
@@ -68,11 +68,11 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       const errBody = await res.text().catch(() => '');
       console.error('grievance: Resend send failed', res.status, errBody);
-      return NextResponse.json({ error: 'Failed to submit grievance. Please try again or email grievance@khabardarjeeling.in directly.' }, { status: 502 });
+      return NextResponse.json({ error: 'Failed to submit grievance. Please try again or email contact@khabardarjeeling.in directly.' }, { status: 502 });
     }
   } catch (err) {
     console.error('grievance: send error', err);
-    return NextResponse.json({ error: 'Failed to submit grievance. Please try again or email grievance@khabardarjeeling.in directly.' }, { status: 502 });
+    return NextResponse.json({ error: 'Failed to submit grievance. Please try again or email contact@khabardarjeeling.in directly.' }, { status: 502 });
   }
 
   return NextResponse.json({ ok: true });

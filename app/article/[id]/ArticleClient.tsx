@@ -772,7 +772,7 @@ export default function ArticleClient({ initialArticle, initialRelated = NO_RELA
           <div style={{ backgroundColor: isDarkMode ? '#2a1518' : '#fff8e1', border: '1px solid ' + (isDarkMode ? '#4a2530' : '#f5c518'), borderRadius: '10px', padding: '18px 20px', margin: '0 28px 20px' }}>
             <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: '700', color: isDarkMode ? '#f5c518' : '#7a5c00' }}>Have a tip on this story?</p>
             <p style={{ margin: 0, fontSize: '13px', color: isDarkMode ? '#ddd' : '#5a4a00', lineHeight: '1.6' }}>
-              WhatsApp Khabar Darjeeling at <a href='https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b' target='_blank' rel='noopener noreferrer' style={{ color: '#c41e3a', fontWeight: '700', textDecoration: 'none' }}>our channel</a> or email <a href='mailto:nowanad@gmail.com' style={{ color: '#c41e3a', fontWeight: '700', textDecoration: 'none' }}>nowanad@gmail.com</a>. Your identity will be protected.
+              Email us at <a href='mailto:contact@khabardarjeeling.in' style={{ color: '#c41e3a', fontWeight: '700', textDecoration: 'none' }}>contact@khabardarjeeling.in</a>. Your identity will be protected.
             </p>
           </div>
           <p style={{ margin: '0 28px 20px', fontSize: '12.5px', lineHeight: 1.6, color: isDarkMode ? '#aaa' : '#666' }}>

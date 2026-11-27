@@ -12,39 +12,15 @@ export default function ContactPage() {
         <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#1a1a1a', margin: '16px 0 24px' }}>Contact Us</h1>
 
         <div style={{ color: '#333', fontSize: '16px', lineHeight: 1.7, marginBottom: '32px' }}>
-          <p>We'd love to hear from you. Whether you have a news tip, feedback, a correction, or a business inquiry, reach out through any of the channels below and we'll get back to you.</p>
+          <p>We'd love to hear from you. Whether you have a news tip, feedback, a correction, or a business inquiry, email us and we'll get back to you.</p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <a href="mailto:nowanad@gmail.com" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
+          <a href="mailto:contact@khabardarjeeling.in" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
             <span style={{ fontSize: '24px' }}>✉️</span>
             <div>
               <div style={{ fontWeight: 700, fontSize: '15px' }}>Email</div>
-              <div style={{ color: '#c41e3a', fontSize: '14px' }}>nowanad@gmail.com</div>
-            </div>
-          </a>
-
-          <a href="https://wa.me/917583914380" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
-            <span style={{ fontSize: '24px' }}>💬</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '15px' }}>WhatsApp</div>
-              <div style={{ color: '#25D366', fontSize: '14px' }}>+91 75839 14380</div>
-            </div>
-          </a>
-
-          <a href="https://www.facebook.com/profile.php?id=61590708777947" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
-            <span style={{ fontSize: '24px' }}>📘</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '15px' }}>Facebook</div>
-              <div style={{ color: '#1877F2', fontSize: '14px' }}>Follow us on Facebook</div>
-            </div>
-          </a>
-
-          <a href="https://www.instagram.com/khabardarjeeling_2026" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
-            <span style={{ fontSize: '24px' }}>📷</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '15px' }}>Instagram</div>
-              <div style={{ color: '#E4405F', fontSize: '14px' }}>Follow us on Instagram</div>
+              <div style={{ color: '#c41e3a', fontSize: '14px' }}>contact@khabardarjeeling.in</div>
             </div>
           </a>
         </div>

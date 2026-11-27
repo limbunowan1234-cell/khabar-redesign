@@ -106,7 +106,7 @@ export default function CodeOfEthicsPage() {
           </p>
 
           <h2 style={H2}>Contact</h2>
-          <p>For questions about this Code of Ethics, email us at <a href="mailto:nowanad@gmail.com" style={{ color: '#c41e3a' }}>nowanad@gmail.com</a>.</p>
+          <p>For questions about this Code of Ethics, email us at <a href="mailto:contact@khabardarjeeling.in" style={{ color: '#c41e3a' }}>contact@khabardarjeeling.in</a>.</p>
         </div>
       </div>
     </div>
