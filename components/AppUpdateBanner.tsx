@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { useState, useSyncExternalStore } from 'react';
+import { appLink, isTesterPeriod, TESTER_OPTIN_URL } from '@/lib/appLink';
 
 // "New in the app" banner for the home page, announcing app 1.4.0
 // (Flash News). Readers can close it; it stays closed for this version.
 // Inside the Android app the "Get the app" button is hidden, since the
 // reader already has it.
 
-const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.khabardarjeeling.app';
 const VERSION = '1.4.0';
 const KEY = 'kdAppBannerClosed';
 const noop = () => () => {};
@@ -25,6 +25,8 @@ export default function AppUpdateBanner({ isMobile }: { isMobile: boolean }) {
     document.referrer.startsWith('android-app://') ||
     window.matchMedia('(display-mode: standalone)').matches
   );
+
+  const tester = isTesterPeriod();
 
   if (!show) return null;
 
@@ -46,10 +48,15 @@ export default function AppUpdateBanner({ isMobile }: { isMobile: boolean }) {
           <div className="kd-appbanner-kicker">New in the app · v{VERSION}</div>
           <div className="kd-appbanner-title">Flash News is here</div>
           <div className="kd-appbanner-sub">Seen something happening in the hills? Post a photo and a few lines. Like stories, edit your comments and get your own @username.</div>
+          {tester && !inApp && (
+            <div className="kd-appbanner-steps">
+              Help us launch: join <b>khabartester@googlegroups.com</b>, then <a href={TESTER_OPTIN_URL} target="_blank" rel="noopener noreferrer">opt in on Google Play</a> and install. Please keep the app for 14 days.
+            </div>
+          )}
         </div>
         <div className="kd-appbanner-actions">
           <Link href="/flash" className="kd-btn kd-btn-light">See Flash News</Link>
-          {!inApp && <a href={PLAY_URL} target="_blank" rel="noopener noreferrer" className="kd-btn kd-btn-gold">Get the app</a>}
+          {!inApp && <a href={appLink()} target="_blank" rel="noopener noreferrer" className="kd-btn kd-btn-gold">{tester ? 'Become a tester' : 'Get the app'}</a>}
         </div>
         <button onClick={close} className="kd-appbanner-close" aria-label="Close">×</button>
       </div>
@@ -66,6 +73,8 @@ const css = `
 .kd-appbanner-title{font-size:22px;font-weight:800;line-height:1.2;margin:2px 0 4px}
 .kd-appbanner-sub{font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.88);max-width:62ch}
 .kd-appbanner-actions{position:relative;display:flex;gap:10px;flex-shrink:0}
+.kd-appbanner-steps{margin-top:8px;font-size:12.5px;line-height:1.45;background:rgba(0,0,0,.22);border-radius:8px;padding:7px 10px;max-width:62ch}
+.kd-appbanner-steps a{color:#f5c518;font-weight:700}
 .kd-btn{display:inline-block;padding:10px 16px;border-radius:999px;font-size:13px;font-weight:800;text-decoration:none;white-space:nowrap}
 .kd-btn-light{background:#fff;color:#c41e3a}
 .kd-btn-gold{background:#f5c518;color:#1a1a1a}
@@ -76,6 +85,8 @@ const css = `
 .kd-appbanner-text{flex:1 1 calc(100% - 60px)}
 .kd-appbanner-title{font-size:18px}
 .kd-appbanner-actions{width:100%}
+.kd-appbanner-steps{margin-top:8px;font-size:12.5px;line-height:1.45;background:rgba(0,0,0,.22);border-radius:8px;padding:7px 10px;max-width:62ch}
+.kd-appbanner-steps a{color:#f5c518;font-weight:700}
 .kd-btn{flex:1;text-align:center}
 }
 `;

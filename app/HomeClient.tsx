@@ -4,6 +4,7 @@ import { trackApkDownload, getWorkerAuthToken } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
 import WeatherWarning from '@/components/WeatherWarning';
 import NewsTicker from '@/components/NewsTicker';
+import { appLink, isTesterPeriod } from '@/lib/appLink';
 import AppUpdateBanner from '@/components/AppUpdateBanner';
 import WeatherStrip from '@/components/WeatherStrip';
 import { useState, useEffect, useRef } from 'react';
@@ -40,7 +41,10 @@ const DB = 'Khabar_db';
 // billing-blocked). Points at the GitHub release asset directly now --
 // the stable /releases/download/ URL always redirects to a
 // freshly-signed, non-expiring-in-practice blob URL on request.
-const APK_URL = 'https://github.com/limbunowan1234-cell/Khabar-darjeeling/releases/download/v1.0.0/KhabarDarjeeling-v1.0.0.2.apk';
+// App links follow lib/appLink.ts: the tester Google Group during the
+// 14-day Play closed test, then the Play Store page.
+const APK_URL = appLink();
+const APP_LINK_LABEL = isTesterPeriod() ? 'Become a tester' : 'Get the Android app';
 // Week 2 of the Cloudflare migration (see cloudflare/README.md): article
 // list + images now read from the Worker/R2 instead of Appwrite. Writes
 // (view counting, comments, etc.) are untouched, still on Appwrite.
@@ -841,7 +845,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
                 <a href="https://www.facebook.com/profile.php?id=61590708777947" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: '#1877f2', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>Facebook</a>
                 <a href="https://www.instagram.com/khabardarjeeling_2026" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>Instagram</a>
                 <a href="https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>WhatsApp Channel</a>
-                <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>Download APK</a>
+                <a href={APK_URL} target="_blank" rel="noopener noreferrer" onClick={() => { trackApkDownload(); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>{isTesterPeriod() ? 'Become an app tester' : 'Get the app on Google Play'}</a>
               </div>
               {user ? (
                 <button onClick={() => { logOut(); setShowMenu(false); }} style={{ width: '100%', padding: '12px', backgroundColor: '#ffebee', color: '#c41e3a', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', marginTop: '16px' }}>Logout</button>
@@ -895,7 +899,7 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
         <div style={{ padding: '10px 16px 0' }}>
           <WeatherStrip isDarkMode={isDarkMode} defaultCity={userDistrict || undefined} />
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', padding: '8px 0 10px', fontSize: '12px', fontWeight: 700, borderBottom: '1px solid var(--rule)', marginBottom: '6px' }}>
-            <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ color: 'var(--color-text)', textDecoration: 'none' }}>Get the Android app</a>
+            <a href={APK_URL} target="_blank" rel="noopener noreferrer" onClick={() => { trackApkDownload(); }} style={{ color: 'var(--color-text)', textDecoration: 'none' }}>{APP_LINK_LABEL}</a>
             <span style={{ color: 'var(--color-text-muted)' }}>|</span>
             <a href="https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>WhatsApp alerts</a>
           </div>
@@ -977,11 +981,11 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
               <AdSlot placement={AD_PLACEMENTS.homepageSidebar} />
             <div style={{ marginTop: '16px' }}><AdBanner isDarkMode={isDarkMode} /></div>
             <SidebarTabs articles={articles} isDarkMode={isDarkMode} topTen={<TopTen articles={articles} isDarkMode={isDarkMode} />} breaking={<BreakingNewsSidebar articles={articles} isDarkMode={isDarkMode} />} />
-            <a href={APK_URL} download onClick={() => { trackApkDownload(); }} style={{ textDecoration: 'none' }}>
+            <a href={APK_URL} target="_blank" rel="noopener noreferrer" onClick={() => { trackApkDownload(); }} style={{ textDecoration: 'none' }}>
               <div style={{ backgroundColor: isDarkMode ? '#1e1e1e' : 'white', border: '1px solid var(--rule)', borderRadius: '2px', padding: '14px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', marginTop: '16px' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '800', fontSize: '13px', color: isDarkMode ? '#fff' : '#1a1a1a' }}>Download the app</div>
-                  <div style={{ fontSize: '11px', color: isDarkMode ? '#aaa' : '#888' }}>Android APK available</div>
+                  <div style={{ fontWeight: '800', fontSize: '13px', color: isDarkMode ? '#fff' : '#1a1a1a' }}>{isTesterPeriod() ? 'Test the new app' : 'Download the app'}</div>
+                  <div style={{ fontSize: '11px', color: isDarkMode ? '#aaa' : '#888' }}>{isTesterPeriod() ? 'Join khabartester@googlegroups.com' : 'Free on Google Play'}</div>
                 </div>
                 <span style={{ backgroundColor: '#c41e3a', color: 'white', padding: '7px 14px', borderRadius: '2px', fontSize: '11px', fontWeight: '800', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Get</span>
               </div>
