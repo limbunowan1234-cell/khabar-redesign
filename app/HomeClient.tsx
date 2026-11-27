@@ -3,6 +3,8 @@ import SiteFooter from '@/components/SiteFooter';
 import { trackApkDownload, getWorkerAuthToken } from '@/lib/appwrite';
 import WeatherWidget from '@/components/WeatherWidget';
 import WeatherWarning from '@/components/WeatherWarning';
+import NewsTicker from '@/components/NewsTicker';
+import AppUpdateBanner from '@/components/AppUpdateBanner';
 import WeatherStrip from '@/components/WeatherStrip';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -664,7 +666,6 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
     setShown(12);
   }, [searchQuery, selectedCategory, selectedDistrict, articles]);
 
-  const breakingArticles = articles.filter(a => a.isBreaking).slice(0, 6);
   const featuredArticle = articles.find(a => a.isFeatured) || articles[0];
   const trendingArticles = [...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
   const gridArticles = filtered;
@@ -875,22 +876,10 @@ export default function HomeClient({ initialArticles = [], initialIsMobile = fal
       />
       <GenreNav selectedGenre={selectedCategory} onSelectGenre={setSelectedCategory} selectedDistrict={selectedDistrict} onSelectDistrict={setSelectedDistrict} isDarkMode={isDarkMode} />
 
-      {breakingArticles.length > 0 && (
-        <div style={{ backgroundColor: '#111', color: 'white', padding: '0', overflow: 'hidden', borderBottom: '1px solid #000' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ flexShrink: 0, fontWeight: '800', fontSize: '11px', letterSpacing: '1.5px', backgroundColor: '#c41e3a', padding: '9px 16px', whiteSpace: 'nowrap' }}>BREAKING</div>
-            <div className="ticker-wrap">
-              <div className="ticker-track">
-                {[...breakingArticles, ...breakingArticles].map((a, i) => (
-                  <Link key={a.$id + i} href={'/article/' + a.$id} style={{ color: 'white', textDecoration: 'none', padding: '0 24px', fontSize: '13px', fontWeight: '500' }}>{a.title}</Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <NewsTicker articles={articles} />
 
       <MarketsStrip isDarkMode={isDarkMode} />
+      <AppUpdateBanner isMobile={isMobile} />
       {isMobile && <TodayCard compact />}
 
       {isMobile && (
