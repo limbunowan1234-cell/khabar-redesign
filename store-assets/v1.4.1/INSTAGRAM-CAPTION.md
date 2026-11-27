@@ -1,7 +1,7 @@
 # Instagram caption (post + story)
 
 ```
-⚡ Flash News is here, only on the Khabar Darjeeling app!
+⚡ Flash News is here on the Khabar Darjeeling app!
 
 Seen something happening in the hills? A traffic jam at Ghoom, fog rolling over Kurseong, a festival in Kalimpong? Snap a photo, add a few lines and post it in seconds. 📸
 
