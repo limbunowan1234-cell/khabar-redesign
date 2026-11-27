@@ -23,6 +23,28 @@ export default function ContactPage() {
               <div style={{ color: '#c41e3a', fontSize: '14px' }}>contact@khabardarjeeling.in</div>
             </div>
           </a>
+          <div style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: '#888', marginTop: '12px' }}>Follow us</div>
+          <a href="https://www.facebook.com/profile.php?id=61590708777947" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
+            <span style={{ fontSize: '24px' }}>📘</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '15px' }}>Facebook</div>
+              <div style={{ color: '#1877F2', fontSize: '14px' }}>Follow us on Facebook</div>
+            </div>
+          </a>
+          <a href="https://www.instagram.com/khabardarjeeling_2026" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
+            <span style={{ fontSize: '24px' }}>📷</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '15px' }}>Instagram</div>
+              <div style={{ color: '#E4405F', fontSize: '14px' }}>Follow us on Instagram</div>
+            </div>
+          </a>
+          <a href="https://whatsapp.com/channel/0029VbD933y3LdQQ0g9Z682b" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', background: '#f9f9f9', borderRadius: '14px', textDecoration: 'none', color: '#1a1a1a', border: '1px solid #eee' }}>
+            <span style={{ fontSize: '24px' }}>💬</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '15px' }}>WhatsApp Channel</div>
+              <div style={{ color: '#25D366', fontSize: '14px' }}>Get news alerts on WhatsApp</div>
+            </div>
+          </a>
         </div>
 
         <div style={{ marginTop: '32px', padding: '18px', background: 'linear-gradient(135deg, rgba(196,30,58,0.08), rgba(245,197,24,0.05))', borderRadius: '14px', color: '#555', fontSize: '14px', lineHeight: 1.6 }}>
