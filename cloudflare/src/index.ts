@@ -31,7 +31,7 @@ import { roads } from './routes/roads';
 import { reports } from './routes/reports';
 import { reunion } from './routes/reunion';
 
-type Bindings = { DB: D1Database; IMAGES: R2Bucket; AUTH_JWT_SECRET: string; AI: Ai };
+type Bindings = { DB: D1Database; IMAGES: R2Bucket; REUNION_PRIVATE: R2Bucket; AUTH_JWT_SECRET: string; AI: Ai };
 
 // Mirrors components/WeatherWidget.tsx's CITIES and components/
 // WeatherWarning.tsx's getSeverity() in the Next.js app -- duplicated

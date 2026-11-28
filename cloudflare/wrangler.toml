@@ -23,6 +23,17 @@ database_id = "991e6a3d-1aca-4c2a-bbdf-5b8d374d45b8"
 binding = "IMAGES"
 bucket_name = "khabar-article-images"
 
+# Family Reunion case files (src/routes/reunionMedia.ts). PRIVATE: no public
+# route ever reads this bucket and it must not get a public r2.dev URL or a
+# custom domain. Files are only streamed to the logged-in case team through
+# the Worker, and every view is written to the case history. A photo is
+# copied to IMAGES (reunion-public/) only when an admin publishes it with a
+# recorded consent. Create once with:
+#   npx wrangler r2 bucket create khabar-reunion-private
+[[r2_buckets]]
+binding = "REUNION_PRIVATE"
+bucket_name = "khabar-reunion-private"
+
 # Powers POST /ai-draft (admin-only) -- turns pasted source material into a
 # structured article draft. Free daily neuron allotment, pay-as-you-go past
 # that at low per-request cost; picked over an external LLM API specifically

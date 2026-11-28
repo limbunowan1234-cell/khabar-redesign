@@ -20,6 +20,29 @@ export async function reunionApi<T = any>(path: string, init: { method?: string;
   return json as T;
 }
 
+// Private case file -> Blob (the file route needs the Bearer token, so it
+// can't be used directly as an <img src>).
+export async function reunionFile(path: string): Promise<Blob> {
+  const token = await getWorkerAuthToken();
+  const res = await fetch(REUNION_API + '/reunion' + path, { headers: token ? { Authorization: 'Bearer ' + token } : {} });
+  if (!res.ok) throw new Error(`Could not open file (${res.status})`);
+  return res.blob();
+}
+
+export async function reunionUpload<T = any>(path: string, form: FormData): Promise<T> {
+  const token = await getWorkerAuthToken();
+  const res = await fetch(REUNION_API + '/reunion' + path, { method: 'POST', headers: token ? { Authorization: 'Bearer ' + token } : {}, body: form });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || `Upload failed (${res.status})`);
+  return json as T;
+}
+
+export const publicMediaUrl = (key: string) => `${REUNION_API}/reunion/public-media/${key}`;
+
+export const CONSENT_SCOPE: Record<string, string> = { public_story: 'Public story', public_photo: 'Public photo', both: 'Story and photo' };
+export const CONSENT_METHOD: Record<string, string> = { written: 'Written / signed', verbal: 'Verbal', whatsapp: 'WhatsApp', email: 'Email', other: 'Other' };
+export const RELATIONSHIP: Record<string, string> = { self: 'The subject', family: 'Family member', guardian: 'Guardian', other: 'Other' };
+
 export const isReunionUser = (u: { email?: string; labels?: string[] } | null) =>
   !!u && (u.email?.toLowerCase() === ADMIN_EMAIL || (u.labels || []).includes('admin') || (u.labels || []).includes('reunion'));
 export const isAdminUser = (u: { email?: string; labels?: string[] } | null) =>
@@ -91,9 +114,17 @@ export function describeEvent(e: any): string {
     case 'contact_added': return `Contact added: ${e.newValue}`;
     case 'contact_changed': return `Contact updated:${f}`;
     case 'contact_removed': return `Contact removed: ${e.oldValue}`;
-    case 'viewed_sensitive': return `Viewed ${e.entityType || 'sensitive records'}`;
+    case 'viewed_sensitive': return e.entityType === 'media' ? `Viewed file: ${e.newValue || ''}` : `Viewed ${e.entityType || 'sensitive records'}`;
     case 'update': return 'Investigation update';
     case 'case_deleted': return 'Case deleted';
+    case 'media_added': return `File added: ${e.newValue}`;
+    case 'media_changed': return 'File caption edited';
+    case 'media_removed': return `File removed: ${e.oldValue}`;
+    case 'media_purged': return `File permanently deleted: ${e.oldValue}`;
+    case 'media_published': return `Photo published: ${e.newValue}`;
+    case 'media_unpublished': return `Photo unpublished: ${e.oldValue}`;
+    case 'consent_recorded': return 'Consent recorded';
+    case 'consent_withdrawn': return 'Consent withdrawn';
     default: return e.eventType.replace(/_/g, ' ');
   }
 }

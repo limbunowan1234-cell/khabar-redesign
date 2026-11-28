@@ -40,7 +40,7 @@ async function readUploadedFile(c: any): Promise<File | null> {
 // Works out what an upload really is from its first bytes, ignoring the
 // file name and the type the browser claims. Only these image formats are
 // accepted for article photos, avatars and app icons.
-function sniffImage(b: Uint8Array): { type: string; ext: string } | null {
+export function sniffImage(b: Uint8Array): { type: string; ext: string } | null {
   const ascii = (from: number, to: number) => String.fromCharCode(...b.subarray(from, to));
   if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { type: 'image/jpeg', ext: 'jpg' };
   if (b.length >= 8 && b[0] === 0x89 && ascii(1, 4) === 'PNG') return { type: 'image/png', ext: 'png' };

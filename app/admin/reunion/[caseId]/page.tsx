@@ -5,6 +5,8 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import ReunionShell, { type ReunionViewer } from '../ReunionShell';
 import StatusPill from '../StatusPill';
+import Dialog from '../Dialog';
+import MediaTab from './MediaTab';
 import {
   CATEGORY, CONTACT_ROLE, FACT_SECTION, LEAD_STATUS, PROVENANCE, SOURCE_TYPE, STATUS,
   describeEvent, fmtWhen, reunionApi, statusLabel,
@@ -129,7 +131,7 @@ function Workspace({ viewer }: { viewer: ReunionViewer }) {
       )}
       {tab === 'leads' && <Leads c={c} team={team} setDialog={setDialog} close={close} done={done} />}
       {tab === 'contacts' && <Contacts c={c} setDialog={setDialog} close={close} />}
-      {tab === 'media' && <Placeholder title="Media & Documents" text="The private media library arrives in the next step: photos and documents stored in a private bucket, viewable only by the case team, with every view recorded. Photos can be made public only with a recorded consent." />}
+      {tab === 'media' && <MediaTab c={c} viewer={viewer} setDialog={setDialog} close={close} done={done} />}
       {tab === 'articles' && <Placeholder title="News Articles" text="The case newsroom arrives in step 4: write several articles for this case (appeal, updates, reunion story), AI-assisted drafts in English, Hindi and Nepali plus social posts, and a Draft → Editorial Review → Approved → Published workflow. Publishing an article never exposes private case details." />}
       {tab === 'history' && <section className={s.panel}><h2 className={s.panelTitle}>Activity history <span className={s.small}>Every change, kept permanently</span></h2><Timeline events={events} /></section>}
       {tab === 'settings' && <Settings c={c} viewer={viewer} team={team} onSaved={reload} />}
@@ -154,7 +156,7 @@ function ProvTag({ p }: { p: string }) {
 // ---- Overview ------------------------------------------------------------------
 
 function Overview({ c, events }: { c: any; events: any[] }) {
-  const key = (c.facts || []).filter((f: any) => ['subject', 'family'].includes(f.section));
+  const key = (c.facts || []).filter((f: any) => ['subject', 'family'].includes(f.section)).sort((a: any, b: any) => (a.section === b.section ? 0 : a.section === 'subject' ? -1 : 1));
   const counts = c.counts || {};
   return (
     <div className={s.cols}>
@@ -533,24 +535,5 @@ function Settings({ c, viewer, team, onSaved }: { c: any; viewer: ReunionViewer;
         </section>
       )}
     </>
-  );
-}
-
-// ---- Dialog shell ---------------------------------------------------------------------------
-
-function Dialog({ title, children, footer, onClose }: { title: string; children: ReactNode; footer: ReactNode; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-  return (
-    <div className={s.overlay} onClick={onClose}>
-      <div className={s.dialog} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
-        <h2 className={s.dialogTitle}>{title}</h2>
-        <div className={s.form} style={{ marginTop: 12 }}>{children}</div>
-        <div className={s.dialogActions}>{footer}</div>
-      </div>
-    </div>
   );
 }
