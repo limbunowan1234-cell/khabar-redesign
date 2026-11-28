@@ -5,7 +5,7 @@ import { verifyUser, isAdmin, isReunionStaff, type AppUser } from './auth';
 // src/routes/reunionMedia.ts): access rules, history events and body parsing.
 // The rules themselves are described at the top of src/routes/reunion.ts.
 
-export type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; IMAGES: R2Bucket; REUNION_PRIVATE: R2Bucket };
+export type Bindings = { DB: D1Database; AUTH_JWT_SECRET: string; IMAGES: R2Bucket; REUNION_PRIVATE: R2Bucket; AI: Ai; REUNION_AI_MOCK?: string };
 export type Ctx = Context<{ Bindings: Bindings }>;
 export type Row = Record<string, any>;
 

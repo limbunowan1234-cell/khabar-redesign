@@ -7,6 +7,7 @@ import ReunionShell, { type ReunionViewer } from '../ReunionShell';
 import StatusPill from '../StatusPill';
 import Dialog from '../Dialog';
 import MediaTab from './MediaTab';
+import NewsTab from './NewsTab';
 import {
   CATEGORY, CONTACT_ROLE, FACT_SECTION, LEAD_STATUS, PROVENANCE, SOURCE_TYPE, STATUS,
   describeEvent, fmtWhen, reunionApi, statusLabel,
@@ -92,7 +93,7 @@ function Workspace({ viewer }: { viewer: ReunionViewer }) {
           </div>
           <div className={s.caseActions}>
             <button type="button" className={`${s.btn} ${s.btnRed}`} onClick={() => setDialog(<UpdateDialog caseId={c.$id} onClose={close} onDone={done} />)}>+ Add Update</button>
-            <button type="button" className={s.btn} onClick={() => go('articles')}>✎ Create Article</button>
+            <Link className={s.btn} href={`/admin/reunion/${c.caseCode}/articles/new`}>✎ Create Article</Link>
           </div>
         </div>
         <div className={s.metaGrid}>
@@ -132,7 +133,7 @@ function Workspace({ viewer }: { viewer: ReunionViewer }) {
       {tab === 'leads' && <Leads c={c} team={team} setDialog={setDialog} close={close} done={done} />}
       {tab === 'contacts' && <Contacts c={c} setDialog={setDialog} close={close} />}
       {tab === 'media' && <MediaTab c={c} viewer={viewer} setDialog={setDialog} close={close} done={done} />}
-      {tab === 'articles' && <Placeholder title="News Articles" text="The case newsroom arrives in step 4: write several articles for this case (appeal, updates, reunion story), AI-assisted drafts in English, Hindi and Nepali plus social posts, and a Draft → Editorial Review → Approved → Published workflow. Publishing an article never exposes private case details." />}
+      {tab === 'articles' && <NewsTab c={c} />}
       {tab === 'history' && <section className={s.panel}><h2 className={s.panelTitle}>Activity history <span className={s.small}>Every change, kept permanently</span></h2><Timeline events={events} /></section>}
       {tab === 'settings' && <Settings c={c} viewer={viewer} team={team} onSaved={reload} />}
 
@@ -143,10 +144,6 @@ function Workspace({ viewer }: { viewer: ReunionViewer }) {
 
 function Meta({ label, value }: { label: string; value?: string | null }) {
   return <div className={s.meta}><span>{label}</span><b>{value || '—'}</b></div>;
-}
-
-function Placeholder({ title, text }: { title: string; text: string }) {
-  return <section className={s.panel}><h2 className={s.panelTitle}>{title}</h2><p className={s.notice}>{text}</p></section>;
 }
 
 function ProvTag({ p }: { p: string }) {

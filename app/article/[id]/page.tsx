@@ -80,8 +80,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const decodedId = decodeURIComponent(id);
   const a = await fetchArticle(decodedId);
   if (!a) return { title: 'Article | Khabar Darjeeling' };
-  const title = a.title || 'Khabar Darjeeling';
-  const description = clean(a.content || a.summary || '');
+  // Optional SEO fields (set in the Family Reunion newsroom editor) win when
+  // present; otherwise the headline and body are used as before.
+  const title = a.seoTitle || a.title || 'Khabar Darjeeling';
+  const description = a.metaDescription || clean(a.content || a.summary || '');
+  const social = a.socialDescription || description;
   const image = imgUrl(a);
   const url = SITE + '/article/' + (a.slug || id);
   const author = a.submitterName || a.authorName || 'Khabar Darjeeling';
@@ -89,10 +92,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title,
     description,
+    ...(a.keywords ? { keywords: String(a.keywords).split(',').map((k: string) => k.trim()).filter(Boolean) } : {}),
     alternates: { canonical: url },
     openGraph: {
       title,
-      description,
+      description: social,
       url,
       siteName: 'Khabar Darjeeling',
       type: 'article',
@@ -104,7 +108,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     twitter: {
       card: 'summary_large_image',
       title,
-      description,
+      description: social,
       images: [image],
     },
   };

@@ -37,6 +37,37 @@ export async function reunionUpload<T = any>(path: string, form: FormData): Prom
   return json as T;
 }
 
+// Ordinary public article images (e.g. a photo of the area), uploaded the
+// same way as for any story. Never use this for private case material.
+export async function articleImageUpload(file: File): Promise<string> {
+  const token = await getWorkerAuthToken();
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch(REUNION_API + '/cdn/articles', { method: 'POST', headers: token ? { Authorization: 'Bearer ' + token } : {}, body: fd });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json.fileId) throw new Error(json.error || `Upload failed (${res.status})`);
+  return json.fileId as string;
+}
+export const articleImageUrl = (key: string) => `${REUNION_API}/cdn/articles/${key}`;
+
+export const ARTICLE_STATUS: Record<string, { label: string; tone: string }> = {
+  draft: { label: 'Draft', tone: 'new' },
+  pending_review: { label: 'Editorial Review', tone: 'wait' },
+  approved: { label: 'Approved', tone: 'public' },
+  published: { label: 'Published', tone: 'done' },
+};
+export const AI_FORMATS: { id: string; label: string; article: boolean }[] = [
+  { id: 'article_en', label: 'English news article', article: true },
+  { id: 'article_hi', label: 'Hindi news article', article: true },
+  { id: 'article_ne', label: 'Nepali news article', article: true },
+  { id: 'appeal', label: 'Public family-reunion appeal', article: false },
+  { id: 'facebook', label: 'Facebook post', article: false },
+  { id: 'instagram', label: 'Instagram caption', article: false },
+  { id: 'whatsapp', label: 'WhatsApp message', article: false },
+];
+export const GENRES = ['Voice of People', 'Poetry', 'Editorial', 'Tourism', 'Politics', 'Culture', 'Health', 'Education', 'Technology', 'Sports', 'Business'];
+export const DISTRICTS = ['Darjeeling', 'Kalimpong', 'Kurseong', 'Mirik', 'Siliguri', 'West Bengal', 'Sikkim', 'National', 'World'];
+
 export const publicMediaUrl = (key: string) => `${REUNION_API}/reunion/public-media/${key}`;
 
 export const CONSENT_SCOPE: Record<string, string> = { public_story: 'Public story', public_photo: 'Public photo', both: 'Story and photo' };
@@ -125,6 +156,11 @@ export function describeEvent(e: any): string {
     case 'media_unpublished': return `Photo unpublished: ${e.oldValue}`;
     case 'consent_recorded': return 'Consent recorded';
     case 'consent_withdrawn': return 'Consent withdrawn';
+    case 'article_created': return `Article created: ${e.newValue}`;
+    case 'article_changed': return `Article edited (${e.field})`;
+    case 'article_status': return `Article "${e.field}": ${ARTICLE_STATUS[e.oldValue]?.label || e.oldValue} → ${ARTICLE_STATUS[e.newValue]?.label || e.newValue}`;
+    case 'article_deleted': return `Article deleted: ${e.oldValue}`;
+    case 'ai_draft': return `AI draft generated: ${e.field}`;
     default: return e.eventType.replace(/_/g, ' ');
   }
 }

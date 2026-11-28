@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { verifyUser, isReporterOrAdmin, isSuspended, type AppUser } from '../lib/auth';
+import { verifyUser, isAdmin, isReporterOrAdmin, isReunionStaff, isSuspended, type AppUser } from '../lib/auth';
 import { pushBreakingIfNew } from './deviceTokens';
 import type { FcmEnv } from '../lib/fcm';
 import { logModeration, PUBLISH_LIMITS } from '../lib/moderation';
@@ -58,6 +58,10 @@ function toArticleJson(row: any, includeEmails = false) {
     isRegionPinned: !!row.is_region_pinned,
     rejectionReason: row.rejection_reason,
     trackerData: row.tracker_data,
+    seoTitle: row.seo_title,
+    metaDescription: row.meta_description,
+    keywords: row.keywords,
+    socialDescription: row.social_description,
     location: row.location,
     publishedAt: row.published_at,
     submittedAt: row.submitted_at,
@@ -176,6 +180,10 @@ articles.get('/', async (c) => {
     where.push('status = ?');
     params.push(q.status || 'published');
   }
+  // Unpublished Family Reunion case articles (drafts may hold unverified
+  // case details) are listed only for the case team -- not for every
+  // reporter. See routes/reunionNews.ts.
+  if (!isReunionStaff(user)) where.push("(reunion_case_id IS NULL OR status = 'published')");
 
   // Comma-separated accepts multiple districts (app/daily-updates -- "other
   // districts" combines 4 in one query) while staying a plain equality for
@@ -260,6 +268,7 @@ articles.get('/:idOrSlug', async (c) => {
     if (!user || ((row as any).submitter_id !== user.$id && !isReporterOrAdmin(user))) {
       return c.json({ error: 'Not found' }, 404);
     }
+    if ((row as any).reunion_case_id && !isReunionStaff(user)) return c.json({ error: 'Not found' }, 404);
   }
 
   const supporting = await c.env.DB
@@ -471,7 +480,7 @@ articles.patch('/:id', async (c) => {
   const user = await verifyUser(c.req.raw, c.env);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
-  const row = await c.env.DB.prepare('SELECT submitter_id FROM articles WHERE id = ?').bind(id).first();
+  const row = await c.env.DB.prepare('SELECT submitter_id, reunion_case_id FROM articles WHERE id = ?').bind(id).first();
   if (!row) return c.json({ error: 'Not found' }, 404);
   const staff = isReporterOrAdmin(user);
   if ((row as any).submitter_id !== user.$id && !staff) {
@@ -483,6 +492,13 @@ articles.patch('/:id', async (c) => {
 
   const body = await c.req.json().catch(() => null);
   if (!body || typeof body !== 'object') return c.json({ error: 'Body required' }, 400);
+  // Family Reunion case articles go through the case newsroom's review and
+  // consent checks (routes/reunionNews.ts). Here only an admin may touch
+  // them, and never their status.
+  if ((row as any).reunion_case_id) {
+    if (!isAdmin(user)) return c.json({ error: 'Case articles are edited in the Family Reunion newsroom' }, 403);
+    if (body.status !== undefined) return c.json({ error: "A case article's status changes only in the Family Reunion newsroom" }, 403);
+  }
   if (!staff) {
     for (const key of STAFF_ONLY_FIELDS) delete body[key];
     // Authors can publish, unpublish to a draft or send for review, never
@@ -553,8 +569,9 @@ articles.delete('/:id', async (c) => {
   const id = c.req.param('id');
   const user = await verifyUser(c.req.raw, c.env);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
-  const owner = await c.env.DB.prepare('SELECT submitter_id, title FROM articles WHERE id = ?').bind(id).first<{ submitter_id: string; title: string }>();
+  const owner = await c.env.DB.prepare('SELECT submitter_id, title, reunion_case_id FROM articles WHERE id = ?').bind(id).first<{ submitter_id: string; title: string; reunion_case_id: string | null }>();
   if (!owner) return c.json({ ok: true });
+  if (owner.reunion_case_id && !isAdmin(user)) return c.json({ error: 'Case articles are managed in the Family Reunion newsroom' }, 403);
   if (owner.submitter_id !== user.$id) {
     if (!isReporterOrAdmin(user)) return c.json({ error: 'Unauthorized' }, 401);
     await logModeration(c.env.DB, user, 'delete', 'article', id, owner.title);

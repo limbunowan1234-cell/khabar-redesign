@@ -7,6 +7,7 @@ import {
   LEAD_STATUSES, SOURCE_TYPES, CONTACT_ROLES, CASE_CODE,
 } from '../lib/reunionCore';
 import { reunionMedia } from './reunionMedia';
+import { reunionNews } from './reunionNews';
 
 // Family Reunion case management (KD-FR-xxx). Everything here is staff-only
 // (admins + the "reunion" label) unless marked otherwise. Tables:
@@ -27,6 +28,8 @@ export const reunion = new Hono<{ Bindings: Bindings }>();
 
 // Case files and consent records: src/routes/reunionMedia.ts.
 reunion.route('/', reunionMedia);
+// Case-linked articles and AI drafts: src/routes/reunionNews.ts.
+reunion.route('/', reunionNews);
 
 // ---- reference data ----------------------------------------------------------
 

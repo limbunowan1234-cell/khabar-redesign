@@ -11,10 +11,13 @@ import { camel, staffUser, loadCase, loadChild, eventStmt, str, oneOf, type Bind
 //    the case history (at most once per person per file per 30 minutes, so a
 //    gallery of thumbnails doesn't flood it).
 //  - A photo becomes public only when an admin publishes it against an active
-//    consent covering photos: the bytes are copied to IMAGES under
-//    reunion-public/ and served by GET /public-media/:key. Withdrawing that
-//    consent, unpublishing, or deleting the file removes the public copy.
-//  - Withdrawing a story consent also switches the case's public page off.
+//    consent covering photos: the bytes are copied to IMAGES as
+//    reunion-<uuid>.<ext>, served by GET /public-media/:key and usable as an
+//    article image through /cdn/articles/:key. Withdrawing that consent,
+//    unpublishing, or deleting the file deletes the public copy and takes it
+//    out of any article that used it.
+//  - Withdrawing the last story consent also switches the case's public page
+//    off and moves its published articles back to "approved" (offline).
 
 export const reunionMedia = new Hono<{ Bindings: Bindings }>();
 
@@ -23,7 +26,6 @@ const MEDIA_KINDS = ['photo', 'document'];
 const CONSENT_SCOPES = ['public_story', 'public_photo', 'both'];
 const CONSENT_METHODS = ['written', 'verbal', 'whatsapp', 'email', 'other'];
 const RELATIONSHIPS = ['self', 'family', 'guardian', 'other'];
-const PUBLIC_PREFIX = 'reunion-public/';
 
 // Photos (the same formats article uploads accept) and PDF documents,
 // identified from the file's first bytes, never its name.
@@ -44,9 +46,11 @@ async function loadConsent(c: Ctx, user: AppUser, id: string): Promise<{ consent
 // Deletes a published copy and returns the statements that record it.
 async function unpublishStmts(c: Ctx, user: AppUser | null, media: Row, caseRow: Row, reason: string): Promise<D1PreparedStatement[]> {
   if (!media.public_key) return [];
-  await c.env.IMAGES.delete(PUBLIC_PREFIX + media.public_key);
+  await c.env.IMAGES.delete(media.public_key);
   const stmts = [
     c.env.DB.prepare('UPDATE reunion_case_media SET public_key = NULL, consent_id = NULL WHERE id = ?').bind(media.id),
+    c.env.DB.prepare("UPDATE articles SET image_file_id = NULL, updated_at = datetime('now') WHERE image_file_id = ?").bind(media.public_key),
+    c.env.DB.prepare('DELETE FROM article_supporting_images WHERE file_id = ?').bind(media.public_key),
     eventStmt(c.env.DB, caseRow.id, user, { type: 'media_unpublished', entityType: 'media', entityId: media.id, oldValue: media.filename, reason }),
   ];
   if (caseRow.public_photo_media_id === media.id) {
@@ -193,8 +197,8 @@ reunionMedia.post('/media/:id/publish', async (c) => {
   }
   const object = await c.env.REUNION_PRIVATE.get(media.private_key);
   if (!object) return c.json({ error: 'File missing from storage' }, 404);
-  const publicKey = crypto.randomUUID() + '.' + (media.private_key.split('.').pop() || 'jpg');
-  await c.env.IMAGES.put(PUBLIC_PREFIX + publicKey, await object.arrayBuffer(), { httpMetadata: { contentType: media.content_type || 'image/jpeg' } });
+  const publicKey = 'reunion-' + crypto.randomUUID() + '.' + (media.private_key.split('.').pop() || 'jpg');
+  await c.env.IMAGES.put(publicKey, await object.arrayBuffer(), { httpMetadata: { contentType: media.content_type || 'image/jpeg' } });
   await c.env.DB.batch([
     c.env.DB.prepare('UPDATE reunion_case_media SET public_key = ?, consent_id = ? WHERE id = ?').bind(publicKey, consent.id, media.id),
     eventStmt(c.env.DB, found.parent.id, user, {
@@ -218,7 +222,7 @@ reunionMedia.post('/media/:id/unpublish', async (c) => {
 // Public: a published photo. Served only while its file and case still exist.
 reunionMedia.get('/public-media/:key', async (c) => {
   const key = c.req.param('key');
-  if (!/^[\w-]+\.\w+$/.test(key)) return c.notFound();
+  if (!/^reunion-[\w-]+\.\w+$/.test(key)) return c.notFound();
   const live = await c.env.DB
     .prepare(
       `SELECT 1 FROM reunion_case_media m JOIN reunion_cases rc ON rc.id = m.case_id
@@ -227,7 +231,7 @@ reunionMedia.get('/public-media/:key', async (c) => {
     .bind(key)
     .first();
   if (!live) return c.notFound();
-  const object = await c.env.IMAGES.get(PUBLIC_PREFIX + key);
+  const object = await c.env.IMAGES.get(key);
   if (!object) return c.notFound();
   const headers = new Headers();
   object.writeHttpMetadata(headers);
@@ -314,6 +318,24 @@ reunionMedia.post('/consents/:id/withdraw', async (c) => {
       );
     }
   }
+  // Published articles about the case go offline when no story consent is left.
+  let articlesOffline = 0;
+  if (['public_story', 'both'].includes(consent.scope)) {
+    const other = await c.env.DB
+      .prepare("SELECT 1 FROM reunion_case_consents WHERE case_id = ? AND id <> ? AND withdrawn_at IS NULL AND scope IN ('public_story', 'both') LIMIT 1")
+      .bind(parent.id, consent.id).first();
+    if (!other) {
+      const { results: live } = await c.env.DB
+        .prepare("SELECT id, title FROM articles WHERE reunion_case_id = ? AND status = 'published'").bind(parent.id).all<Row>();
+      articlesOffline = live.length;
+      for (const a of live) {
+        stmts.push(
+          c.env.DB.prepare("UPDATE articles SET status = 'approved', updated_at = datetime('now') WHERE id = ?").bind(a.id),
+          eventStmt(c.env.DB, parent.id, user, { type: 'article_status', entityType: 'article', entityId: a.id, field: a.title, oldValue: 'published', newValue: 'approved', note: 'Taken offline: story consent withdrawn' }),
+        );
+      }
+    }
+  }
   await c.env.DB.batch(stmts);
-  return c.json({ ok: true, unpublishedPhotos: published.length, publicPageSwitchedOff: pageOff });
+  return c.json({ ok: true, unpublishedPhotos: published.length, publicPageSwitchedOff: pageOff, articlesTakenOffline: articlesOffline });
 });
