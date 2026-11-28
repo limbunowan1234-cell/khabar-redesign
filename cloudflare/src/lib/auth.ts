@@ -51,6 +51,14 @@ export function isReporterOrAdmin(user: AppUser | null): boolean {
   return isAdmin(user) || (user.labels || []).includes('reporter');
 }
 
+// Family Reunion case team (src/routes/reunion.ts): admins plus users given
+// the "reunion" label. Deliberately not granted to every reporter -- cases
+// hold private family details and informants' contact information.
+export function isReunionStaff(user: AppUser | null): boolean {
+  if (!user) return false;
+  return isAdmin(user) || (user.labels || []).includes('reunion');
+}
+
 // Matches app/hills-in-frame/post/page.tsx's own gate -- a separate role
 // from reporter/admin, for Hills in Frame photo submissions specifically.
 export function isPhotographer(user: AppUser | null): boolean {
