@@ -8,6 +8,7 @@ import StatusPill from '../StatusPill';
 import Dialog from '../Dialog';
 import MediaTab from './MediaTab';
 import NewsTab from './NewsTab';
+import PublicPanel from './PublicPanel';
 import {
   CATEGORY, CONTACT_ROLE, FACT_SECTION, LEAD_STATUS, PROVENANCE, SOURCE_TYPE, STATUS,
   describeEvent, fmtWhen, reunionApi, statusLabel,
@@ -345,7 +346,10 @@ function Leads({ c, team, setDialog, close, done }: { c: any; team: { $id: strin
               <button type="button" className={s.btn} style={{ padding: '5px 10px' }} onClick={() => setDialog(<LeadDialog caseId={c.$id} lead={l} team={team} onClose={close} onDone={after} />)}>Review</button>
             </div>
           </div>
+          {l.sourceType === 'public_form' && <p className={s.small} style={{ margin: '6px 0 0' }}><span className={`${s.pill} ${s.t_public}`}>Public submission</span>{l.consentGiven ? ' · Consent to be contacted given' : ''}</p>}
           {l.originalMessage && <p className={s.quote}>{l.originalMessage}</p>}
+          {l.recognition && <p className={s.quote}><b>How they recognise the case:</b> {l.recognition}</p>}
+          {l.attachments > 0 && <p className={s.small} style={{ marginBottom: 0 }}>📎 {l.attachments} attachment{l.attachments > 1 ? 's' : ''} (see Media &amp; Documents)</p>}
           {l.translatedMessage && <p className={s.quote}><b>Translation:</b> {l.translatedMessage}</p>}
           {(l.providerContact || l.providerEmail) && <p className={s.small} style={{ marginBottom: 0 }}><span className={s.private}>Private:</span> {[l.providerContact, l.providerEmail].filter(Boolean).join(' · ')}</p>}
           {l.followUp && <p className={s.small} style={{ marginBottom: 0 }}>Follow-up: {l.followUp}</p>}
@@ -515,10 +519,7 @@ function Settings({ c, viewer, team, onSaved }: { c: any; viewer: ReunionViewer;
         </div>
       </section>
 
-      <section className={s.panel}>
-        <h2 className={s.panelTitle}>Public appeal page</h2>
-        <p className={s.notice}>The public page, consent records and the information-submission form arrive in a later step. Only an admin will be able to switch a case&rsquo;s page on, and only items marked public will appear on it.</p>
-      </section>
+      <PublicPanel c={c} viewer={viewer} onSaved={onSaved} />
 
       {viewer.isAdmin && (
         <section className={s.panel}>

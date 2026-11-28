@@ -8,6 +8,7 @@ import {
 } from '../lib/reunionCore';
 import { reunionMedia } from './reunionMedia';
 import { reunionNews } from './reunionNews';
+import { reunionPublic } from './reunionPublic';
 
 // Family Reunion case management (KD-FR-xxx). Everything here is staff-only
 // (admins + the "reunion" label) unless marked otherwise. Tables:
@@ -30,6 +31,8 @@ export const reunion = new Hono<{ Bindings: Bindings }>();
 reunion.route('/', reunionMedia);
 // Case-linked articles and AI drafts: src/routes/reunionNews.ts.
 reunion.route('/', reunionNews);
+// Public appeal page data and the public submission form (no login): src/routes/reunionPublic.ts.
+reunion.route('/', reunionPublic);
 
 // ---- reference data ----------------------------------------------------------
 
@@ -205,6 +208,12 @@ reunion.patch('/cases/:id', async (c) => {
       .bind(String(b.publicPhotoMediaId), row.id).first();
     if (!ok) return c.json({ error: 'That photo has not been published with consent' }, 400);
   }
+  if (b.publicEnabled && !row.public_enabled) {
+    const consent = await c.env.DB
+      .prepare("SELECT 1 FROM reunion_case_consents WHERE case_id = ? AND withdrawn_at IS NULL AND scope IN ('public_story', 'both') LIMIT 1")
+      .bind(row.id).first();
+    if (!consent) return c.json({ error: 'Record an active consent for the public story before turning the public page on' }, 400);
+  }
   const { stmts, changed, forbidden } = diffUpdate(c.env.DB, 'reunion_cases', row, b, CASE_FIELDS, user, row.id, 'case');
   if (forbidden.length) return c.json({ error: 'Only an admin can change: ' + forbidden.join(', ') }, 403);
   if (stmts.length) await c.env.DB.batch(stmts);
@@ -365,7 +374,9 @@ reunion.get('/cases/:id/leads', async (c) => {
   if (!row) return c.json({ error: 'Not found' }, 404);
   const { results } = await c.env.DB
     .prepare(
-      `SELECT l.*, u.name AS assigned_name FROM reunion_case_leads l LEFT JOIN users u ON u.id = l.assigned_to
+      `SELECT l.*, u.name AS assigned_name,
+              (SELECT COUNT(*) FROM reunion_case_media m WHERE m.lead_id = l.id AND m.deleted_at IS NULL) AS attachments
+       FROM reunion_case_leads l LEFT JOIN users u ON u.id = l.assigned_to
        WHERE l.case_id = ? AND l.deleted_at IS NULL ORDER BY l.received_at DESC`
     )
     .bind(row.id)

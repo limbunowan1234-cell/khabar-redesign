@@ -87,6 +87,10 @@ custom_domain = true
 #   RESEND_API_KEY — sends password-reset emails via Resend's HTTP API
 #     (see src/lib/email.ts). Optional: POST /auth/request-password-reset
 #     no-ops the send (but still returns 200) if this isn't set.
+#   TURNSTILE_SECRET — Cloudflare Turnstile secret key for the Family Reunion
+#     public "Submit information" form (src/routes/reunionPublic.ts). The form
+#     refuses submissions while this is unset. The matching site key is the
+#     Vercel env var NEXT_PUBLIC_TURNSTILE_SITE_KEY.
 #   SERVICE_SECRET — shared with Vercel's WORKER_SERVICE_SECRET env var.
 #     Lets app/api/send-notification/route.ts create notifications and read
 #     push subscriptions for arbitrary recipients (not its own JWT identity)
