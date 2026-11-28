@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { appLink } from '@/lib/appLink';
+import { useAuthStore } from '@/lib/authStore';
 
 // Flash News as a full-screen, swipe-up photo feed (like Shorts, but
 // photos). One post fills the screen; swipe, scroll, or use the arrow keys
@@ -50,6 +51,13 @@ const SHARE = 'M14 4l7 7-7 7v-4.1C8.5 13.9 5 15.6 3 20c.8-6 4-10.6 11-11.6V4z';
 export default function FlashFeed({ items }: { items: Flash[] }) {
   const feed = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
+  // Reporters and admins can post Flash from the website's Reporter panel
+  // (Story / Flash News switch); everyone else is sent to the app.
+  const user = useAuthStore((st) => st.user);
+  const canPostHere = !!user && (user.labels?.includes('reporter') || user.labels?.includes('admin') || user.email === 'nowanad@gmail.com');
+  const postLink = canPostHere
+    ? { href: '/reporter/post' }
+    : { href: appLink(), target: '_blank', rel: 'noopener noreferrer' };
 
   // Track which post is on screen (for the progress dots).
   useEffect(() => {
@@ -87,7 +95,7 @@ export default function FlashFeed({ items }: { items: Flash[] }) {
         <header className="ff-top">
           <Link href="/" className="ff-back" aria-label="Back to home">‹</Link>
           <span className="ff-title">⚡ Flash News</span>
-          <a href={appLink()} target="_blank" rel="noopener noreferrer" className="ff-post">+ Flash</a>
+          <a {...postLink} className="ff-post">+ Flash</a>
         </header>
 
         {items.length === 0 ? (
@@ -95,7 +103,7 @@ export default function FlashFeed({ items }: { items: Flash[] }) {
             <div className="ff-empty-bolt">⚡</div>
             <h1>No Flash News yet</h1>
             <p>Seen something happening in the hills? Post a photo and a few lines from the Khabar Darjeeling app.</p>
-            <a href={appLink()} target="_blank" rel="noopener noreferrer" className="ff-empty-btn">Get the app</a>
+            <a {...postLink} className="ff-empty-btn">{canPostHere ? 'Post Flash News' : 'Get the app'}</a>
           </div>
         ) : (
           <>
